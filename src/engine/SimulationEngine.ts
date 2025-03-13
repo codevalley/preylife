@@ -2,6 +2,8 @@ import { Entity, EntityType } from '../entities/Entity';
 import { Resource } from '../entities/Resource';
 import { Prey } from '../entities/Prey';
 import { Predator } from '../entities/Predator';
+import { SimulationConfig } from '../config';
+import { GeneticAttributes } from '../entities/Creature';
 
 interface AttributeStats {
   strength: number;
@@ -35,7 +37,7 @@ export class SimulationEngine {
   
   // Seasonal resource spawning
   private seasonLength: number = 90; // 90 days per season (much less frequent)
-  private seasonResourceSpawnAmount: number = 200; // Resources to spawn each season (much more dramatic)
+  private seasonResourceSpawnAmount: number = SimulationConfig.resources.bloom.resourcesPerBloom; // Resources to spawn each season
   private resourceBloom: boolean = false; // Whether we're in a resource bloom period
   
   // Extinction and spawn tracking
@@ -156,15 +158,18 @@ export class SimulationEngine {
             preyAttributes[key as keyof GeneticAttributes] = Math.max(0.05, Math.min(0.95, preyAttributes[key as keyof GeneticAttributes]));
           });
           
-          // Apply energy modifier for this cluster type
-          const energy = Prey.DEFAULT_MAX_ENERGY * clusterType.energyMod;
+          // Apply energy modifier for this cluster type with additional random variation (±10-15%)
+          const baseEnergy = Prey.DEFAULT_MAX_ENERGY * clusterType.energyMod;
+          const randomVariation = 0.85 + (Math.random() * 0.3); // 0.85 to 1.15 (±15%)
+          const energy = baseEnergy * randomVariation;
           
-          this.prey.push(new Prey(x, y, energy, preyAttributes));
+          const newPrey = new Prey(x, y, energy, preyAttributes);
+          this.addPrey(newPrey);
         }
       }
       
-      // Update total spawned count
-      this.totalSpawned.prey += count;
+      // The total spawned count is already updated in the addPrey method
+      // No need to update it again here
       
       console.log(`Total prey: ${this.prey.length}`);
     } else {
@@ -172,11 +177,9 @@ export class SimulationEngine {
       for (let i = 0; i < count; i++) {
         const x = Math.random() * this.environmentWidth - this.environmentWidth/2;
         const y = Math.random() * this.environmentHeight - this.environmentHeight/2;
-        this.prey.push(new Prey(x, y));
+        const newPrey = new Prey(x, y);
+        this.addPrey(newPrey);
       }
-      
-      // Update total spawned count
-      this.totalSpawned.prey += count;
       
       console.log(`Spawned ${count} new prey randomly. Total prey: ${this.prey.length}`);
     }
@@ -268,15 +271,18 @@ export class SimulationEngine {
             predatorAttributes[key as keyof GeneticAttributes] = Math.max(0.05, Math.min(0.95, predatorAttributes[key as keyof GeneticAttributes]));
           });
           
-          // Apply energy modifier for this cluster type
-          const energy = Predator.DEFAULT_MAX_ENERGY * clusterType.energyMod;
+          // Apply energy modifier for this cluster type with additional random variation (±10-15%)
+          const baseEnergy = Predator.DEFAULT_MAX_ENERGY * clusterType.energyMod;
+          const randomVariation = 0.85 + (Math.random() * 0.3); // 0.85 to 1.15 (±15%)
+          const energy = baseEnergy * randomVariation;
           
-          this.predators.push(new Predator(x, y, energy, predatorAttributes));
+          const newPredator = new Predator(x, y, energy, predatorAttributes);
+          this.addPredator(newPredator);
         }
       }
       
-      // Update total spawned count
-      this.totalSpawned.predators += count;
+      // The total spawned count is already updated in the addPredator method
+      // No need to update it again here
       
       console.log(`Total predators: ${this.predators.length}`);
     } else {
@@ -284,11 +290,9 @@ export class SimulationEngine {
       for (let i = 0; i < count; i++) {
         const x = Math.random() * this.environmentWidth - this.environmentWidth/2;
         const y = Math.random() * this.environmentHeight - this.environmentHeight/2;
-        this.predators.push(new Predator(x, y));
+        const newPredator = new Predator(x, y);
+        this.addPredator(newPredator);
       }
-      
-      // Update total spawned count
-      this.totalSpawned.predators += count;
       
       console.log(`Spawned ${count} new predators randomly. Total predators: ${this.predators.length}`);
     }
@@ -436,8 +440,8 @@ export class SimulationEngine {
   update(deltaTime: number): void {
     if (!this.isRunning) return;
     
-    // Update all prey
-    this.prey.forEach(prey => prey.update(deltaTime, this.resources));
+    // Update all prey - now passing predator information so prey can avoid them
+    this.prey.forEach(prey => prey.update(deltaTime, this.resources, this.predators));
     
     // Update all predators
     this.predators.forEach(predator => predator.update(deltaTime, this.prey));
@@ -481,8 +485,8 @@ export class SimulationEngine {
       
       console.log(`=== Day ${this.days}: MAJOR SEASONAL RESOURCE BLOOM ===`);
       
-      // Spawn resource clusters - fewer but denser clusters
-      const clusterCount = 5; // 5 clusters of resources
+      // Spawn resource clusters based on config
+      const clusterCount = SimulationConfig.resources.bloom.clusterCount;
       const resourcesPerCluster = Math.floor(this.seasonResourceSpawnAmount / clusterCount);
       
       // Create dense resource clusters in random locations
@@ -492,29 +496,31 @@ export class SimulationEngine {
         const centerY = Math.random() * this.environmentHeight - this.environmentHeight/2;
         
         // Create a primary dense cluster at the center
-        const primaryClusterSize = Math.floor(resourcesPerCluster * 0.6); // 60% of resources in dense center
+        const primaryClusterSize = Math.floor(resourcesPerCluster * SimulationConfig.resources.bloom.primaryDensity);
         for (let i = 0; i < primaryClusterSize; i++) {
           // Very tight clustering for primary resources
-          const radius = Math.random() * 60; // Tighter cluster
+          const radius = Math.random() * SimulationConfig.resources.bloom.primaryClusterRadius;
           const angle = Math.random() * Math.PI * 2;
           const x = centerX + Math.cos(angle) * radius;
           const y = centerY + Math.sin(angle) * radius;
           
           // Seasonal resources have much more energy during these major blooms
-          this.resources.push(new Resource(x, y, Resource.DEFAULT_ENERGY * 2.0));
+          this.resources.push(new Resource(x, y, Resource.DEFAULT_ENERGY * SimulationConfig.resources.bloom.primaryEnergyMultiplier));
         }
         
         // Create a secondary sparse cluster surrounding the primary cluster
         const secondaryClusterSize = resourcesPerCluster - primaryClusterSize;
         for (let i = 0; i < secondaryClusterSize; i++) {
           // Wider spread for secondary resources
-          const radius = 60 + (Math.random() * 100); // 60-160 units from center
+          const radius = SimulationConfig.resources.bloom.primaryClusterRadius + 
+                        (Math.random() * (SimulationConfig.resources.bloom.secondaryClusterRadius - 
+                                         SimulationConfig.resources.bloom.primaryClusterRadius));
           const angle = Math.random() * Math.PI * 2;
           const x = centerX + Math.cos(angle) * radius;
           const y = centerY + Math.sin(angle) * radius;
           
           // Secondary resources have less energy than primary but still more than normal
-          this.resources.push(new Resource(x, y, Resource.DEFAULT_ENERGY * 1.5));
+          this.resources.push(new Resource(x, y, Resource.DEFAULT_ENERGY * SimulationConfig.resources.bloom.secondaryEnergyMultiplier));
         }
       }
       
@@ -523,11 +529,11 @@ export class SimulationEngine {
       
       // Announce the bloom in the console with more detail
       console.log(`Spawned ${this.seasonResourceSpawnAmount} resources in ${clusterCount} rich clusters`);
-      console.log(`Primary resource energy: ${Resource.DEFAULT_ENERGY * 2.0}`);
-      console.log(`Secondary resource energy: ${Resource.DEFAULT_ENERGY * 1.5}`);
+      console.log(`Primary resource energy: ${Resource.DEFAULT_ENERGY * SimulationConfig.resources.bloom.primaryEnergyMultiplier}`);
+      console.log(`Secondary resource energy: ${Resource.DEFAULT_ENERGY * SimulationConfig.resources.bloom.secondaryEnergyMultiplier}`);
       
-      // Resource bloom lasts for 10 days - longer bloom period
-      const bloomDuration = 10; // days
+      // Get bloom duration from config
+      const bloomDuration = SimulationConfig.resources.bloom.bloomDuration;
       console.log(`Resource bloom will last for ${bloomDuration} days`);
       
       setTimeout(() => {
@@ -602,14 +608,19 @@ export class SimulationEngine {
       // Only hunt for food if the prey isn't close to being full
       // Prey will only consume resources if they are below 90% of their max energy
       if (prey.energy < prey.maxEnergy * 0.9) {
-        for (let i = this.resources.length - 1; i >= 0; i--) {
-          const resource = this.resources[i];
-          const distance = prey.position.distanceTo(resource.position);
-          
-          if (distance < 10) { // Consumption range
-            prey.consumeResource(resource);
-            this.resources.splice(i, 1);
-            break; // Each prey can only consume one resource per update
+        // Check if any predators are nearby - if so, don't consume resources (prioritize escape)
+        const nearbyPredator = this.isPredatorNearby(prey, 70); // Check within 70 units
+        
+        if (!nearbyPredator) {
+          for (let i = this.resources.length - 1; i >= 0; i--) {
+            const resource = this.resources[i];
+            const distance = prey.position.distanceTo(resource.position);
+            
+            if (distance < 10) { // Consumption range
+              prey.consumeResource(resource);
+              this.resources.splice(i, 1);
+              break; // Each prey can only consume one resource per update
+            }
           }
         }
       } else {
@@ -618,6 +629,16 @@ export class SimulationEngine {
         // but will continue their current movement patterns
       }
     }
+  }
+  
+  // Helper method to check if any predators are near a prey
+  private isPredatorNearby(prey: Prey, distance: number): boolean {
+    for (const predator of this.predators) {
+      if (prey.position.distanceTo(predator.position) < distance) {
+        return true;
+      }
+    }
+    return false;
   }
   
   private handlePredation(): void {
@@ -664,19 +685,49 @@ export class SimulationEngine {
     const newPrey: Prey[] = [];
     for (const prey of this.prey) {
       if (prey.canReproduce()) {
-        newPrey.push(prey.reproduce());
+        const offspring = prey.reproduce();
+        newPrey.push(offspring);
       }
     }
-    this.prey.push(...newPrey);
+    
+    // Add new prey to the simulation and update counts
+    for (const prey of newPrey) {
+      this.addPrey(prey);
+    }
+    
+    if (newPrey.length > 0) {
+      console.log(`${newPrey.length} new prey born through reproduction. Total spawned: ${this.totalSpawned.prey}`);
+    }
     
     // Handle predator reproduction
     const newPredators: Predator[] = [];
     for (const predator of this.predators) {
       if (predator.canReproduce()) {
-        newPredators.push(predator.reproduce());
+        const offspring = predator.reproduce();
+        newPredators.push(offspring);
       }
     }
-    this.predators.push(...newPredators);
+    
+    // Add new predators to the simulation and update counts
+    for (const predator of newPredators) {
+      this.addPredator(predator);
+    }
+    
+    if (newPredators.length > 0) {
+      console.log(`${newPredators.length} new predators born through reproduction. Total spawned: ${this.totalSpawned.predators}`);
+    }
+  }
+  
+  // Helper method to add a prey to the simulation and update counts
+  private addPrey(prey: Prey): void {
+    this.prey.push(prey);
+    this.totalSpawned.prey += 1;
+  }
+  
+  // Helper method to add a predator to the simulation and update counts
+  private addPredator(predator: Predator): void {
+    this.predators.push(predator);
+    this.totalSpawned.predators += 1;
   }
   
   private removeDeadEntities(): void {

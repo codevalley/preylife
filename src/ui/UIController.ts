@@ -105,6 +105,7 @@ export class UIController {
               <svg width="14" height="14" viewBox="0 0 24 24" fill="#5588ff" style="margin-right: 4px;">
                 <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
               </svg>
+              <span style="color: #aaaaaa; font-size: 11px; margin-right: 4px;">Live:</span>
             </span>
             <span id="prey-count" style="color: #5588ff; font-weight: bold;">0</span>
           </div>
@@ -113,6 +114,7 @@ export class UIController {
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2" style="margin-right: 4px;">
                 <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
               </svg>
+              <span style="color: #aaaaaa; font-size: 11px; margin-right: 4px;">Total:</span>
             </span>
             <span id="prey-spawned" style="color: #5588ff;">0</span>
           </div>
@@ -128,23 +130,25 @@ export class UIController {
         <div style="background-color: rgba(130, 40, 40, 0.3); border: 1px solid rgba(255, 85, 85, 0.5); border-radius: 4px; padding: 8px;">
           <div style="font-weight: bold; color: #ff5555; margin-bottom: 5px; font-size: 14px; display: flex; align-items: center;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="#ff5555" style="margin-right: 4px;">
-              <path d="M12 2L22 20H2L12 2z"/>
+              <path d="M12 2 L22 9 L19 20 L5 20 L2 9 Z"/>
             </svg>
             Predators
           </div>
           <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
             <span style="display: flex; align-items: center;">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="#ff5555" style="margin-right: 4px;">
-                <path d="M12 2L22 20H2L12 2z"/>
+                <path d="M12 2 L22 9 L19 20 L5 20 L2 9 Z"/>
               </svg>
+              <span style="color: #aaaaaa; font-size: 11px; margin-right: 4px;">Live:</span>
             </span>
             <span id="predator-count" style="color: #ff5555; font-weight: bold;">0</span>
           </div>
           <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
             <span style="display: flex; align-items: center;">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2" style="margin-right: 4px;">
-                <path d="M12 2L22 20H2L12 2z"/>
+                <path d="M12 2 L22 9 L19 20 L5 20 L2 9 Z"/>
               </svg>
+              <span style="color: #aaaaaa; font-size: 11px; margin-right: 4px;">Total:</span>
             </span>
             <span id="predator-spawned" style="color: #ff5555;">0</span>
           </div>
@@ -169,6 +173,7 @@ export class UIController {
               <svg width="14" height="14" viewBox="0 0 24 24" fill="#55cc55" style="margin-right: 4px;">
                 <rect x="4" y="4" width="16" height="16" />
               </svg>
+              <span style="color: #aaaaaa; font-size: 11px; margin-right: 4px;">Active:</span>
             </span>
             <span id="resource-count" style="color: #55cc55; font-weight: bold;">0</span>
           </div>
@@ -177,6 +182,7 @@ export class UIController {
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2" style="margin-right: 4px;">
                 <rect x="4" y="4" width="16" height="16" />
               </svg>
+              <span style="color: #aaaaaa; font-size: 11px; margin-right: 4px;">Total:</span>
             </span>
             <span id="resource-spawned" style="color: #55cc55;">0</span>
           </div>

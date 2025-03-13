@@ -26,7 +26,7 @@ A browser-based simulation modeling predator-prey dynamics with evolutionary mec
 - **Resource Decay**: If prey population reaches zero, resources slowly decay and disappear
 
 ### 2. Prey
-- **Visual Representation**: Blue circular shapes with attribute visualization
+- **Visual Representation**: Blue circular shapes with attribute visualization (blue-green color scheme)
 - **Primary Goal**: Consume resources, reproduce, avoid predators
 - **Movement**: 
   - Hunger-driven foraging behavior
@@ -34,31 +34,38 @@ A browser-based simulation modeling predator-prey dynamics with evolutionary mec
   - When satiated (>70% energy): Primarily random movement with reduced resource interest
   - Hungrier prey move faster toward detected resources
   - Detection range scales with hunger level (up to 60% increase when starving)
+- **Predator Avoidance Behavior**:
+  - Actively detect nearby predators within a configurable detection range
+  - Stealth attribute increases predator detection range
+  - Flee from detected predators at increased speed (50% faster than normal)
+  - Prioritize survival over feeding when predators are nearby
+  - Higher stealth prey can detect predators from further away
 
 ### 3. Predators
-- **Visual Representation**: Red triangular shapes with attribute visualization
+- **Visual Representation**: Red pentagon shapes with attribute visualization (red-yellow color scheme)
 - **Primary Goal**: Hunt prey, reproduce
 - **Movement**: 
   - Hunger-driven hunting behavior
   - When hungry (<80% energy): Active prey pursuit with increased detection range
   - When satiated (>80% energy): Reduced aggression and mostly random movement
   - Opportunistic hunting only for very close prey when satiated
-  - Hungrier predators move faster during pursuit
+  - Hungrier predators move faster during pursuit (up to 25% faster when starving)
   - Detection range scales with hunger level (up to 50% increase when starving)
+  - Slightly slower maximum speed than fleeing prey (25% vs 50% boost)
 
 ## Genetic Attributes
 
 ### 1. Strength (0.0-1.0)
-- **Visual**: Red section of the creature
+- **Visual**: Green component for prey, red component for predators
 - **Effect for Prey**: Determines escape capability, movement speed
 - **Effect for Predator**: Determines hunting success, movement speed
 - **Trade-off**: Higher strength = faster movement but higher energy cost
 
 ### 2. Stealth (0.0-1.0)
-- **Visual**: Blue section of the creature
-- **Effect for Prey**: Ability to avoid detection
+- **Visual**: Blue component for prey, yellow component for predators
+- **Effect for Prey**: Ability to avoid detection and detect predators from further away
 - **Effect for Predator**: Ability to approach prey undetected
-- **Trade-off**: Higher stealth = better direction changes but higher energy cost
+- **Trade-off**: Higher stealth = better predator detection/avoidance but higher energy cost
 
 ### 3. Energy Capacity (Evolving)
 - **Visual**: Influences overall size of creature
@@ -250,25 +257,28 @@ Energy_Cost = Learning_Cost_Base + (abs(Capped_Shift) * Energy_Multiplier)
 
 ### Creatures
 - **Base Shape**: 
-  - Predators: Triangular shapes
+  - Predators: Pentagon shapes
   - Prey: Circular shapes
 - **Size**: Based on energy capacity and current energy level
   - Base size determined by maximum energy capacity
   - Current size scales with percentage of energy filled
 - **Color Scheme**:
-  - Predators: Red base
-  - Prey: Blue base
-  - Attribute visualization as pie sections:
-    - Strength: Red section
-    - Stealth: Blue section
+  - Predators: Red-yellow color scheme
+    - Strength: Red component
+    - Stealth: Yellow component
+  - Prey: Blue-green color scheme
+    - Strength: Green component  
+    - Stealth: Blue component
+  - Overall color intensity reflects energy level (brighter = more energy)
 - **Special Effects**:
-  - Learnability: Yellow outline intensity
-  - Longevity: Purple glow intensity
+  - Learnability: Slight pulsation effect
+  - Longevity: Slight glow intensity
   - Age: Opacity/saturation (fades slightly with age)
 - **Movement**: 
   - Speed proportional to strength 
   - Direction changes proportional to stealth
-  - Optional: Small trail showing recent movement
+  - Predator facing direction matches movement
+  - Prey fleeing behavior when predators are detected
 
 ### Resources
 - Small green square dots
@@ -289,7 +299,11 @@ Energy_Cost = Learning_Cost_Base + (abs(Capped_Shift) * Energy_Multiplier)
 
 ### Main Loop
 1. Update all creature positions
+   - Prey check for nearby predators and flee if detected
+   - Prey seek resources based on hunger level
+   - Predators seek prey based on hunger level
 2. Check for resource consumption (prey)
+   - Only consume resources if no predators nearby
 3. Check for predator-prey interactions
 4. Calculate energy consumption
 5. Apply starvation probability checks
@@ -302,8 +316,9 @@ Energy_Cost = Learning_Cost_Base + (abs(Capped_Shift) * Energy_Multiplier)
 
 - Cyclical population dynamics (predator-prey cycles)
 - Evolution of specialized strategies:
-  - High-strength, low-stealth predators
-  - High-stealth, low-strength prey
+  - High-strength, low-stealth predators (fast hunters)
+  - High-stealth, low-strength prey (good at detecting and avoiding predators)
+  - Balanced prey that can both evade predators and efficiently forage
 - Adaptation to resource availability:
   - Higher energy capacity in volatile environments
   - Lower energy capacity in stable, resource-rich environments
@@ -327,6 +342,8 @@ Energy_Cost = Learning_Cost_Base + (abs(Capped_Shift) * Energy_Multiplier)
   - Cluster formation around resource-rich areas
   - Development of different attribute profiles in different regions
   - Local extinction and recolonization dynamics
+  - Formation of "safe zones" where prey leverage terrain and stealth to avoid predators
+  - Predator hunting grounds with specialized attributes for more effective hunting
 - Resilience Mechanisms:
   - System self-regulation through prey population protection mechanisms
   - Extinction and recovery cycles

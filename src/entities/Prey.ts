@@ -3,14 +3,15 @@ import { Creature, GeneticAttributes } from './Creature';
 import { EntityType } from './Entity';
 import { Resource } from './Resource';
 import { Predator } from './Predator';
+import { SimulationConfig } from '../config';
 
 export class Prey extends Creature {
-  static readonly DEFAULT_MAX_ENERGY: number = 100;
+  static readonly DEFAULT_MAX_ENERGY: number = SimulationConfig.prey.maxEnergy;
   static readonly DEFAULT_ATTRIBUTES: GeneticAttributes = {
-    strength: 0.5,
-    stealth: 0.5,
-    learnability: 0.3,
-    longevity: 0.5
+    strength: SimulationConfig.prey.defaultAttributes.strength,
+    stealth: SimulationConfig.prey.defaultAttributes.stealth,
+    learnability: SimulationConfig.prey.defaultAttributes.learnability,
+    longevity: SimulationConfig.prey.defaultAttributes.longevity
   };
   
   constructor(
@@ -118,46 +119,93 @@ export class Prey extends Creature {
     return closestResource;
   }
   
-  // Override update to include resource detection and movement
-  update(deltaTime: number, resources: Resource[] = []): void {
+  // Method to detect nearby predators
+  detectPredator(predators: Predator[]): Predator | null {
+    // Get predator detection range from config
+    const baseDetectionRange = SimulationConfig.creatures.interactionRanges.preyPredatorDetectionRange;
+    
+    // Increase detection range based on stealth attribute (higher stealth = better at detecting predators)
+    const detectionMultiplier = SimulationConfig.prey.predatorDetectionMultiplier || 1.2;
+    const adjustedRange = baseDetectionRange * (1 + this.attributes.stealth * detectionMultiplier);
+    
+    // Find closest predator within range
+    let closestPredator: Predator | null = null;
+    let closestDistance = adjustedRange;
+    
+    for (const predator of predators) {
+      const distance = this.position.distanceTo(predator.position);
+      if (distance < closestDistance) {
+        closestDistance = distance;
+        closestPredator = predator;
+      }
+    }
+    
+    return closestPredator;
+  }
+  
+  // Override update to include resource detection, predator avoidance, and movement
+  update(deltaTime: number, resources: Resource[] = [], predators: Predator[] = []): void {
+    
+    // Check for nearby predators first - survival takes priority over feeding
+    const nearbyPredator = this.detectPredator(predators);
+    
     // Randomly change direction occasionally - higher chance when full
     const energyRatio = this.energy / this.maxEnergy;
     const directionChangeChance = 0.02 + (energyRatio * 0.03); // Up to 5% when full
     
-    if (Math.random() < directionChangeChance) {
+    if (Math.random() < directionChangeChance && !nearbyPredator) {
       const angle = Math.random() * Math.PI * 2;
       this.velocity.set(Math.cos(angle), Math.sin(angle)).normalize().multiplyScalar(this.speed);
     }
     
-    // Check hunger level to determine foraging behavior
-    const hungerLevel = 1 - energyRatio;
-    
-    // If prey is fairly full (less than 30% hunger), it's less focused on finding food
-    if (hungerLevel < 0.3) {
-      // When fairly full, prey wanders more and is less likely to chase resources
-      // They might still opportunistically grab very close resources
-      if (Math.random() < 0.8) { // 80% chance to just wander when full
-        // Just continue current movement - no active foraging
-      } else {
-        // Occasionally still check for extremely close resources (opportunistic feeding)
-        const nearbyResource = this.detectResource(resources, 30); // Much shorter detection range
-        if (nearbyResource) {
-          // Move toward the resource, but with less urgency
-          const direction = nearbyResource.position.clone().sub(this.position).normalize();
-          this.velocity.copy(direction).multiplyScalar(this.speed * 0.8); // Move slower when not hungry
-        }
-      }
-    } else {
-      // When hungry, actively search for food
-      // Scale detection range with hunger - hungrier prey are more motivated to find food
-      const detectionRange = 50 * (1 + hungerLevel * 0.6); // Up to 60% increase when starving
+    // If a predator is nearby, flee from it
+    if (nearbyPredator) {
+      // Direction away from predator
+      const fleeDirection = this.position.clone().sub(nearbyPredator.position).normalize();
       
-      const nearbyResource = this.detectResource(resources, detectionRange);
-      if (nearbyResource) {
-        // Move toward the resource - hungrier prey move faster toward food
-        const foragingSpeed = this.speed * (1 + hungerLevel * 0.3); // Up to 30% faster when starving
-        const direction = nearbyResource.position.clone().sub(this.position).normalize();
-        this.velocity.copy(direction).multiplyScalar(foragingSpeed);
+      // Get avoidance multiplier from config (default to 1.5 if not set)
+      const avoidanceMultiplier = SimulationConfig.prey.predatorAvoidanceMultiplier || 1.5;
+      
+      // Boost speed based on stealth and avoidance multiplier
+      const fleeSpeed = this.speed * (1 + this.attributes.stealth * 0.5) * avoidanceMultiplier;
+      
+      // Set velocity to flee
+      this.velocity.copy(fleeDirection).multiplyScalar(fleeSpeed);
+      
+      // Fleeing consumes more energy
+      this.energy = Math.max(0, this.energy - (2 * deltaTime));
+    }
+    // If no predator nearby, focus on foraging based on hunger level
+    else {
+      const hungerLevel = 1 - energyRatio;
+      
+      // If prey is fairly full (less than 30% hunger), it's less focused on finding food
+      if (hungerLevel < 0.3) {
+        // When fairly full, prey wanders more and is less likely to chase resources
+        // They might still opportunistically grab very close resources
+        if (Math.random() < 0.8) { // 80% chance to just wander when full
+          // Just continue current movement - no active foraging
+        } else {
+          // Occasionally still check for extremely close resources (opportunistic feeding)
+          const nearbyResource = this.detectResource(resources, 30); // Much shorter detection range
+          if (nearbyResource) {
+            // Move toward the resource, but with less urgency
+            const direction = nearbyResource.position.clone().sub(this.position).normalize();
+            this.velocity.copy(direction).multiplyScalar(this.speed * 0.8); // Move slower when not hungry
+          }
+        }
+      } else {
+        // When hungry, actively search for food
+        // Scale detection range with hunger - hungrier prey are more motivated to find food
+        const detectionRange = 50 * (1 + hungerLevel * 0.6); // Up to 60% increase when starving
+        
+        const nearbyResource = this.detectResource(resources, detectionRange);
+        if (nearbyResource) {
+          // Move toward the resource - hungrier prey move faster toward food
+          const foragingSpeed = this.speed * (1 + hungerLevel * 0.3); // Up to 30% faster when starving
+          const direction = nearbyResource.position.clone().sub(this.position).normalize();
+          this.velocity.copy(direction).multiplyScalar(foragingSpeed);
+        }
       }
     }
     

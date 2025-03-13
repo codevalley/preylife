@@ -15,12 +15,24 @@ export const SimulationConfig = {
   
   // Resource settings
   resources: {
-    defaultEnergy: 20,
+    defaultEnergy: 15,
     regenerationChance: 0.02, // % chance each frame
     emergencyRegenerationThreshold: 0.2, // % of initial prey
     emergencyRegenerationChance: 0.05, // % chance each frame
     emergencyEnergyBonus: 1.5, // multiplier for emergency resources
     decayChance: 0.1, // % chance of resources decaying when no prey
+    
+    // Seasonal bloom settings
+    bloom: {
+      clusterCount: 5,           // Number of resource clusters during bloom
+      primaryEnergyMultiplier: 2.0,  // Energy multiplier for primary cluster resources
+      secondaryEnergyMultiplier: 1.5, // Energy multiplier for secondary cluster resources
+      primaryClusterRadius: 60,  // Radius of primary dense clusters
+      secondaryClusterRadius: 160, // Max radius of secondary sparse clusters
+      bloomDuration: 10,         // How many days the bloom lasts
+      resourcesPerBloom: 75,    // Total resources spawned during bloom
+      primaryDensity: 0.6        // Percentage of resources in primary clusters (0.6 = 60%)
+    }
   },
   
   // Creature settings
@@ -44,13 +56,14 @@ export const SimulationConfig = {
       resourceConsumption: 10,
       preyCaptureRange: 15,
       preyDetectionRange: 80,
-      preyResourceDetectionRange: 50
+      preyResourceDetectionRange: 50,
+      preyPredatorDetectionRange: 100 // How far prey can detect predators
     }
   },
   
   // Predator settings
   predator: {
-    maxEnergy: 350,
+    maxEnergy: 480,
     defaultAttributes: {
       strength: 0.5,
       stealth: 0.4,
@@ -68,7 +81,7 @@ export const SimulationConfig = {
   
   // Prey settings
   prey: {
-    maxEnergy: 280,
+    maxEnergy: 300,
     defaultAttributes: {
       strength: 0.5,
       stealth: 0.5,
@@ -76,6 +89,8 @@ export const SimulationConfig = {
       longevity: 0.5
     },
     resourceEnergyBonus: 1.2, // multiplier for energy from resources
+    predatorAvoidanceMultiplier: 1.5, // Speed boost when fleeing from predators
+    predatorDetectionMultiplier: 1.2, // How much stealth improves predator detection
   },
   
   // Learning settings

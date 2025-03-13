@@ -1,8 +1,10 @@
 import * as THREE from 'three';
 import { Entity, EntityType } from './Entity';
 
+import { SimulationConfig } from '../config';
+
 export class Resource extends Entity {
-  static readonly DEFAULT_ENERGY: number = 20;
+  static readonly DEFAULT_ENERGY: number = SimulationConfig.resources.defaultEnergy;
   
   constructor(x: number, y: number, energy: number = Resource.DEFAULT_ENERGY) {
     super(EntityType.RESOURCE, x, y);

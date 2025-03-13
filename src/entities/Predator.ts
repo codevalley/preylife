@@ -3,13 +3,15 @@ import { Creature, GeneticAttributes } from './Creature';
 import { EntityType } from './Entity';
 import { Prey } from './Prey';
 
+import { SimulationConfig } from '../config';
+
 export class Predator extends Creature {
-  static readonly DEFAULT_MAX_ENERGY: number = 150;
+  static readonly DEFAULT_MAX_ENERGY: number = SimulationConfig.predator.maxEnergy;
   static readonly DEFAULT_ATTRIBUTES: GeneticAttributes = {
-    strength: 0.5,
-    stealth: 0.4,
-    learnability: 0.3,
-    longevity: 0.5
+    strength: SimulationConfig.predator.defaultAttributes.strength,
+    stealth: SimulationConfig.predator.defaultAttributes.stealth,
+    learnability: SimulationConfig.predator.defaultAttributes.learnability,
+    longevity: SimulationConfig.predator.defaultAttributes.longevity
   };
   
   constructor(
@@ -189,8 +191,9 @@ export class Predator extends Creature {
       
       const nearbyPrey = this.detectPrey(preyList, detectionRange);
       if (nearbyPrey) {
-        // Move toward the prey - hungrier predators move faster
-        const huntSpeed = this.speed * (1 + hungerLevel * 0.3); // Up to 30% faster when starving
+        // Move toward the prey - hungrier predators move faster, but slightly slower than maximum prey flee speed
+        // This gives fleeing prey a small chance to escape by outrunning the predator
+        const huntSpeed = this.speed * (1 + hungerLevel * 0.25); // Up to 25% faster when starving (vs 50% for fleeing prey)
         const direction = nearbyPrey.position.clone().sub(this.position).normalize();
         this.velocity.copy(direction).multiplyScalar(huntSpeed);
         
