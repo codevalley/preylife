@@ -93,9 +93,9 @@ export abstract class Creature extends Entity {
   
   handleBoundaries(): void {
     // Wrap around environment boundaries
-    // Assuming environment size of 1000x600 for now
-    const width = 1000;
-    const height = 600;
+    // Use camera frustum size for consistent environment boundaries
+    const width = 600 * (window.innerWidth / window.innerHeight); // Adjust for aspect ratio
+    const height = 600; // Fixed height
     
     if (this.position.x < -width/2) this.position.x = width/2;
     if (this.position.x > width/2) this.position.x = -width/2;

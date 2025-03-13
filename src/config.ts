@@ -68,7 +68,7 @@ export const SimulationConfig = {
   
   // Prey settings
   prey: {
-    maxEnergy: 100,
+    maxEnergy: 70,
     defaultAttributes: {
       strength: 0.5,
       stealth: 0.5,

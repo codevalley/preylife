@@ -22,12 +22,12 @@ class Application {
     // Initialize simulation
     this.simulation.initialize();
     
-    // Create renderer
+    // Create renderer to fill window
     const container = document.body;
     this.renderer = new Renderer(
       container, 
-      SimulationConfig.environment.width,
-      SimulationConfig.environment.height,
+      window.innerWidth,
+      window.innerHeight,
       this.simulation
     );
     

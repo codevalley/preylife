@@ -2,27 +2,37 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>PreyLife - Predator-Prey Ecosystem Simulation</title>
   <style>
-    body {
+    html, body {
       margin: 0;
       padding: 0;
+      width: 100%;
+      height: 100%;
       overflow: hidden;
       background-color: #000;
     }
+    body {
+      position: relative; /* For absolute positioning of children */
+    }
     canvas {
       display: block;
+      width: 100%;
+      height: 100%;
     }
     #ui-container {
       position: absolute;
-      top: 10px;
-      left: 10px;
+      top: 20px;
+      left: 20px;
       z-index: 100;
       color: white;
       font-family: Arial, sans-serif;
       font-size: 14px;
       width: 320px;
+      max-width: 90vw; /* Prevent UI from overflowing on small screens */
+      pointer-events: auto; /* Ensure UI interactions work */
+      touch-action: auto; /* Ensure touch interactions work */
     }
     button {
       background-color: #333;
@@ -108,6 +118,40 @@
     #resource-count {
       color: #55cc55;
       font-weight: bold;
+    }
+    
+    /* Responsive adjustments for different screen sizes */
+    @media (max-width: 768px) {
+      #ui-container {
+        width: 280px;
+      }
+      button {
+        padding: 6px 12px;
+        font-size: 12px;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      #ui-container {
+        width: 250px;
+        font-size: 12px;
+      }
+      .dashboard-panel .panel-header {
+        padding: 6px 8px !important;
+      }
+      .dashboard-panel .panel-content {
+        padding: 8px !important;
+      }
+      button {
+        padding: 4px 8px;
+        font-size: 11px;
+      }
+    }
+    
+    /* Prevent text selection on UI elements */
+    #ui-container {
+      user-select: none;
+      -webkit-user-select: none;
     }
   </style>
 </head>

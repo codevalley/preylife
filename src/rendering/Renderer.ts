@@ -18,17 +18,21 @@ export class Renderer {
   
   constructor(
     private container: HTMLElement,
-    private width: number = 1000,
-    private height: number = 600,
+    private width: number = window.innerWidth,
+    private height: number = window.innerHeight,
     private simulation: SimulationEngine
   ) {
     // Create scene
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x111111);
     
+    // Get initial window dimensions
+    this.width = window.innerWidth;
+    this.height = window.innerHeight;
+    
     // Create orthographic camera
-    const aspectRatio = width / height;
-    const frustumSize = height;
+    const aspectRatio = this.width / this.height;
+    const frustumSize = 600; // Base scale for the world (fixed height)
     
     this.camera = new THREE.OrthographicCamera(
       frustumSize * aspectRatio / -2,
@@ -42,8 +46,15 @@ export class Renderer {
     
     // Create renderer
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
-    this.renderer.setSize(width, height);
+    this.renderer.setSize(this.width, this.height);
     this.renderer.setPixelRatio(window.devicePixelRatio);
+    
+    // Make renderer fill the container
+    this.renderer.domElement.style.width = '100%';
+    this.renderer.domElement.style.height = '100%';
+    this.renderer.domElement.style.position = 'absolute';
+    this.renderer.domElement.style.top = '0';
+    this.renderer.domElement.style.left = '0';
     
     // Add to container
     container.appendChild(this.renderer.domElement);
@@ -62,6 +73,9 @@ export class Renderer {
     
     // Handle window resize
     window.addEventListener('resize', this.onWindowResize.bind(this));
+    
+    // Do an initial resize to ensure correct size
+    this.onWindowResize();
   }
   
   private onMouseMove(event: MouseEvent): void {
@@ -135,18 +149,25 @@ export class Renderer {
   }
   
   private onWindowResize(): void {
-    const newWidth = this.container.clientWidth;
-    const newHeight = this.container.clientHeight;
-    const aspectRatio = newWidth / newHeight;
-    const frustumSize = newHeight;
+    // Get new window dimensions
+    this.width = window.innerWidth;
+    this.height = window.innerHeight;
+    const aspectRatio = this.width / this.height;
     
+    // Keep a fixed height for the camera to maintain scale of the simulation
+    const frustumSize = 600; // Fixed height
+    
+    // Update camera frustum
     this.camera.left = frustumSize * aspectRatio / -2;
     this.camera.right = frustumSize * aspectRatio / 2;
     this.camera.top = frustumSize / 2;
     this.camera.bottom = frustumSize / -2;
     
+    // Update camera matrix
     this.camera.updateProjectionMatrix();
-    this.renderer.setSize(newWidth, newHeight);
+    
+    // Update renderer size
+    this.renderer.setSize(this.width, this.height);
   }
   
   updateEntities(entities: Entity[]): void {

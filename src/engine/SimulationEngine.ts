@@ -24,8 +24,9 @@ export class SimulationEngine {
   private predators: Predator[] = [];
   
   private isRunning: boolean = false;
-  private environmentWidth: number = 1000;
-  private environmentHeight: number = 600;
+  // Environment dimensions (set to match camera frustum size)
+  private environmentWidth: number = 1000; // Will adjust based on aspect ratio
+  private environmentHeight: number = 600; // Fixed base height
   
   // Simulation time tracking
   private days: number = 0;
