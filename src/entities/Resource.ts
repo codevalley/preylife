@@ -16,9 +16,28 @@ export class Resource extends Entity {
   
   createMesh(): THREE.Mesh {
     const geometry = new THREE.PlaneGeometry(3, 3);
-    const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+    
+    // Calculate color intensity based on energy level
+    const energyRatio = this.energy / this.maxEnergy;
+    const colorIntensity = 0.3 + (energyRatio * 0.7); // 30-100% intensity
+    
+    // Green color with intensity based on energy
+    const color = new THREE.Color(0, colorIntensity, 0);
+    const material = new THREE.MeshBasicMaterial({ color });
+    
     this.mesh = new THREE.Mesh(geometry, material);
     this.updateMeshPosition();
     return this.mesh;
+  }
+  
+  updateMeshPosition(): void {
+    super.updateMeshPosition();
+    
+    // Update color based on current energy level
+    if (this.mesh) {
+      const energyRatio = this.energy / this.maxEnergy;
+      const colorIntensity = 0.3 + (energyRatio * 0.7); // 30-100% intensity
+      (this.mesh.material as THREE.MeshBasicMaterial).color.setRGB(0, colorIntensity, 0);
+    }
   }
 }

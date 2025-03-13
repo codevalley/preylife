@@ -31,6 +31,7 @@ export abstract class Entity {
   updateMeshPosition(): void {
     if (this.mesh) {
       this.mesh.position.set(this.position.x, this.position.y, 0);
+      // Color updates will be handled in derived classes
     }
   }
   

@@ -75,8 +75,16 @@ export abstract class Creature extends Entity {
     // More reasonable values to ensure predators can survive
     const typeMultiplier = this.type === EntityType.PREDATOR ? 2.5 : 0.7;
     
+    // Save previous energy for comparison
+    const previousEnergy = this.energy;
+    
     // Final energy consumption
     this.energy = Math.max(0, this.energy - (totalCost * typeMultiplier));
+    
+    // If energy changed significantly, update the mesh to reflect new energy level
+    if (Math.abs(previousEnergy - this.energy) > 1) {
+      this.updateMeshPosition();
+    }
     
     // Check for death from starvation
     if (this.energy <= 0) {

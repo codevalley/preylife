@@ -22,17 +22,43 @@ export class Predator extends Creature {
   }
   
   createMesh(): THREE.Mesh {
-    // Create a triangular geometry for predator
+    // Create a pentagon geometry for predator (instead of triangle)
     const shape = new THREE.Shape();
-    shape.moveTo(0, 8);  // Top point
-    shape.lineTo(-6, -4); // Bottom left
-    shape.lineTo(6, -4);  // Bottom right
-    shape.lineTo(0, 8);   // Back to top
+    const radius = 8;
+    const segments = 5; // Pentagon has 5 sides
+    
+    for (let i = 0; i < segments; i++) {
+      const angle = (i / segments) * Math.PI * 2;
+      const x = Math.sin(angle) * radius;
+      const y = Math.cos(angle) * radius;
+      
+      if (i === 0) {
+        shape.moveTo(x, y);
+      } else {
+        shape.lineTo(x, y);
+      }
+    }
+    shape.lineTo(Math.sin(0) * radius, Math.cos(0) * radius); // Close the shape
     
     const geometry = new THREE.ShapeGeometry(shape);
     
-    // Create material with red color
-    const material = new THREE.MeshBasicMaterial({ color: 0xff3333 });
+    // Calculate color based on genetic attributes
+    // Stealth = yellow component, Strength = red component
+    const yellowIntensity = this.attributes.stealth;
+    const redIntensity = this.attributes.strength;
+    
+    // Energy affects overall brightness
+    const energyRatio = this.energy / this.maxEnergy;
+    const brightness = 0.3 + (energyRatio * 0.7); // 30-100% brightness
+    
+    // Combine colors: strength (red) and stealth (yellow)
+    const color = new THREE.Color(
+      Math.max(redIntensity, yellowIntensity) * brightness, // Red component (take highest value)
+      yellowIntensity * brightness, // Green component from yellow
+      0                             // No blue component
+    );
+    
+    const material = new THREE.MeshBasicMaterial({ color });
     
     this.mesh = new THREE.Mesh(geometry, material);
     this.updateMeshPosition();
@@ -43,11 +69,36 @@ export class Predator extends Creature {
     return this.mesh;
   }
   
+  updateMeshPosition(): void {
+    super.updateMeshPosition();
+    
+    // Update color based on current energy level and attributes
+    if (this.mesh) {
+      const yellowIntensity = this.attributes.stealth;
+      const redIntensity = this.attributes.strength;
+      
+      const energyRatio = this.energy / this.maxEnergy;
+      const brightness = 0.3 + (energyRatio * 0.7); // 30-100% brightness
+      
+      (this.mesh.material as THREE.MeshBasicMaterial).color.setRGB(
+        Math.max(redIntensity, yellowIntensity) * brightness,
+        yellowIntensity * brightness,
+        0
+      );
+      
+      // Update rotation to face movement direction
+      this.mesh.rotation.z = Math.atan2(this.velocity.y, this.velocity.x) - Math.PI/2;
+    }
+  }
+  
   // Method to consume prey
   consumePrey(prey: Prey): void {
     // Predator gains 70% of prey's current energy
     const energyGained = prey.energy * 0.7;
     this.energy = Math.min(this.maxEnergy, this.energy + energyGained);
+    
+    // Update visual appearance to reflect new energy level
+    this.updateMeshPosition();
   }
   
   // Method to check for nearby prey
@@ -178,6 +229,9 @@ export class Predator extends Creature {
     
     // Parent loses energy from reproduction
     this.energy *= 0.5;
+    
+    // Update visual appearance of parent to reflect energy loss
+    this.updateMeshPosition();
     
     return offspring;
   }

@@ -50,7 +50,7 @@ export const SimulationConfig = {
   
   // Predator settings
   predator: {
-    maxEnergy: 150,
+    maxEnergy: 350,
     defaultAttributes: {
       strength: 0.5,
       stealth: 0.4,
@@ -68,7 +68,7 @@ export const SimulationConfig = {
   
   // Prey settings
   prey: {
-    maxEnergy: 70,
+    maxEnergy: 280,
     defaultAttributes: {
       strength: 0.5,
       stealth: 0.5,

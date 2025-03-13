@@ -63,58 +63,110 @@ export class SimulationEngine {
   // Methods to spawn new creatures on demand with clustering
   spawnPrey(count: number = 10, clustered: boolean = true): void {
     if (clustered) {
-      // Create 2-3 clusters of prey with variant attributes
-      const clusterCount = Math.floor(Math.random() * 2) + 2; // 2-3 clusters
+      // Define specialized cluster types for diverse initial population
+      const clusterTypes = [
+        {
+          name: "Strength-Focused",
+          attributes: {
+            strength: 0.9,     // Strong
+            stealth: 0.1,      // Very low stealth
+            learnability: 0.3, // Average learnability
+            longevity: 0.4,    // Average longevity
+          },
+          energyMod: 1.2       // 20% more energy capacity
+        },
+        {
+          name: "Stealth-Focused",
+          attributes: {
+            strength: 0.1,     // Very low strength
+            stealth: 0.9,      // Very stealthy
+            learnability: 0.3, // Average learnability
+            longevity: 0.4,    // Average longevity
+          },
+          energyMod: 0.9       // 10% less energy capacity
+        },
+        {
+          name: "Resilient",
+          attributes: {
+            strength: 0.5,     // Average strength
+            stealth: 0.5,      // Average stealth
+            learnability: 0.1, // Very low learnability (resilient)
+            longevity: 0.8,    // High longevity
+          },
+          energyMod: 1.1       // 10% more energy capacity
+        },
+        {
+          name: "Balanced",
+          attributes: {
+            strength: 0.5,     // Average strength
+            stealth: 0.5,      // Average stealth
+            learnability: 0.5, // Average learnability
+            longevity: 0.5,    // Average longevity
+          },
+          energyMod: 1.0       // Normal energy capacity
+        },
+        {
+          name: "Adaptive",
+          attributes: {
+            strength: 0.4,     // Slightly below average strength
+            stealth: 0.4,      // Slightly below average stealth
+            learnability: 0.9, // High learnability
+            longevity: 0.3,    // Lower longevity
+          },
+          energyMod: 0.8       // 20% less energy capacity
+        }
+      ];
+      
+      // Use all cluster types for initial spawning to ensure diversity
+      const clusterCount = Math.min(clusterTypes.length, count > 25 ? 5 : 3);
       const preyPerCluster = Math.floor(count / clusterCount);
+      const remainder = count % clusterCount;
+      
+      console.log(`Spawning ${count} prey in ${clusterCount} specialized clusters:`);
       
       for (let cluster = 0; cluster < clusterCount; cluster++) {
         // Generate a cluster center
         const centerX = Math.random() * this.environmentWidth - this.environmentWidth/2;
         const centerY = Math.random() * this.environmentHeight - this.environmentHeight/2;
         
-        // Generate base attributes for this cluster (with some randomization)
-        const clusterAttributes = {
-          strength: 0.3 + Math.random() * 0.4, // 0.3-0.7
-          stealth: 0.3 + Math.random() * 0.4,  // 0.3-0.7
-          learnability: 0.2 + Math.random() * 0.4, // 0.2-0.6
-          longevity: 0.3 + Math.random() * 0.4,    // 0.3-0.7
-        };
+        // Get the cluster type definition
+        const clusterType = clusterTypes[cluster];
+        const clusterPreyCount = cluster < remainder ? preyPerCluster + 1 : preyPerCluster;
+        
+        console.log(`- Cluster ${cluster+1}: ${clusterType.name} (${clusterPreyCount} prey)`);
         
         // Spawn prey in this cluster
-        for (let i = 0; i < preyPerCluster; i++) {
-          // Calculate position within the cluster (normal distribution)
+        for (let i = 0; i < clusterPreyCount; i++) {
+          // Calculate position within the cluster
           const radius = Math.random() * 80; // Cluster radius
           const angle = Math.random() * Math.PI * 2;
           const x = centerX + Math.cos(angle) * radius;
           const y = centerY + Math.sin(angle) * radius;
           
-          // Create prey with cluster-specific attributes + small individual variation
+          // Create prey with cluster-specific attributes + small individual variation (±10%)
           const preyAttributes = {
-            strength: clusterAttributes.strength + (Math.random() * 0.2 - 0.1),
-            stealth: clusterAttributes.stealth + (Math.random() * 0.2 - 0.1),
-            learnability: clusterAttributes.learnability + (Math.random() * 0.2 - 0.1),
-            longevity: clusterAttributes.longevity + (Math.random() * 0.2 - 0.1),
+            strength: clusterType.attributes.strength + (Math.random() * 0.2 - 0.1),
+            stealth: clusterType.attributes.stealth + (Math.random() * 0.2 - 0.1),
+            learnability: clusterType.attributes.learnability + (Math.random() * 0.2 - 0.1),
+            longevity: clusterType.attributes.longevity + (Math.random() * 0.2 - 0.1),
           };
           
           // Clamp values to valid range
           Object.keys(preyAttributes).forEach(key => {
-            preyAttributes[key as keyof GeneticAttributes] = Math.max(0, Math.min(1, preyAttributes[key as keyof GeneticAttributes]));
+            preyAttributes[key as keyof GeneticAttributes] = Math.max(0.05, Math.min(0.95, preyAttributes[key as keyof GeneticAttributes]));
           });
           
-          this.prey.push(new Prey(x, y, Prey.DEFAULT_MAX_ENERGY, preyAttributes));
+          // Apply energy modifier for this cluster type
+          const energy = Prey.DEFAULT_MAX_ENERGY * clusterType.energyMod;
+          
+          this.prey.push(new Prey(x, y, energy, preyAttributes));
         }
       }
       
       // Update total spawned count
       this.totalSpawned.prey += count;
       
-      console.log(`Spawned ${count} new prey in ${clusterCount} clusters. Total prey: ${this.prey.length}`);
-      console.log(`Cluster attributes:`);
-      for (let i = this.prey.length - count; i < this.prey.length; i += preyPerCluster) {
-        if (i >= 0 && i < this.prey.length) {
-          console.log(`- Cluster: S:${this.prey[i].attributes.strength.toFixed(2)} St:${this.prey[i].attributes.stealth.toFixed(2)} L:${this.prey[i].attributes.learnability.toFixed(2)} Lg:${this.prey[i].attributes.longevity.toFixed(2)}`);
-        }
-      }
+      console.log(`Total prey: ${this.prey.length}`);
     } else {
       // Original random spawning
       for (let i = 0; i < count; i++) {
@@ -132,58 +184,101 @@ export class SimulationEngine {
   
   spawnPredators(count: number = 5, clustered: boolean = true): void {
     if (clustered) {
-      // Create 1-2 clusters of predators with variant attributes
-      const clusterCount = Math.floor(Math.random() * 2) + 1; // 1-2 clusters
+      // Define specialized cluster types for diverse initial predator population
+      const clusterTypes = [
+        {
+          name: "Brute Force",
+          attributes: {
+            strength: 0.9,     // Very strong
+            stealth: 0.1,      // Not stealthy
+            learnability: 0.3, // Average learnability
+            longevity: 0.5,    // Average longevity
+          },
+          energyMod: 1.2       // 20% more energy capacity
+        },
+        {
+          name: "Stealthy Hunter",
+          attributes: {
+            strength: 0.3,     // Lower strength
+            stealth: 0.9,      // Very stealthy
+            learnability: 0.4, // Slightly above average learnability
+            longevity: 0.4,    // Average longevity
+          },
+          energyMod: 0.9       // 10% less energy capacity
+        },
+        {
+          name: "Endurance Hunter",
+          attributes: {
+            strength: 0.6,     // Above average strength
+            stealth: 0.4,      // Below average stealth
+            learnability: 0.1, // Low learnability (resilient)
+            longevity: 0.9,    // Very high longevity
+          },
+          energyMod: 1.15      // 15% more energy capacity
+        },
+        {
+          name: "Balanced Hunter",
+          attributes: {
+            strength: 0.5,     // Average strength
+            stealth: 0.5,      // Average stealth
+            learnability: 0.5, // Average learnability
+            longevity: 0.5,    // Average longevity
+          },
+          energyMod: 1.0       // Normal energy capacity
+        }
+      ];
+      
+      // Use all cluster types for initial spawning to ensure diversity
+      // For small predator counts, use at least 2 types
+      const clusterCount = Math.min(clusterTypes.length, Math.max(2, count > 8 ? 4 : count > 4 ? 3 : 2));
       const predatorsPerCluster = Math.floor(count / clusterCount);
+      const remainder = count % clusterCount;
+      
+      console.log(`Spawning ${count} predators in ${clusterCount} specialized clusters:`);
       
       for (let cluster = 0; cluster < clusterCount; cluster++) {
         // Generate a cluster center
         const centerX = Math.random() * this.environmentWidth - this.environmentWidth/2;
         const centerY = Math.random() * this.environmentHeight - this.environmentHeight/2;
         
-        // Generate base attributes for this cluster (with some randomization)
-        const clusterAttributes = {
-          strength: 0.4 + Math.random() * 0.4, // 0.4-0.8
-          stealth: 0.3 + Math.random() * 0.4,  // 0.3-0.7
-          learnability: 0.2 + Math.random() * 0.4, // 0.2-0.6
-          longevity: 0.3 + Math.random() * 0.4,    // 0.3-0.7
-        };
+        // Get the cluster type definition
+        const clusterType = clusterTypes[cluster];
+        const clusterPredCount = cluster < remainder ? predatorsPerCluster + 1 : predatorsPerCluster;
+        
+        console.log(`- Cluster ${cluster+1}: ${clusterType.name} (${clusterPredCount} predators)`);
         
         // Spawn predators in this cluster
-        for (let i = 0; i < predatorsPerCluster; i++) {
-          // Calculate position within the cluster (normal distribution)
+        for (let i = 0; i < clusterPredCount; i++) {
+          // Calculate position within the cluster
           const radius = Math.random() * 60; // Cluster radius
           const angle = Math.random() * Math.PI * 2;
           const x = centerX + Math.cos(angle) * radius;
           const y = centerY + Math.sin(angle) * radius;
           
-          // Create predator with cluster-specific attributes + small individual variation
+          // Create predator with cluster-specific attributes + small individual variation (±10%)
           const predatorAttributes = {
-            strength: clusterAttributes.strength + (Math.random() * 0.2 - 0.1),
-            stealth: clusterAttributes.stealth + (Math.random() * 0.2 - 0.1),
-            learnability: clusterAttributes.learnability + (Math.random() * 0.2 - 0.1),
-            longevity: clusterAttributes.longevity + (Math.random() * 0.2 - 0.1),
+            strength: clusterType.attributes.strength + (Math.random() * 0.2 - 0.1),
+            stealth: clusterType.attributes.stealth + (Math.random() * 0.2 - 0.1),
+            learnability: clusterType.attributes.learnability + (Math.random() * 0.2 - 0.1),
+            longevity: clusterType.attributes.longevity + (Math.random() * 0.2 - 0.1),
           };
           
           // Clamp values to valid range
           Object.keys(predatorAttributes).forEach(key => {
-            predatorAttributes[key as keyof GeneticAttributes] = Math.max(0, Math.min(1, predatorAttributes[key as keyof GeneticAttributes]));
+            predatorAttributes[key as keyof GeneticAttributes] = Math.max(0.05, Math.min(0.95, predatorAttributes[key as keyof GeneticAttributes]));
           });
           
-          this.predators.push(new Predator(x, y, Predator.DEFAULT_MAX_ENERGY, predatorAttributes));
+          // Apply energy modifier for this cluster type
+          const energy = Predator.DEFAULT_MAX_ENERGY * clusterType.energyMod;
+          
+          this.predators.push(new Predator(x, y, energy, predatorAttributes));
         }
       }
       
       // Update total spawned count
       this.totalSpawned.predators += count;
       
-      console.log(`Spawned ${count} new predators in ${clusterCount} clusters. Total predators: ${this.predators.length}`);
-      console.log(`Cluster attributes:`);
-      for (let i = this.predators.length - count; i < this.predators.length; i += predatorsPerCluster) {
-        if (i >= 0 && i < this.predators.length) {
-          console.log(`- Cluster: S:${this.predators[i].attributes.strength.toFixed(2)} St:${this.predators[i].attributes.stealth.toFixed(2)} L:${this.predators[i].attributes.learnability.toFixed(2)} Lg:${this.predators[i].attributes.longevity.toFixed(2)}`);
-        }
-      }
+      console.log(`Total predators: ${this.predators.length}`);
     } else {
       // Original random spawning
       for (let i = 0; i < count; i++) {

@@ -23,15 +23,49 @@ export class Prey extends Creature {
   }
   
   createMesh(): THREE.Mesh {
-    // Create a circular geometry for prey
+    // Keep circular geometry for prey
     const geometry = new THREE.CircleGeometry(6, 32);
     
-    // Create material with blue color
-    const material = new THREE.MeshBasicMaterial({ color: 0x0088ff });
+    // Calculate color based on genetic attributes
+    // Stealth = blue component, Strength = green component
+    const blueIntensity = this.attributes.stealth;
+    const greenIntensity = this.attributes.strength;
+    
+    // Energy affects overall brightness
+    const energyRatio = this.energy / this.maxEnergy;
+    const brightness = 0.3 + (energyRatio * 0.7); // 30-100% brightness
+    
+    // Combine colors: strength (green) and stealth (blue)
+    const color = new THREE.Color(
+      0,                          // No red component
+      greenIntensity * brightness, // Green component
+      blueIntensity * brightness   // Blue component
+    );
+    
+    const material = new THREE.MeshBasicMaterial({ color });
     
     this.mesh = new THREE.Mesh(geometry, material);
     this.updateMeshPosition();
     return this.mesh;
+  }
+  
+  updateMeshPosition(): void {
+    super.updateMeshPosition();
+    
+    // Update color based on current energy level and attributes
+    if (this.mesh) {
+      const blueIntensity = this.attributes.stealth;
+      const greenIntensity = this.attributes.strength;
+      
+      const energyRatio = this.energy / this.maxEnergy;
+      const brightness = 0.3 + (energyRatio * 0.7); // 30-100% brightness
+      
+      (this.mesh.material as THREE.MeshBasicMaterial).color.setRGB(
+        0,
+        greenIntensity * brightness, 
+        blueIntensity * brightness
+      );
+    }
   }
   
   // Method to consume a resource
@@ -39,6 +73,9 @@ export class Prey extends Creature {
     // Prey get a 20% bonus when consuming resources to further help them survive
     const energyGain = resource.energy * 1.2;
     this.energy = Math.min(this.maxEnergy, this.energy + energyGain);
+    
+    // Update visual appearance to reflect new energy level
+    this.updateMeshPosition();
   }
   
   // New method to determine if prey can escape using stealth after being caught
@@ -152,6 +189,9 @@ export class Prey extends Creature {
     
     // Parent loses energy from reproduction
     this.energy *= 0.5;
+    
+    // Update visual appearance of parent to reflect energy loss
+    this.updateMeshPosition();
     
     return offspring;
   }
