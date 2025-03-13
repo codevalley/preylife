@@ -108,16 +108,45 @@ export class Predator extends Creature {
       this.velocity.set(Math.cos(angle), Math.sin(angle)).normalize().multiplyScalar(this.speed);
     }
     
-    // Try to detect nearby prey
-    const nearbyPrey = this.detectPrey(preyList, 80);
-    if (nearbyPrey) {
-      // Move toward the prey
-      const direction = nearbyPrey.position.clone().sub(this.position).normalize();
-      this.velocity.copy(direction).multiplyScalar(this.speed);
+    // Check hunger level to determine hunting behavior
+    const hungerLevel = 1 - (this.energy / this.maxEnergy);
+    
+    // If the predator is fairly full (less than 20% hunger), it's less aggressive
+    if (hungerLevel < 0.2) {
+      // When relatively full, only notice prey that are very close and easy to catch
+      // Reduced detection range and higher chance of just wandering
+      if (Math.random() < 0.7) { // 70% chance to just wander when full
+        // Just continue current movement - no hunting
+      } else {
+        // Occasionally still check for extremely close prey (opportunistic hunting)
+        const nearbyPrey = this.detectPrey(preyList, 40); // Much shorter detection range
+        if (nearbyPrey) {
+          // Move toward the prey, but with less persistence (lower speed multiplier)
+          const direction = nearbyPrey.position.clone().sub(this.position).normalize();
+          this.velocity.copy(direction).multiplyScalar(this.speed * 0.7); // Move slower when not hungry
+          
+          // Update rotation to face movement direction
+          if (this.mesh) {
+            this.mesh.rotation.z = Math.atan2(this.velocity.y, this.velocity.x) - Math.PI/2;
+          }
+        }
+      }
+    } else {
+      // When hungry, actively hunt prey
+      // Scale detection range with hunger - hungrier predators are more motivated
+      const detectionRange = 80 * (1 + hungerLevel * 0.5); // Up to 50% increase when starving
       
-      // Update rotation to face movement direction
-      if (this.mesh) {
-        this.mesh.rotation.z = Math.atan2(this.velocity.y, this.velocity.x) - Math.PI/2;
+      const nearbyPrey = this.detectPrey(preyList, detectionRange);
+      if (nearbyPrey) {
+        // Move toward the prey - hungrier predators move faster
+        const huntSpeed = this.speed * (1 + hungerLevel * 0.3); // Up to 30% faster when starving
+        const direction = nearbyPrey.position.clone().sub(this.position).normalize();
+        this.velocity.copy(direction).multiplyScalar(huntSpeed);
+        
+        // Update rotation to face movement direction
+        if (this.mesh) {
+          this.mesh.rotation.z = Math.atan2(this.velocity.y, this.velocity.x) - Math.PI/2;
+        }
       }
     }
     

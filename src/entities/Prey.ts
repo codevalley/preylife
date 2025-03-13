@@ -83,18 +83,45 @@ export class Prey extends Creature {
   
   // Override update to include resource detection and movement
   update(deltaTime: number, resources: Resource[] = []): void {
-    // Randomly change direction occasionally
-    if (Math.random() < 0.02) {
+    // Randomly change direction occasionally - higher chance when full
+    const energyRatio = this.energy / this.maxEnergy;
+    const directionChangeChance = 0.02 + (energyRatio * 0.03); // Up to 5% when full
+    
+    if (Math.random() < directionChangeChance) {
       const angle = Math.random() * Math.PI * 2;
       this.velocity.set(Math.cos(angle), Math.sin(angle)).normalize().multiplyScalar(this.speed);
     }
     
-    // Try to detect nearby resources
-    const nearbyResource = this.detectResource(resources, 50);
-    if (nearbyResource) {
-      // Move toward the resource
-      const direction = nearbyResource.position.clone().sub(this.position).normalize();
-      this.velocity.copy(direction).multiplyScalar(this.speed);
+    // Check hunger level to determine foraging behavior
+    const hungerLevel = 1 - energyRatio;
+    
+    // If prey is fairly full (less than 30% hunger), it's less focused on finding food
+    if (hungerLevel < 0.3) {
+      // When fairly full, prey wanders more and is less likely to chase resources
+      // They might still opportunistically grab very close resources
+      if (Math.random() < 0.8) { // 80% chance to just wander when full
+        // Just continue current movement - no active foraging
+      } else {
+        // Occasionally still check for extremely close resources (opportunistic feeding)
+        const nearbyResource = this.detectResource(resources, 30); // Much shorter detection range
+        if (nearbyResource) {
+          // Move toward the resource, but with less urgency
+          const direction = nearbyResource.position.clone().sub(this.position).normalize();
+          this.velocity.copy(direction).multiplyScalar(this.speed * 0.8); // Move slower when not hungry
+        }
+      }
+    } else {
+      // When hungry, actively search for food
+      // Scale detection range with hunger - hungrier prey are more motivated to find food
+      const detectionRange = 50 * (1 + hungerLevel * 0.6); // Up to 60% increase when starving
+      
+      const nearbyResource = this.detectResource(resources, detectionRange);
+      if (nearbyResource) {
+        // Move toward the resource - hungrier prey move faster toward food
+        const foragingSpeed = this.speed * (1 + hungerLevel * 0.3); // Up to 30% faster when starving
+        const direction = nearbyResource.position.clone().sub(this.position).normalize();
+        this.velocity.copy(direction).multiplyScalar(foragingSpeed);
+      }
     }
     
     // Call parent update method

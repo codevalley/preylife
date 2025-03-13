@@ -8,18 +8,43 @@ A browser-based simulation modeling predator-prey dynamics with evolutionary mec
 ### 1. Resources
 - **Visual Representation**: Small green square dots scattered across the environment
 - **Behavior**: Static, regenerates when consumed by prey
-- **Regeneration**: Resources respawn when prey or predators die (70% of organism's energy converts to resources)
+- **Death Regeneration**: When any creature dies (old age, starvation, predation), resources spawn at their location
+  - 70% of the creature's max energy is converted to resources
+  - Resources are distributed in a circular pattern around the death location
+  - Predators create more resources due to their higher energy capacity
 - **Energy Value**: Each resource provides a fixed amount of energy to prey
+- **Resource Clustering**: Resources spawn in clusters rather than uniformly, creating rich areas and food deserts
+- **Major Seasonal Resource Blooms**: Every 90 simulation days, a dramatic resource bloom occurs
+  - 200 high-energy resources spawn in 5 dense clusters
+  - Primary resources (60% of each cluster): Tightly packed with 2x normal energy
+  - Secondary resources (40% of each cluster): Surrounding ring with 1.5x normal energy
+  - Blooms last for 10 days (vs. 5 days for standard blooms)
+- **Adaptive Resource Generation**: 
+  - During resource blooms: Accelerated regeneration rate (10% chance per frame) with higher energy value
+  - Normal periods: Low regeneration rate (0.5% chance per frame)
+  - Critical prey population: Bonus resources with 50% higher energy value to help prey recover
+- **Resource Decay**: If prey population reaches zero, resources slowly decay and disappear
 
 ### 2. Prey
 - **Visual Representation**: Blue circular shapes with attribute visualization
 - **Primary Goal**: Consume resources, reproduce, avoid predators
-- **Movement**: Random movement with directional changes when resources detected
+- **Movement**: 
+  - Hunger-driven foraging behavior
+  - When hungry (<70% energy): Active resource seeking with increased detection range
+  - When satiated (>70% energy): Primarily random movement with reduced resource interest
+  - Hungrier prey move faster toward detected resources
+  - Detection range scales with hunger level (up to 60% increase when starving)
 
 ### 3. Predators
 - **Visual Representation**: Red triangular shapes with attribute visualization
 - **Primary Goal**: Hunt prey, reproduce
-- **Movement**: Random movement with directed pursuit when prey detected
+- **Movement**: 
+  - Hunger-driven hunting behavior
+  - When hungry (<80% energy): Active prey pursuit with increased detection range
+  - When satiated (>80% energy): Reduced aggression and mostly random movement
+  - Opportunistic hunting only for very close prey when satiated
+  - Hungrier predators move faster during pursuit
+  - Detection range scales with hunger level (up to 50% increase when starving)
 
 ## Genetic Attributes
 
@@ -88,6 +113,25 @@ A browser-based simulation modeling predator-prey dynamics with evolutionary mec
 - **Critical Energy**: Below 10% of capacity
 - **Death**: Occurs at 0% energy, through starvation probability, or when maximum age is reached
 
+### Hunger-Driven Behavior System
+- **Prey Foraging Thresholds**:
+  - Full (90-100% energy): Will not consume resources even when directly on top of them
+  - Satiated (70-90% energy): Opportunistic foraging only for very close resources
+  - Hungry (30-70% energy): Active foraging with normal detection range
+  - Starving (0-30% energy): Aggressive foraging with increased detection range and speed
+  
+- **Predator Hunting Thresholds**:
+  - Full (80-100% energy): Will not attack prey even when in range
+  - Satiated (70-80% energy): Opportunistic hunting only for very close, easily caught prey
+  - Hungry (20-70% energy): Active hunting with normal detection range
+  - Starving (0-20% energy): Aggressive hunting with increased detection range and speed
+  
+- **Movement Adaptations**:
+  - Detection range increases with hunger level
+  - Movement speed toward food/prey increases with hunger level
+  - Direction change probability increases when satiated (more exploration)
+  - Pursuit persistence increases with hunger level
+
 ### Starvation Probability System
 - As energy decreases below 50% capacity, risk of sudden death increases:
   - At 50% energy: 1% chance of death per time unit
@@ -103,15 +147,29 @@ A browser-based simulation modeling predator-prey dynamics with evolutionary mec
 ```
 Detection_Chance = Predator_Stealth - Prey_Stealth + Base_Detection_Rate (0.3)
 ```
-- If Detection_Chance ≤ 0: Prey remains undetected
-- If Detection_Chance > 0: Predator spots prey and pursues
+- If Detection_Chance > 0: Prey may be detected based on a probability check (Math.random() < Detection_Chance)
+- If detected, a detection score is calculated based on distance and stealth advantage
+- Predators target the prey with the highest detection score (closest and most detectable)
 
 #### Capture Calculation
 ```
-Catch_Chance = Predator_Strength - Prey_Strength + Base_Catch_Rate (0.4)
+Catch_Chance = (Predator_Strength - Prey_Strength) * 0.6 + 0.2
+Capped_Chance = min(0.5, max(0.1, Catch_Chance))
 ```
-- If Catch_Chance ≤ 0: Prey escapes
-- If Catch_Chance > 0: Predator catches prey
+- The capture chance is probabilistic: Math.random() < Capped_Chance
+- Minimum 10% and maximum 50% chance of capture regardless of strength difference
+- This ensures predators always have some chance to catch prey while giving prey the opportunity to escape
+
+#### Stealth Escape Mechanism
+Even after a successful capture, prey have a second chance to escape:
+```
+Escape_Chance = (Prey_Stealth - Predator_Stealth) * 0.8 + 0.3
+Capped_Escape_Chance = min(0.7, max(0.1, Escape_Chance))
+```
+- The escape chance is probabilistic: Math.random() < Capped_Escape_Chance
+- Minimum 10% and maximum 70% chance of escape
+- Successful escape temporarily boosts prey speed to flee from the predator
+- Escape attempts cost energy (5 energy units)
 
 #### Learning Calculation
 When two creatures of the same type (prey-prey or predator-predator) encounter each other:
@@ -158,13 +216,27 @@ Energy_Cost = Learning_Cost_Base + (abs(Capped_Shift) * Energy_Multiplier)
 ## Simulation Parameters
 
 ### Initial Population
-- Resources: 200
-- Prey: 50 (random distribution of attributes)
-- Predators: 15 (random distribution of attributes)
+- Resources: 250 (spawned in 4 clusters)
+- Prey: 50 (spawned in 2-3 clusters with shared attribute profiles)
+- Predators: 8 (spawned in 1-2 clusters with shared attribute profiles)
+
+### Cluster Spawning
+- **Resource Clusters**: Resources spawn in 4 primary clusters with some random distribution
+- **Prey Clusters**: 2-3 clusters with cluster-specific attribute profiles
+  - Each cluster has a base attribute profile (e.g., high stealth/low strength)
+  - Individual prey have small variations around their cluster's profile (±0.1)
+- **Predator Clusters**: 1-2 clusters with cluster-specific attribute profiles
+  - Creates initial predator sub-populations with different hunting styles
+  - Encourages evolution of distinct predator strategies
 
 ### Environment
-- **Boundaries**: Creatures bounce off edges of the simulation area
+- **Boundaries**: Creatures wrap around edges of the simulation area (toroidal space)
 - **Size**: 1000×600 pixels
+
+### Extinction Tracking and Response
+- **Extinction Events**: System tracks and logs when either predators or prey go extinct
+- **Population Recovery**: When prey population falls below 20% of initial count, bonus high-energy resources spawn to help recovery
+- **Simulation History**: Records extinction events with day numbers and final attribute states
 
 ### Timescale
 - Simulation steps occur at 60fps, with each step:
@@ -247,5 +319,17 @@ Energy_Cost = Learning_Cost_Base + (abs(Capped_Shift) * Energy_Multiplier)
   - Development of "slow and steady" strategies (high longevity, slower aging)
   - Age-structured populations with different roles for young and old individuals
   - Generational cycles as aging populations become vulnerable to predation or starvation
+- Seasonal Adaptive Behaviors:
+  - Population surges following resource blooms
+  - Predator population lag behind prey population increases
+  - Crash-and-recovery cycles tied to seasonal resource availability
+- Geographic Specialization:
+  - Cluster formation around resource-rich areas
+  - Development of different attribute profiles in different regions
+  - Local extinction and recolonization dynamics
+- Resilience Mechanisms:
+  - System self-regulation through prey population protection mechanisms
+  - Extinction and recovery cycles
+  - Attribute profile shifts in response to extinction events
 
 This simulation provides a foundation for exploring evolutionary dynamics in a simplified ecosystem while maintaining biological realism through meaningful trade-offs and interdependencies.
