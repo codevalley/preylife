@@ -70,10 +70,12 @@ A browser-based simulation modeling predator-prey dynamics with evolutionary mec
 ### 3. Energy Capacity (Evolving)
 - **Visual**: Influences overall size of creature
 - **Initial Values**: 
-  - Prey: 100 units
-  - Predators: 150 units
+  - Prey: 300 units (evolves through mutations)
+  - Predators: 480 units (evolves through mutations)
 - **Effect**: Determines maximum energy storage, reproduction timing, and death threshold
 - **Trade-off**: Higher capacity = more buffer against starvation but slower reproduction rate
+- **Mutation**: Inherited from parent with small random variations (±5% normally, ±20% for significant mutations)
+- **Range**: Can evolve between 50-200% of baseline value through successive generations
 
 ### 4. Learnability (0.0-1.0)
 - **Visual**: Yellow outline intensity around the creature
@@ -95,10 +97,12 @@ A browser-based simulation modeling predator-prey dynamics with evolutionary mec
   - Prey gain energy by consuming resources
   - Predators gain energy by consuming prey (70% of prey's current energy)
 - **Consumption**:
-  - Base metabolism (constant drain)
+  - Base metabolism (constant drain, reduced by longevity)
   - Movement costs (proportional to strength)
+  - Activity costs (proportional to velocity and strength)
   - Direction change costs (proportional to stealth)
-  - Age-related inefficiency (increases over time)
+  - Age-related inefficiency (separate factors for metabolism and activity)
+  - Cost scales with creature type (predators have higher base costs)
 
 ### Aging System
 - **Lifespan**: Determined by Longevity attribute and environmental factors
@@ -140,13 +144,16 @@ A browser-based simulation modeling predator-prey dynamics with evolutionary mec
   - Pursuit persistence increases with hunger level
 
 ### Starvation Probability System
-- As energy decreases below 50% capacity, risk of sudden death increases:
-  - At 50% energy: 1% chance of death per time unit
-  - At 40% energy: 5% chance of death per time unit
-  - At 30% energy: 15% chance of death per time unit
-  - At 20% energy: 30% chance of death per time unit
-  - At 10% energy: 50% chance of death per time unit
-  - Below 10% energy: Probability increases rapidly toward 100%
+- As energy decreases below threshold levels, risk of sudden death increases:
+  - At 50% energy: 0.1% chance of death per update
+  - At 40% energy: 0.5% chance of death per update
+  - At 30% energy: 1.5% chance of death per update
+  - At 20% energy: 3% chance of death per update
+  - At 10% energy: 5% chance of death per update
+  - At 5% energy: 10% chance of death per update
+- This creates unpredictable sudden deaths from starvation, as seen in nature
+- Higher longevity attribute reduces base metabolism, indirectly reducing starvation risk
+- Higher strength increases activity costs, indirectly increasing starvation risk
 
 ### Interaction Formulas
 
@@ -207,18 +214,22 @@ Energy_Cost = Learning_Cost_Base + (abs(Capped_Shift) * Energy_Multiplier)
   - Gradually decreases in later life (declining after 60% of lifespan)
   - Formula: Reproduction_Probability = Base_Chance * Age_Modifier * Energy_Level
   - Age_Modifier follows a bell curve peaking at 50% of lifespan
-- **Inheritance**: Offspring inherit attributes from parent with slight variations:
+- **Attribute Inheritance**: Offspring inherit attributes from parent with slight variations:
   - Strength: Parent's value ± 0.05 (random)
   - Stealth: Parent's value ± 0.05 (random)
-  - Energy Capacity: Parent's value ± 5% (random)
   - Learnability: Parent's value ± 0.05 (random)
   - Longevity: Parent's value ± 0.05 (random)
-- **Mutation**: 10% chance of significant attribute change:
-  - Strength: ± 0.2 (random)
-  - Stealth: ± 0.2 (random)
+- **Energy Capacity Inheritance**:
+  - Base value: Parent's exact capacity
+  - Small random variation: ± 5% by default
+  - Limits: Cannot go below 50% or above 200% of species baseline
+- **Significant Mutations**: 10% chance of larger attribute change:
+  - Genetic attributes: ± 0.2 (random)
   - Energy Capacity: ± 20% (random)
-  - Learnability: ± 0.2 (random)
-  - Longevity: ± 0.2 (random)
+- **Mutation Balance**: 
+  - Small mutations allow gradual adaptation
+  - Significant mutations enable rapid response to environmental shifts
+  - Energy capacity evolution creates diverse ecological niches
 
 ## Simulation Parameters
 
@@ -275,10 +286,12 @@ Energy_Cost = Learning_Cost_Base + (abs(Capped_Shift) * Energy_Multiplier)
   - Longevity: Slight glow intensity
   - Age: Opacity/saturation (fades slightly with age)
 - **Movement**: 
+  - Base speed is deliberately slow to create meaningful geographic separation
   - Speed proportional to strength 
   - Direction changes proportional to stealth
   - Predator facing direction matches movement
   - Prey fleeing behavior when predators are detected
+  - Limited travel distance creates geographic specialization
 
 ### Resources
 - Small green square dots
@@ -339,11 +352,12 @@ Energy_Cost = Learning_Cost_Base + (abs(Capped_Shift) * Energy_Multiplier)
   - Predator population lag behind prey population increases
   - Crash-and-recovery cycles tied to seasonal resource availability
 - Geographic Specialization:
-  - Cluster formation around resource-rich areas
+  - Cluster formation around resource-rich areas due to limited movement speed
   - Development of different attribute profiles in different regions
-  - Local extinction and recolonization dynamics
+  - Local extinction and recolonization dynamics with slower repopulation
   - Formation of "safe zones" where prey leverage terrain and stealth to avoid predators
   - Predator hunting grounds with specialized attributes for more effective hunting
+  - Meaningful territorial boundaries due to limited movement range
 - Resilience Mechanisms:
   - System self-regulation through prey population protection mechanisms
   - Extinction and recovery cycles

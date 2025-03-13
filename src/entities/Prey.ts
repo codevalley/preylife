@@ -222,16 +222,43 @@ export class Prey extends Creature {
       longevity: this.attributes.longevity + (Math.random() * 0.1 - 0.05)
     };
     
+    // Significant mutation chance for attributes
+    if (Math.random() < SimulationConfig.reproduction.mutationChance) {
+      // Pick a random attribute for significant mutation
+      const attributes = ['strength', 'stealth', 'learnability', 'longevity'];
+      const attributeToMutate = attributes[Math.floor(Math.random() * attributes.length)] as keyof GeneticAttributes;
+      
+      // Apply significant mutation
+      const mutationAmount = Math.random() * SimulationConfig.reproduction.significantMutationRange - (SimulationConfig.reproduction.significantMutationRange / 2);
+      childAttributes[attributeToMutate] += mutationAmount;
+    }
+    
     // Clamp attributes to valid range
     Object.keys(childAttributes).forEach(key => {
       childAttributes[key as keyof GeneticAttributes] = Math.max(0, Math.min(1, childAttributes[key as keyof GeneticAttributes]));
     });
     
-    // Create new prey instance with mutated attributes
+    // Mutate energy capacity (inheriting parent's with some variation)
+    let childEnergyCapacity = this.maxEnergy;
+    
+    // Apply small random mutation to energy capacity
+    const energyMutation = Math.random() * SimulationConfig.reproduction.energyCapacityMutationRange - (SimulationConfig.reproduction.energyCapacityMutationRange / 2);
+    childEnergyCapacity *= (1 + energyMutation);
+    
+    // Small chance of significant energy capacity mutation
+    if (Math.random() < SimulationConfig.reproduction.mutationChance) {
+      const significantEnergyMutation = Math.random() * SimulationConfig.reproduction.significantEnergyCapacityMutationRange - (SimulationConfig.reproduction.significantEnergyCapacityMutationRange / 2);
+      childEnergyCapacity *= (1 + significantEnergyMutation);
+    }
+    
+    // Ensure energy capacity doesn't get too small or too large
+    childEnergyCapacity = Math.max(SimulationConfig.prey.maxEnergy * 0.5, Math.min(SimulationConfig.prey.maxEnergy * 2.0, childEnergyCapacity));
+    
+    // Create new prey instance with mutated attributes and energy capacity
     const offspring = new Prey(
       this.position.x + (Math.random() * 20 - 10),
       this.position.y + (Math.random() * 20 - 10),
-      this.maxEnergy,
+      childEnergyCapacity,  // Pass the mutated energy capacity
       childAttributes
     );
     

@@ -8,9 +8,9 @@ export const SimulationConfig = {
   
   // Initial population
   initialPopulation: {
-    resources: 500,
+    resources: 200,
     prey: 50,
-    predators: 4
+    predators: 40
   },
   
   // Resource settings
@@ -38,6 +38,7 @@ export const SimulationConfig = {
   // Creature settings
   creatures: {
     // General creature settings
+    baseSpeed: 7, // Base movement speed in units per second
     baseCost: 1.0, // base energy consumption per second
     movementCostMultiplier: 2.0, // how much strength affects movement cost
     maxLifespan: {
@@ -63,7 +64,7 @@ export const SimulationConfig = {
   
   // Predator settings
   predator: {
-    maxEnergy: 480,
+    maxEnergy: 620,
     defaultAttributes: {
       strength: 0.5,
       stealth: 0.4,
@@ -81,7 +82,7 @@ export const SimulationConfig = {
   
   // Prey settings
   prey: {
-    maxEnergy: 300,
+    maxEnergy: 280,
     defaultAttributes: {
       strength: 0.5,
       stealth: 0.5,
@@ -89,8 +90,8 @@ export const SimulationConfig = {
       longevity: 0.5
     },
     resourceEnergyBonus: 1.2, // multiplier for energy from resources
-    predatorAvoidanceMultiplier: 1.5, // Speed boost when fleeing from predators
-    predatorDetectionMultiplier: 1.2, // How much stealth improves predator detection
+    predatorAvoidanceMultiplier: 1.15, // Speed boost when fleeing from predators
+    predatorDetectionMultiplier: 1.1, // How much stealth improves predator detection
   },
   
   // Learning settings
@@ -106,6 +107,21 @@ export const SimulationConfig = {
     mutationRange: 0.1, // ±0.05 by default
     mutationChance: 0.1, // chance of significant mutation
     significantMutationRange: 0.4, // ±0.2 by default
+    energyCapacityMutationRange: 0.1, // ±5% by default
+    significantEnergyCapacityMutationRange: 0.4, // ±20% by default
+  },
+  
+  // Starvation settings
+  starvation: {
+    // Starvation probability thresholds (energy % : probability of death per update)
+    thresholds: [
+      { energyPercent: 0.5, probability: 0.0001 }, // 50% energy: 0.01% chance per update
+      { energyPercent: 0.4, probability: 0.0001 }, // 40% energy: 0.01% chance per update
+      { energyPercent: 0.3, probability: 0.002 }, // 30% energy: 0.2% chance per update
+      { energyPercent: 0.2, probability: 0.015 },  // 20% energy: 1.5% chance per update
+      { energyPercent: 0.1, probability: 0.025 },  // 10% energy: 2.5% chance per update
+      { energyPercent: 0.05, probability: 0.15 }   // 5% energy: 15% chance per update
+    ]
   },
   
   // Clustered spawning settings

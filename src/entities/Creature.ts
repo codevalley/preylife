@@ -1,6 +1,6 @@
-import * as THREE from 'three';
 import { Vector2 } from 'three';
 import { Entity, EntityType } from './Entity';
+import { SimulationConfig } from '../config';
 
 export interface GeneticAttributes {
   strength: number;  // 0.0-1.0
@@ -12,7 +12,7 @@ export interface GeneticAttributes {
 export abstract class Creature extends Entity {
   // Movement properties
   velocity: Vector2 = new Vector2(0, 0);
-  speed: number = 10; // Base speed in units per second
+  speed: number = SimulationConfig.creatures.baseSpeed; // Base speed from config
   
   // Genetic attributes
   attributes: GeneticAttributes;
@@ -64,12 +64,25 @@ export abstract class Creature extends Entity {
     // Movement cost - higher strength = higher movement cost
     const movementCost = this.attributes.strength * 2 * deltaTime;
     
-    // Age factor - older creatures become less efficient
-    // The effect is reduced by longevity
-    const ageEfficiency = Math.max(0.8, 1 - (this.age * 0.01 * (1 - this.attributes.longevity)));
+    // Activity-related cost (proportional to the creature's velocity)
+    const velocityMagnitude = this.velocity.length();
+    const activityCost = velocityMagnitude * this.attributes.strength * 0.5 * deltaTime;
+    
+    // Age factor - older creatures become less efficient 
+    // Calculate age as a percentage of maximum lifespan
+    const maxLifespan = 60 + (this.attributes.longevity * 40); // 60-100 seconds
+    const ageRatio = this.age / maxLifespan;
+    
+    // Metabolic efficiency decreases with age, but is improved by longevity attribute
+    // Formula: 1.0 at birth, decreases to longevity at maximum age
+    const ageEfficiency = Math.max(0.7, 1.0 - (ageRatio * (1.0 - this.attributes.longevity)));
+    
+    // Calculate activity cost multiplier based on age
+    // Older creatures get tired more quickly (affected less with higher longevity)
+    const activityEfficiency = Math.max(0.6, 1.0 - (ageRatio * 0.8 * (1.0 - this.attributes.longevity)));
     
     // Total energy consumption with all factors
-    const totalCost = (baseCost + movementCost) / ageEfficiency;
+    const totalCost = (baseCost / ageEfficiency) + (movementCost + activityCost) / activityEfficiency;
     
     // Balance energy consumption between predators and prey
     // More reasonable values to ensure predators can survive
@@ -86,16 +99,39 @@ export abstract class Creature extends Entity {
       this.updateMeshPosition();
     }
     
-    // Check for death from starvation
+    // Starvation probability check - chance of sudden death when energy is low
+    const energyRatio = this.energy / this.maxEnergy;
+    this.checkStarvationProbability(energyRatio);
+    
+    // Check for death from starvation (energy completely depleted)
     if (this.energy <= 0) {
       this.die();
     }
     
     // Check for death from old age
-    // Maximum lifespan is affected by longevity attribute
-    const maxLifespan = 60 + (this.attributes.longevity * 40); // 60-100 seconds
     if (this.age > maxLifespan) {
       this.die();
+    }
+  }
+  
+  private checkStarvationProbability(energyRatio: number): void {
+    // Check if energy level has dropped to starvation threshold levels
+    // Apply random chance of death based on thresholds in config
+    
+    const thresholds = SimulationConfig.starvation.thresholds;
+    
+    // Check against each threshold from lowest energy to highest
+    for (const threshold of thresholds) {
+      if (energyRatio <= threshold.energyPercent) {
+        // At or below this threshold, apply probability check
+        if (Math.random() < threshold.probability) {
+          // Random starvation death occurs!
+          this.die();
+          console.log(`${this.type} died from starvation at ${(energyRatio * 100).toFixed(1)}% energy`);
+          break; // No need to check further thresholds
+        }
+        break; // Only apply the first (lowest) matching threshold
+      }
     }
   }
   
