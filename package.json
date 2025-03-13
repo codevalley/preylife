@@ -1,0 +1,29 @@
+{
+  "name": "preylife",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "lint": "eslint src --ext ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "simulation",
+    "predator-prey",
+    "ecosystem",
+    "three.js"
+  ],
+  "author": "",
+  "license": "ISC",
+  "description": "A browser-based 3D predator-prey ecosystem simulation with evolutionary mechanics",
+  "dependencies": {
+    "three": "^0.174.0"
+  },
+  "devDependencies": {
+    "@types/three": "^0.174.0",
+    "typescript": "^5.8.2",
+    "vite": "^6.2.1"
+  }
+}

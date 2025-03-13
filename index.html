@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PreyLife - Predator-Prey Ecosystem Simulation</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background-color: #000;
+    }
+    canvas {
+      display: block;
+    }
+    #ui-container {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 100;
+      color: white;
+      font-family: Arial, sans-serif;
+      font-size: 14px;
+      width: 320px;
+    }
+    button {
+      background-color: #4CAF50;
+      border: none;
+      color: white;
+      padding: 8px 16px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 14px;
+      margin: 4px 2px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    #stats {
+      margin-top: 10px;
+      background-color: rgba(0, 0, 0, 0.7);
+      padding: 15px;
+      border-radius: 4px;
+      width: 280px;
+    }
+    .attribute-section {
+      margin-top: 8px;
+      padding: 8px;
+      background-color: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+    }
+    .attribute-section div:first-child {
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+    #prey-count, #prey-strength, #prey-stealth, #prey-learnability, #prey-longevity {
+      color: #5588ff;
+      font-weight: bold;
+    }
+    #predator-count, #predator-strength, #predator-stealth, #predator-learnability, #predator-longevity {
+      color: #ff5555;
+      font-weight: bold;
+    }
+    #resource-count {
+      color: #55cc55;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div id="ui-container">
+    <!-- The dashboard panels will be created dynamically by UIController -->
+  </div>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
