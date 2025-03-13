@@ -109,7 +109,7 @@ export class UIController {
             </span>
             <span id="prey-count" style="color: #5588ff; font-weight: bold;">0</span>
           </div>
-          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
             <span style="display: flex; align-items: center;">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2" style="margin-right: 4px;">
                 <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
@@ -117,6 +117,15 @@ export class UIController {
               <span style="color: #aaaaaa; font-size: 11px; margin-right: 4px;">Total:</span>
             </span>
             <span id="prey-spawned" style="color: #5588ff;">0</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <span style="display: flex; align-items: center;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="#aaa" style="margin-right: 4px;">
+                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+              </svg>
+              <span style="color: #aaaaaa; font-size: 11px; margin-right: 4px;">Ready:</span>
+            </span>
+            <span id="prey-ready" style="color: #5588ff; font-weight: bold;">0%</span>
           </div>
           <button id="spawn-prey-btn" title="Spawn 10 Prey" style="width: 100%; font-size: 12px; display: flex; align-items: center; justify-content: center;">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 4px;">
@@ -143,7 +152,7 @@ export class UIController {
             </span>
             <span id="predator-count" style="color: #ff5555; font-weight: bold;">0</span>
           </div>
-          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
             <span style="display: flex; align-items: center;">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2" style="margin-right: 4px;">
                 <path d="M12 2 L22 9 L19 20 L5 20 L2 9 Z"/>
@@ -151,6 +160,15 @@ export class UIController {
               <span style="color: #aaaaaa; font-size: 11px; margin-right: 4px;">Total:</span>
             </span>
             <span id="predator-spawned" style="color: #ff5555;">0</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <span style="display: flex; align-items: center;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="#aaa" style="margin-right: 4px;">
+                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+              </svg>
+              <span style="color: #aaaaaa; font-size: 11px; margin-right: 4px;">Ready:</span>
+            </span>
+            <span id="predator-ready" style="color: #ff5555; font-weight: bold;">0%</span>
           </div>
           <button id="spawn-predator-btn" title="Spawn 5 Predators" style="width: 100%; font-size: 12px; display: flex; align-items: center; justify-content: center;">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 4px;">
@@ -320,6 +338,7 @@ export class UIController {
     const totalSpawned = this.simulation.getTotalSpawned();
     const extinctionEvents = this.simulation.getExtinctionEvents();
     const resourceBloom = this.simulation.isResourceBloom();
+    const reproductionStats = this.simulation.getReproductionStats();
     
     // Update population counts
     this.preyCountElement.textContent = stats.preyCount.toString();
@@ -390,6 +409,22 @@ export class UIController {
       }
       
       extinctionTableElement.innerHTML = tableHTML;
+    }
+    
+    // Update reproduction stats
+    const preyReadyElement = document.getElementById('prey-ready');
+    const predatorReadyElement = document.getElementById('predator-ready');
+    
+    if (preyReadyElement && reproductionStats.prey.total > 0) {
+      const percentage = Math.round((reproductionStats.prey.ready / reproductionStats.prey.total) * 100);
+      preyReadyElement.textContent = `${percentage}%`;
+      preyReadyElement.title = `${reproductionStats.prey.ready} of ${reproductionStats.prey.total} prey ready to reproduce`;
+    }
+    
+    if (predatorReadyElement && reproductionStats.predator.total > 0) {
+      const percentage = Math.round((reproductionStats.predator.ready / reproductionStats.predator.total) * 100);
+      predatorReadyElement.textContent = `${percentage}%`;
+      predatorReadyElement.title = `${reproductionStats.predator.ready} of ${reproductionStats.predator.total} predators ready to reproduce`;
     }
     
     // Add resource box special effect during bloom

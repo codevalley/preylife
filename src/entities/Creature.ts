@@ -20,6 +20,9 @@ export abstract class Creature extends Entity {
   // Age properties
   age: number = 0;
   
+  // Reproduction tracking
+  timeSinceLastReproduction: number = 0; // Time since last reproduction event
+  
   constructor(
     type: EntityType,
     x: number,
@@ -50,6 +53,9 @@ export abstract class Creature extends Entity {
     
     // Increment age
     this.age += deltaTime;
+    
+    // Increment time since last reproduction
+    this.timeSinceLastReproduction += deltaTime;
     
     // Update mesh position
     this.updateMeshPosition();
@@ -148,8 +154,55 @@ export abstract class Creature extends Entity {
   }
   
   canReproduce(): boolean {
-    // Creature can reproduce when energy is at max capacity
-    return this.energy >= this.maxEnergy;
+    // Calculate max lifespan for maturity check
+    const maxLifespan = SimulationConfig.creatures.maxLifespan.base + 
+                        (this.attributes.longevity * SimulationConfig.creatures.maxLifespan.longevityBonus);
+    
+    // Get type-specific reproduction parameters
+    const isPreyType = this.type === EntityType.PREY;
+    const energyThreshold = isPreyType 
+      ? SimulationConfig.reproduction.energyThreshold.prey 
+      : SimulationConfig.reproduction.energyThreshold.predator;
+    
+    const cooldownDays = isPreyType
+      ? SimulationConfig.reproduction.cooldown.prey
+      : SimulationConfig.reproduction.cooldown.predator;
+      
+    // Convert cooldown days to simulation time units
+    const cooldownTime = cooldownDays * 10; // 10 frames per day
+    
+    // Calculate cooldown factor (0 right after reproduction, 1 when cooldown is complete)
+    const cooldownFactor = Math.min(1, this.timeSinceLastReproduction / cooldownTime);
+    
+    // Check if juvenile (age less than juvenile maturity threshold of max lifespan)
+    const isJuvenile = this.age < (maxLifespan * SimulationConfig.reproduction.juvenileMaturity);
+    
+    // Calculate energy ratio
+    const energyRatio = this.energy / this.maxEnergy;
+    
+    // Base reproduction probability
+    let reproductionProbability;
+    if (isJuvenile) {
+      // Very low probability for juveniles
+      reproductionProbability = SimulationConfig.reproduction.juvenileReproductionProbability;
+    } else {
+      // Normal energy-based probability
+      if (energyRatio >= energyThreshold) {
+        reproductionProbability = isPreyType
+          ? SimulationConfig.reproduction.probability.highEnergy.prey
+          : SimulationConfig.reproduction.probability.highEnergy.predator;
+      } else {
+        reproductionProbability = isPreyType
+          ? SimulationConfig.reproduction.probability.lowEnergy.prey
+          : SimulationConfig.reproduction.probability.lowEnergy.predator;
+      }
+    }
+    
+    // Apply cooldown factor (reduces probability right after reproduction)
+    reproductionProbability *= cooldownFactor;
+    
+    // Check if reproduction occurs based on calculated probability
+    return Math.random() < reproductionProbability;
   }
   
   abstract reproduce(): Creature;

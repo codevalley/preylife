@@ -206,30 +206,57 @@ Energy_Cost = Learning_Cost_Base + (abs(Capped_Shift) * Energy_Multiplier)
 - More significant changes cost proportionally more energy
 
 ### Reproduction System
-- **Trigger**: When energy reaches 100% capacity
+- **Probabilistic Reproduction**: Based on multiple factors rather than simple energy threshold
+  - Energy level: Determines base probability
+  - Age: Affects eligibility and probability
+  - Time since last reproduction: Enforces cooldown period
+  
+- **Energy-Based Probability**:
+  - **High Energy Threshold**: 
+    - Prey: 80% of maximum energy
+    - Predator: 70% of maximum energy
+  - **Reproduction Probability**:
+    - Above threshold: 
+      - Prey: 20% chance per update
+      - Predator: 30% chance per update
+    - Below threshold: 
+      - Prey: 3% chance per update
+      - Predator: 5% chance per update
+  
+- **Age-Based Probability**:
+  - Juvenile period: 0-15% of maximum lifespan
+  - Juvenile reproduction probability: 1% (very rare but possible)
+  - Adult reproduction follows normal energy-based probabilities
+  
+- **Reproduction Cooldown**:
+  - Prey: 7-day cooldown after reproduction
+  - Predator: 3-day cooldown after reproduction
+  - Probability gradually increases as cooldown period progresses
+  - Formula: Current_Probability = Base_Probability * (time_since_reproduction / cooldown_period)
+  
 - **Energy Cost**: Parent transfers 50% of energy to offspring
-- **Reproduction Probability**: Bell curve based on age
-  - Very low probability during early life (0-15% of lifespan)
-  - Gradually increases to peak at middle age (40-60% of lifespan)
-  - Gradually decreases in later life (declining after 60% of lifespan)
-  - Formula: Reproduction_Probability = Base_Chance * Age_Modifier * Energy_Level
-  - Age_Modifier follows a bell curve peaking at 50% of lifespan
+
 - **Attribute Inheritance**: Offspring inherit attributes from parent with slight variations:
   - Strength: Parent's value ± 0.05 (random)
   - Stealth: Parent's value ± 0.05 (random)
   - Learnability: Parent's value ± 0.05 (random)
   - Longevity: Parent's value ± 0.05 (random)
+  
 - **Energy Capacity Inheritance**:
   - Base value: Parent's exact capacity
   - Small random variation: ± 5% by default
   - Limits: Cannot go below 50% or above 200% of species baseline
+  
 - **Significant Mutations**: 10% chance of larger attribute change:
   - Genetic attributes: ± 0.2 (random)
   - Energy Capacity: ± 20% (random)
+  
 - **Mutation Balance**: 
   - Small mutations allow gradual adaptation
   - Significant mutations enable rapid response to environmental shifts
   - Energy capacity evolution creates diverse ecological niches
+  - Cooldown periods prevent rapid population explosions
+  - Maturity requirement simulates real biological development
 
 ## Simulation Parameters
 

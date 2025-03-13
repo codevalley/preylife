@@ -265,6 +265,9 @@ export class Prey extends Creature {
     // Parent loses energy from reproduction
     this.energy *= 0.5;
     
+    // Reset reproduction timer
+    this.timeSinceLastReproduction = 0;
+    
     // Update visual appearance of parent to reflect energy loss
     this.updateMeshPosition();
     

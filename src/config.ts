@@ -8,9 +8,9 @@ export const SimulationConfig = {
   
   // Initial population
   initialPopulation: {
-    resources: 200,
-    prey: 50,
-    predators: 40
+    resources: 250,
+    prey: 60,
+    predators: 15
   },
   
   // Resource settings
@@ -64,7 +64,7 @@ export const SimulationConfig = {
   
   // Predator settings
   predator: {
-    maxEnergy: 620,
+    maxEnergy: 420,
     defaultAttributes: {
       strength: 0.5,
       stealth: 0.4,
@@ -82,7 +82,7 @@ export const SimulationConfig = {
   
   // Prey settings
   prey: {
-    maxEnergy: 280,
+    maxEnergy: 200,
     defaultAttributes: {
       strength: 0.5,
       stealth: 0.5,
@@ -109,6 +109,28 @@ export const SimulationConfig = {
     significantMutationRange: 0.4, // ±0.2 by default
     energyCapacityMutationRange: 0.1, // ±5% by default
     significantEnergyCapacityMutationRange: 0.4, // ±20% by default
+    
+    // Probabilistic reproduction parameters
+    energyThreshold: {
+      prey: 0.8,    // 80% energy threshold for high reproduction probability
+      predator: 0.7 // 70% energy threshold for high reproduction probability
+    },
+    probability: {
+      highEnergy: {  // When energy is above threshold
+        prey: 0.2,   // 20% chance per update when above threshold
+        predator: 0.3 // 30% chance per update when above threshold
+      },
+      lowEnergy: {   // When energy is below threshold
+        prey: 0.03,   // 3% chance per update when below threshold
+        predator: 0.05 // 5% chance per update when below threshold
+      }
+    },
+    cooldown: {
+      prey: 7,      // 7 days until full reproduction probability is restored
+      predator: 3    // 3 days until full reproduction probability is restored
+    },
+    juvenileMaturity: 0.15, // Percentage of lifespan before creature is mature enough to reproduce
+    juvenileReproductionProbability: 0.01 // Very low probability for juveniles to reproduce
   },
   
   // Starvation settings

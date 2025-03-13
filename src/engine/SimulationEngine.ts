@@ -905,4 +905,36 @@ export class SimulationEngine {
       }
     }
   }
+  
+  // Calculate reproduction statistics for UI display
+  getReproductionStats(): {prey: {ready: number, total: number}, predator: {ready: number, total: number}} {
+    // Count creatures ready to reproduce
+    let preyReady = 0;
+    let predatorReady = 0;
+    
+    // Check each prey
+    this.prey.forEach(prey => {
+      if (prey.canReproduce()) {
+        preyReady++;
+      }
+    });
+    
+    // Check each predator
+    this.predators.forEach(predator => {
+      if (predator.canReproduce()) {
+        predatorReady++;
+      }
+    });
+    
+    return {
+      prey: {
+        ready: preyReady,
+        total: this.prey.length
+      },
+      predator: {
+        ready: predatorReady,
+        total: this.predators.length
+      }
+    };
+  }
 }
