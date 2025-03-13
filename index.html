@@ -25,8 +25,8 @@
       width: 320px;
     }
     button {
-      background-color: #4CAF50;
-      border: none;
+      background-color: #333;
+      border: 1px solid #444;
       color: white;
       padding: 8px 16px;
       text-align: center;
@@ -36,9 +36,49 @@
       margin: 4px 2px;
       cursor: pointer;
       border-radius: 4px;
+      transition: all 0.3s ease;
     }
     button:hover {
-      background-color: #45a049;
+      background-color: #444;
+      border-color: #666;
+    }
+    .icon-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #play-pause-btn {
+      background-color: #2a623c;
+    }
+    #play-pause-btn:hover {
+      background-color: #347a4b;
+    }
+    #reset-btn {
+      background-color: #444;
+    }
+    #reset-btn:hover {
+      background-color: #555;
+    }
+    #spawn-prey-btn {
+      background-color: #2c4476 !important;
+      border-color: #3a5a99 !important;
+    }
+    #spawn-prey-btn:hover {
+      background-color: #3a5a99 !important;
+    }
+    #spawn-predator-btn {
+      background-color: #762c2c !important;
+      border-color: #993a3a !important;
+    }
+    #spawn-predator-btn:hover {
+      background-color: #993a3a !important;
+    }
+    #spawn-resource-btn {
+      background-color: #2c7640 !important;
+      border-color: #3a9950 !important;
+    }
+    #spawn-resource-btn:hover {
+      background-color: #3a9950 !important;
     }
     #stats {
       margin-top: 10px;

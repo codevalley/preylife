@@ -464,10 +464,12 @@ export class SimulationEngine {
   private checkForExtinction(): void {
     // Check if prey went extinct
     if (this.lastPreyCount > 0 && this.prey.length === 0) {
-      // Create extinction event
+      // Create extinction event with counts at time of extinction
       this.extinctionEvents.push({
         type: 'prey',
-        day: this.days
+        day: this.days,
+        predatorCount: this.predators.length,
+        resourceCount: this.resources.length
       });
       
       console.log("=== PREY EXTINCTION ===");
@@ -479,10 +481,12 @@ export class SimulationEngine {
     
     // Check if predators went extinct
     if (this.lastPredatorCount > 0 && this.predators.length === 0) {
-      // Create extinction event
+      // Create extinction event with counts at time of extinction
       this.extinctionEvents.push({
         type: 'predator',
-        day: this.days
+        day: this.days,
+        preyCount: this.prey.length,
+        resourceCount: this.resources.length
       });
       
       console.log("=== PREDATOR EXTINCTION ===");
