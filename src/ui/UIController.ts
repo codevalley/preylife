@@ -249,13 +249,13 @@ export class UIController {
     // Add hover effect for feedback button
     const feedbackButton = document.querySelector('a[href="https://twitter.com/nyn"]');
     if (feedbackButton) {
-      feedbackButton.addEventListener('mouseenter', () => {
-        feedbackButton.style.backgroundColor = 'rgba(255, 255, 255, 0.95)';
-        feedbackButton.style.boxShadow = '0 2px 5px rgba(0,0,0,0.3)';
+      (feedbackButton as HTMLElement).addEventListener('mouseenter', () => {
+        (feedbackButton as HTMLElement).style.backgroundColor = 'rgba(255, 255, 255, 0.95)';
+        (feedbackButton as HTMLElement).style.boxShadow = '0 2px 5px rgba(0,0,0,0.3)';
       });
-      feedbackButton.addEventListener('mouseleave', () => {
-        feedbackButton.style.backgroundColor = 'rgba(255, 255, 255, 0.85)';
-        feedbackButton.style.boxShadow = '0 1px 3px rgba(0,0,0,0.2)';
+      (feedbackButton as HTMLElement).addEventListener('mouseleave', () => {
+        (feedbackButton as HTMLElement).style.backgroundColor = 'rgba(255, 255, 255, 0.85)';
+        (feedbackButton as HTMLElement).style.boxShadow = '0 1px 3px rgba(0,0,0,0.2)';
       });
     }
 
