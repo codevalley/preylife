@@ -65,48 +65,48 @@ export class UIController {
       <!-- First row: Controls -->
       <div style="display: flex; align-items: center; margin-bottom: 8px; background-color: rgba(40, 40, 40, 0.6); border-radius: 4px; padding: 6px 10px; gap: 8px;">
         <!-- Play/Pause button -->
-        <button id="play-pause-btn" class="control-button" style="background-color: rgba(50, 120, 70, 0.7); border: none; width: 34px; height: 34px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 4px;">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+        <button id="play-pause-btn" class="control-button" style="background-color: rgba(50, 120, 70, 0.7); border: none; width: 30px; height: 30px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 4px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
             <path id="play-icon" d="M8 5v14l11-7z" style="display: block;"/>
             <path id="pause-icon" d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" style="display: none;"/>
           </svg>
         </button>
         
         <!-- Reset button -->
-        <button id="reset-btn" class="control-button" style="background-color: rgba(60, 60, 60, 0.7); border: none; width: 34px; height: 34px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 4px;">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+        <button id="reset-btn" class="control-button" style="background-color: rgba(60, 60, 60, 0.7); border: none; width: 30px; height: 30px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 4px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
             <path d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
           </svg>
         </button>
 
         <!-- Custom/Settings button -->
-        <button id="custom-btn" class="control-button" style="background-color: rgba(60, 60, 60, 0.7); border: none; width: 34px; height: 34px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 4px;">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+        <button id="custom-btn" class="control-button" style="background-color: rgba(60, 60, 60, 0.7); border: none; width: 30px; height: 30px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 4px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
             <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
           </svg>
         </button>
 
         <!-- Help button -->
-        <button id="help-btn" class="control-button" style="background-color: rgba(60, 60, 60, 0.7); border: none; width: 34px; height: 34px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 4px;">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+        <button id="help-btn" class="control-button" style="background-color: rgba(60, 60, 60, 0.7); border: none; width: 30px; height: 30px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 4px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/>
           </svg>
         </button>
 
         <!-- Day display -->
-        <div class="control-button" style="display: flex; align-items: center; background-color: rgba(60, 60, 60, 0.7); border-radius: 4px; padding: 0 12px; height: 34px; line-height: 34px;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="#aaa" style="margin-right: 4px;">
+        <div class="control-button" style="display: flex; align-items: center; background-color: rgba(60, 60, 60, 0.7); border-radius: 4px; padding: 0 10px; height: 30px; line-height: 30px; font-size: 11px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="#aaa" style="margin-right: 4px;">
             <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.2 3.2.8-1.3-4.5-2.7V7z"/>
           </svg>
-          <span id="days-count" style="font-weight: bold; min-width: 18px; text-align: center;">0</span>
+          <span id="days-count" style="font-weight: bold; min-width: 16px; text-align: center;">0</span>
         </div>
       </div>
 
       <!-- Second row: Stats -->
       <div style="display: flex; align-items: center; background-color: rgba(40, 40, 40, 0.6); border-radius: 4px; padding: 6px 10px; gap: 8px;">
         <!-- Prey stats -->
-        <div id="prey-widget" style="display: flex; align-items: center; background-color: rgba(40, 70, 130, 0.3); border-radius: 4px; padding: 4px 8px; flex: 1; cursor: pointer; transition: background-color 0.2s;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="#5588ff" style="margin-right: 4px;">
+        <div id="prey-widget" style="display: flex; align-items: center; background-color: rgba(40, 70, 130, 0.3); border-radius: 4px; padding: 4px 8px; flex: 1; cursor: pointer; transition: background-color 0.2s; font-size: 11px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="#5588ff" style="margin-right: 4px;">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"/>
           </svg>
           <span id="prey-count" style="color: #5588ff; font-weight: bold;">0</span>
@@ -115,8 +115,8 @@ export class UIController {
         </div>
 
         <!-- Predator stats -->
-        <div id="predator-widget" style="display: flex; align-items: center; background-color: rgba(130, 40, 40, 0.3); border-radius: 4px; padding: 4px 8px; flex: 1; cursor: pointer; transition: background-color 0.2s;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="#ff5555" style="margin-right: 4px;">
+        <div id="predator-widget" style="display: flex; align-items: center; background-color: rgba(130, 40, 40, 0.3); border-radius: 4px; padding: 4px 8px; flex: 1; cursor: pointer; transition: background-color 0.2s; font-size: 11px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="#ff5555" style="margin-right: 4px;">
             <path d="M12 2 L22 9 L19 20 L5 20 L2 9 Z"/>
           </svg>
           <span id="predator-count" style="color: #ff5555; font-weight: bold;">0</span>
@@ -125,14 +125,24 @@ export class UIController {
         </div>
 
         <!-- Resource stats -->
-        <div id="resource-widget" style="display: flex; align-items: center; background-color: rgba(40, 130, 40, 0.3); border-radius: 4px; padding: 4px 8px; flex: 1; cursor: pointer; transition: background-color 0.2s;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="#55cc55" style="margin-right: 4px;">
+        <div id="resource-widget" style="display: flex; align-items: center; background-color: rgba(40, 130, 40, 0.3); border-radius: 4px; padding: 4px 8px; flex: 1; cursor: pointer; transition: background-color 0.2s; font-size: 11px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="#55cc55" style="margin-right: 4px;">
             <rect x="4" y="4" width="16" height="16" />
           </svg>
           <span id="resource-count" style="color: #55cc55; font-weight: bold;">0</span>
           <span style="color: #777; margin: 0 4px;">/</span>
           <span id="resource-spawned" style="color: #55cc55;">0</span>
         </div>
+      </div>
+      
+      <!-- Feedback Button (Bottom Left) -->
+      <div style="position: fixed; bottom: 15px; left: 15px;">
+        <a href="https://twitter.com/nyn" target="_blank" style="display: flex; align-items: center; background-color: rgba(255, 255, 255, 0.85); color: #1DA1F2; text-decoration: none; padding: 5px 10px; border-radius: 4px; font-size: 11px; transition: background-color 0.2s; font-weight: 500; box-shadow: 0 1px 3px rgba(0,0,0,0.2);">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="#1DA1F2" style="margin-right: 6px;">
+            <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
+          </svg>
+          Feedback @nyn
+        </a>
       </div>
     `;
 
@@ -235,6 +245,19 @@ export class UIController {
         });
       }
     });
+    
+    // Add hover effect for feedback button
+    const feedbackButton = document.querySelector('a[href="https://twitter.com/nyn"]');
+    if (feedbackButton) {
+      feedbackButton.addEventListener('mouseenter', () => {
+        feedbackButton.style.backgroundColor = 'rgba(255, 255, 255, 0.95)';
+        feedbackButton.style.boxShadow = '0 2px 5px rgba(0,0,0,0.3)';
+      });
+      feedbackButton.addEventListener('mouseleave', () => {
+        feedbackButton.style.backgroundColor = 'rgba(255, 255, 255, 0.85)';
+        feedbackButton.style.boxShadow = '0 1px 3px rgba(0,0,0,0.2)';
+      });
+    }
 
     // Setup keyboard shortcuts
     window.addEventListener('keydown', (event) => {

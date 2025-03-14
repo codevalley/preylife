@@ -433,6 +433,11 @@ export class SimulationEngine {
   }
   
   reset(): void {
+    // Update initial counts from current config before initializing
+    this.initialResourceCount = SimulationConfig.initialPopulation.resources;
+    this.initialPreyCount = SimulationConfig.initialPopulation.prey;
+    this.initialPredatorCount = SimulationConfig.initialPopulation.predators;
+    
     this.initialize();
   }
   
