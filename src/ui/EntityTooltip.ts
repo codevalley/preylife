@@ -1,7 +1,5 @@
 import { Entity, EntityType } from '../entities/Entity';
-import { Creature, GeneticAttributes } from '../entities/Creature';
-import { Prey } from '../entities/Prey';
-import { Predator } from '../entities/Predator';
+import { Creature } from '../entities/Creature';
 import { Resource } from '../entities/Resource';
 
 export class EntityTooltip {

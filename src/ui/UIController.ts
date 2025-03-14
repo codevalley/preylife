@@ -1,10 +1,13 @@
 import { SimulationEngine } from '../engine/SimulationEngine';
 import { DashboardPanel } from './DashboardPanel';
+import { SettingsPanel } from './SettingsPanel';
+import { SimulationConfig } from '../config';
 
 export class UIController {
   // Dashboard panels
   private controlPanel: DashboardPanel;
   private ecologyPanel: DashboardPanel;
+  private settingsPanel: SettingsPanel;
   
   // Control buttons
   private playPauseButton: HTMLButtonElement;
@@ -51,6 +54,7 @@ export class UIController {
     // Create dashboard panels
     this.controlPanel = new DashboardPanel('Simulation Controls', 'control', uiContainer);
     this.ecologyPanel = new DashboardPanel('Ecology Events', 'ecology', uiContainer);
+    this.settingsPanel = new SettingsPanel(uiContainer);
     
     // Set up control panel
     const controlContent = this.controlPanel.getContentElement();
@@ -221,6 +225,19 @@ export class UIController {
         this.onResetClick();
       }
     });
+
+    // Add settings button click handler
+    if (customButton) {
+      customButton.addEventListener('click', () => {
+        this.settingsPanel.onSave((newConfig) => {
+          // Update simulation config
+          Object.assign(SimulationConfig, newConfig);
+          // Reset simulation with new config
+          this.onResetClick();
+        });
+        this.settingsPanel.show();
+      });
+    }
   }
   
   private onPlayPauseClick(): void {

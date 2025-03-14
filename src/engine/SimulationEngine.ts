@@ -20,6 +20,25 @@ interface SimulationStats {
   predatorAttributes: AttributeStats;
 }
 
+// Add type definition for extinction events
+interface ExtinctionEvent {
+  type: string;
+  day: number;
+  preyCount?: number;
+  predatorCount?: number;
+  resourceCount: number;
+}
+
+// Add type definition for evolution events
+interface EvolutionEvent {
+  fromType: string;
+  toType: string;
+  day: number;
+  preyCount: number;
+  predatorCount: number;
+  resourceCount: number;
+}
+
 export class SimulationEngine {
   private resources: Resource[] = [];
   private prey: Prey[] = [];
@@ -41,15 +60,8 @@ export class SimulationEngine {
   private resourceBloom: boolean = false; // Whether we're in a resource bloom period
   
   // Ecology tracking - extinctions, evolutions, and spawning
-  private extinctionEvents: {type: string, day: number}[] = [];
-  private evolutionEvents: {
-    fromType: string, 
-    toType: string, 
-    day: number, 
-    preyCount: number, 
-    predatorCount: number, 
-    resourceCount: number
-  }[] = [];
+  private extinctionEvents: ExtinctionEvent[] = [];
+  private evolutionEvents: EvolutionEvent[] = [];
   private totalSpawned: {
     prey: number,
     predators: number,
@@ -647,20 +659,13 @@ export class SimulationEngine {
   }
   
   // Getter for extinction events
-  getExtinctionEvents(): {type: string, day: number}[] {
-    return [...this.extinctionEvents]; // Return a copy
+  getExtinctionEvents(): ExtinctionEvent[] {
+    return [...this.extinctionEvents];
   }
   
   // Getter for evolution events
-  getEvolutionEvents(): {
-    fromType: string, 
-    toType: string, 
-    day: number, 
-    preyCount: number, 
-    predatorCount: number, 
-    resourceCount: number
-  }[] {
-    return [...this.evolutionEvents]; // Return a copy
+  getEvolutionEvents(): EvolutionEvent[] {
+    return [...this.evolutionEvents];
   }
   
   // Getter for total spawned counts

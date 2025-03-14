@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { Entity, EntityType } from '../entities/Entity';
+import { Entity } from '../entities/Entity';
 import { SimulationEngine } from '../engine/SimulationEngine';
 import { EntityTooltip } from '../ui/EntityTooltip';
 
