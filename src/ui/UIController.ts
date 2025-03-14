@@ -269,6 +269,9 @@ export class UIController {
         this.helpPanel.show();
       });
     }
+
+    // Show help panel on startup
+    this.helpPanel.show();
   }
   
   private onPlayPauseClick(): void {

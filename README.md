@@ -1,6 +1,55 @@
-# 🌿 Evolutionary Ecosystem Simulator
+# 🌿 Preylife
 
-A sophisticated browser-based simulation exploring the intricate dynamics of predator-prey relationships, natural selection, and evolutionary adaptation. Watch as digital creatures evolve complex survival strategies in real-time!
+An evolutionary ecosystem simulation where complex behaviors emerge from simple rules.
+
+## 🎮 Overview
+
+Preylife is a digital ecosystem that demonstrates the emergence of complex evolutionary strategies through simple probabilistic rules. Watch as creatures evolve, adapt, and develop fascinating survival strategies in real-time.
+
+For detailed information about the simulation, check out our [comprehensive guide](Preylife.md).
+
+## ✨ Features
+
+- 🧬 Real-time evolution simulation
+- 🔄 Complex emergent behaviors
+- 🎯 Natural selection and adaptation
+- 🌍 Dynamic ecosystem balance
+- 📊 Population monitoring
+- 🎨 Beautiful visual feedback
+- ⚙️ Customizable parameters
+
+## 🚀 Getting Started
+
+1. Clone the repository
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Start the development server:
+   ```bash
+   npm run dev
+   ```
+
+## 📖 Documentation
+
+- [Simulation Guide](Preylife.md) - Detailed explanation of the ecosystem
+- [Configuration](src/config.ts) - Customize simulation parameters
+- [API Documentation](docs/API.md) - Technical documentation
+
+## 📄 License
+
+This project is licensed under the BSD 2-Clause License - see the [LICENSE.md](LICENSE.md) file for details.
+
+### Attribution Requirements
+
+If you use or modify this software, please provide appropriate credit by:
+1. Retaining the copyright notice in the [LICENSE.md](LICENSE.md)
+2. Including a reference to the original project (Preylife)
+3. Indicating if changes were made
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
 
 ## 🎮 Live Demo
 [Add your demo link here]
@@ -83,28 +132,6 @@ This simulation explores several key ecological and evolutionary concepts:
 - Niche exploitation
 - Territorial boundaries
 
-## 🚀 Getting Started
-
-```bash
-# Clone the repository
-git clone [your-repo-url]
-
-# Install dependencies
-npm install
-
-# Start the development server
-npm run dev
-```
-
-## 📖 Configuration
-
-The simulation is highly configurable through `src/config.ts`. Key parameters include:
-- Initial population sizes
-- Creature attributes and energy costs
-- Environmental settings
-- Learning and reproduction rates
-- Resource generation rules
-
 ## 🤝 Contributing
 
 Contributions are welcome! Some areas for potential enhancement:
@@ -113,10 +140,6 @@ Contributions are welcome! Some areas for potential enhancement:
 - Enhanced visualization options
 - Performance optimizations
 - Data collection and analysis tools
-
-## 📜 License
-
-MIT License
 
 ## 🙏 Acknowledgments
 
