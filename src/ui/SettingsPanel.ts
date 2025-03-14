@@ -4,12 +4,18 @@ export class SettingsPanel {
   private panel: HTMLElement;
   private _isVisible: boolean = false;
   private onSaveCallback: ((config: typeof SimulationConfig) => void) | null = null;
-  
+  private defaultConfig: typeof SimulationConfig;
+  private showAdvanced: boolean = false;
+  private currentConfig: any = {};
+
   get isVisible(): boolean {
     return this._isVisible;
   }
 
   constructor(container: HTMLElement) {
+    // Store a deep copy of the default config for resetting
+    this.defaultConfig = JSON.parse(JSON.stringify(SimulationConfig));
+    
     // Create the panel container
     this.panel = document.createElement('div');
     this.panel.className = 'settings-panel';
@@ -69,14 +75,68 @@ export class SettingsPanel {
     // Create settings content
     this.createSettingsContent();
 
+    // Add buttons row
+    const buttonsRow = document.createElement('div');
+    buttonsRow.style.cssText = `
+      display: flex;
+      justify-content: space-between;
+      margin-top: 20px;
+      position: sticky;
+      bottom: 0;
+      background: rgba(30, 30, 30, 0.95);
+      padding: 10px 0;
+    `;
+
+    // Add restore defaults button
+    const restoreButton = document.createElement('button');
+    restoreButton.textContent = 'Restore Defaults';
+    restoreButton.style.cssText = `
+      background: #777;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    `;
+    restoreButton.addEventListener('mouseenter', () => {
+      restoreButton.style.backgroundColor = '#888';
+    });
+    restoreButton.addEventListener('mouseleave', () => {
+      restoreButton.style.backgroundColor = '#777';
+    });
+    restoreButton.addEventListener('click', () => this.restoreDefaults());
+    buttonsRow.appendChild(restoreButton);
+
+    // Add toggle advanced button
+    const toggleAdvancedButton = document.createElement('button');
+    toggleAdvancedButton.textContent = 'Show Advanced Settings';
+    toggleAdvancedButton.style.cssText = `
+      background: #555;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    `;
+    toggleAdvancedButton.addEventListener('mouseenter', () => {
+      toggleAdvancedButton.style.backgroundColor = '#666';
+    });
+    toggleAdvancedButton.addEventListener('mouseleave', () => {
+      toggleAdvancedButton.style.backgroundColor = '#555';
+    });
+    toggleAdvancedButton.addEventListener('click', () => {
+      this.showAdvanced = !this.showAdvanced;
+      toggleAdvancedButton.textContent = this.showAdvanced ? 'Hide Advanced Settings' : 'Show Advanced Settings';
+      this.updateAdvancedVisibility();
+    });
+    buttonsRow.appendChild(toggleAdvancedButton);
+
     // Add save button
     const saveButton = document.createElement('button');
     saveButton.textContent = 'Save Changes';
     saveButton.style.cssText = `
-      position: sticky;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
       background: #4CAF50;
       color: white;
       padding: 10px 20px;
@@ -84,7 +144,6 @@ export class SettingsPanel {
       border-radius: 4px;
       cursor: pointer;
       font-size: 16px;
-      margin-top: 20px;
     `;
     saveButton.addEventListener('mouseenter', () => {
       saveButton.style.backgroundColor = '#45a049';
@@ -93,7 +152,9 @@ export class SettingsPanel {
       saveButton.style.backgroundColor = '#4CAF50';
     });
     saveButton.addEventListener('click', () => this.saveSettings());
-    this.panel.appendChild(saveButton);
+    buttonsRow.appendChild(saveButton);
+
+    this.panel.appendChild(buttonsRow);
 
     // Add overlay
     const overlay = document.createElement('div');
@@ -116,6 +177,7 @@ export class SettingsPanel {
 
   private createSettingsContent(): void {
     const content = document.createElement('div');
+    content.id = 'settings-content';
     content.style.cssText = `
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -136,6 +198,7 @@ export class SettingsPanel {
     content.appendChild(this.createSpeciesConversionSection());
 
     this.panel.appendChild(content);
+    this.updateAdvancedVisibility();
   }
 
   private createSection(title: string, icon: string): HTMLElement {
@@ -186,16 +249,24 @@ export class SettingsPanel {
   private createNumberInput(
     label: string,
     value: number,
+    configPath: string,
     min?: number,
     max?: number,
     step?: number,
-    tooltip?: string
+    tooltip?: string,
+    isAdvanced: boolean = false
   ): HTMLElement {
     const container = document.createElement('div');
+    container.className = isAdvanced ? 'advanced-setting' : '';
+    container.dataset.configPath = configPath;
     container.style.cssText = `
       margin-bottom: 10px;
       position: relative;
     `;
+
+    if (isAdvanced) {
+      container.style.display = this.showAdvanced ? 'block' : 'none';
+    }
 
     const labelElement = document.createElement('label');
     labelElement.style.cssText = `
@@ -282,6 +353,8 @@ export class SettingsPanel {
     const input = document.createElement('input');
     input.type = 'number';
     input.value = value.toString();
+    input.dataset.configPath = configPath;
+    
     if (min !== undefined) input.min = min.toString();
     if (max !== undefined) input.max = max.toString();
     if (step !== undefined) input.step = step.toString();
@@ -295,8 +368,134 @@ export class SettingsPanel {
       font-size: 14px;
     `;
 
+    // Add change event to store value
+    input.addEventListener('change', () => {
+      this.setConfigValue(configPath, parseFloat(input.value));
+    });
+
     container.appendChild(labelElement);
     container.appendChild(input);
+    return container;
+  }
+
+  private createCheckboxInput(
+    label: string,
+    value: boolean,
+    configPath: string,
+    tooltip?: string,
+    isAdvanced: boolean = false
+  ): HTMLElement {
+    const container = document.createElement('div');
+    container.className = isAdvanced ? 'advanced-setting' : '';
+    container.dataset.configPath = configPath;
+    container.style.cssText = `
+      margin-bottom: 10px;
+      position: relative;
+      display: flex;
+      align-items: center;
+    `;
+
+    if (isAdvanced) {
+      container.style.display = this.showAdvanced ? 'flex' : 'none';
+    }
+
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.checked = value;
+    input.dataset.configPath = configPath;
+    input.id = `checkbox-${configPath.replace(/\./g, '-')}`;
+    input.style.cssText = `
+      margin-right: 8px;
+    `;
+
+    // Add change event to store value
+    input.addEventListener('change', () => {
+      this.setConfigValue(configPath, input.checked);
+    });
+
+    const labelElement = document.createElement('label');
+    labelElement.htmlFor = input.id;
+    labelElement.style.cssText = `
+      font-size: 14px;
+      color: #aaa;
+    `;
+    labelElement.textContent = label;
+
+    if (tooltip) {
+      const tooltipContainer = document.createElement('div');
+      tooltipContainer.style.cssText = `
+        display: inline-block;
+        position: relative;
+        margin-left: 5px;
+      `;
+
+      const tooltipIcon = document.createElement('span');
+      tooltipIcon.innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="#666">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+        </svg>
+      `;
+      tooltipIcon.style.cssText = `
+        cursor: help;
+        display: inline-flex;
+        vertical-align: middle;
+      `;
+
+      const tooltipText = document.createElement('div');
+      tooltipText.textContent = tooltip;
+      tooltipText.style.cssText = `
+        visibility: hidden;
+        background-color: rgba(40, 40, 40, 0.95);
+        color: #fff;
+        text-align: center;
+        padding: 8px 12px;
+        border-radius: 6px;
+        position: absolute;
+        z-index: 1;
+        width: 200px;
+        left: 50%;
+        transform: translateX(-50%);
+        bottom: 125%;
+        font-size: 12px;
+        opacity: 0;
+        transition: opacity 0.2s;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        pointer-events: none;
+      `;
+
+      // Add arrow
+      const arrow = document.createElement('div');
+      arrow.style.cssText = `
+        content: '';
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        margin-left: -5px;
+        border-width: 5px;
+        border-style: solid;
+        border-color: rgba(40, 40, 40, 0.95) transparent transparent transparent;
+      `;
+      tooltipText.appendChild(arrow);
+
+      tooltipContainer.appendChild(tooltipIcon);
+      tooltipContainer.appendChild(tooltipText);
+
+      // Show/hide tooltip on hover
+      tooltipContainer.addEventListener('mouseenter', () => {
+        tooltipText.style.visibility = 'visible';
+        tooltipText.style.opacity = '1';
+      });
+
+      tooltipContainer.addEventListener('mouseleave', () => {
+        tooltipText.style.visibility = 'hidden';
+        tooltipText.style.opacity = '0';
+      });
+
+      labelElement.appendChild(tooltipContainer);
+    }
+
+    container.appendChild(input);
+    container.appendChild(labelElement);
     return container;
   }
 
@@ -310,6 +509,7 @@ export class SettingsPanel {
     section.appendChild(this.createNumberInput(
       'Initial Resources',
       SimulationConfig.initialPopulation.resources,
+      'initialPopulation.resources',
       0,
       1000,
       10,
@@ -319,6 +519,7 @@ export class SettingsPanel {
     section.appendChild(this.createNumberInput(
       'Initial Prey',
       SimulationConfig.initialPopulation.prey,
+      'initialPopulation.prey',
       0,
       500,
       10,
@@ -328,6 +529,7 @@ export class SettingsPanel {
     section.appendChild(this.createNumberInput(
       'Initial Predators',
       SimulationConfig.initialPopulation.predators,
+      'initialPopulation.predators',
       0,
       100,
       5,
@@ -347,6 +549,7 @@ export class SettingsPanel {
     section.appendChild(this.createNumberInput(
       'Default Energy',
       SimulationConfig.resources.defaultEnergy,
+      'resources.defaultEnergy',
       1,
       50,
       1,
@@ -356,14 +559,140 @@ export class SettingsPanel {
     section.appendChild(this.createNumberInput(
       'Regeneration Chance',
       SimulationConfig.resources.regenerationChance,
+      'resources.regenerationChance',
       0,
       1,
       0.01,
       'Probability of a new resource spawning each frame'
     ));
 
-    // Add more resource settings...
-    // (I'll continue with the rest of the sections in subsequent edits)
+    section.appendChild(this.createNumberInput(
+      'Emergency Regeneration Threshold',
+      SimulationConfig.resources.emergencyRegenerationThreshold,
+      'resources.emergencyRegenerationThreshold',
+      0,
+      1,
+      0.01,
+      'When prey population falls below this % of initial count, trigger emergency resources'
+    ));
+
+    section.appendChild(this.createNumberInput(
+      'Emergency Regeneration Chance',
+      SimulationConfig.resources.emergencyRegenerationChance,
+      'resources.emergencyRegenerationChance',
+      0,
+      1,
+      0.01,
+      'Higher probability of resource spawning during emergency conditions'
+    ));
+
+    section.appendChild(this.createNumberInput(
+      'Emergency Energy Bonus',
+      SimulationConfig.resources.emergencyEnergyBonus,
+      'resources.emergencyEnergyBonus',
+      1,
+      5,
+      0.1,
+      'Energy multiplier for resources spawned during emergency conditions'
+    ));
+
+    section.appendChild(this.createNumberInput(
+      'Decay Chance',
+      SimulationConfig.resources.decayChance,
+      'resources.decayChance',
+      0,
+      1,
+      0.01,
+      'Probability of resources decaying when no prey exist in the ecosystem',
+      true
+    ));
+
+    // Resource limits
+    section.appendChild(this.createNumberInput(
+      'Max Resource Count',
+      SimulationConfig.resources.limits.maxCount,
+      'resources.limits.maxCount',
+      100,
+      5000,
+      100,
+      'Absolute maximum number of resources allowed in simulation at once',
+      true
+    ));
+
+    section.appendChild(this.createCheckboxInput(
+      'Enable Resource Decay',
+      SimulationConfig.resources.limits.enableDecay,
+      'resources.limits.enableDecay',
+      'Whether resources naturally decay over time',
+      true
+    ));
+
+    section.appendChild(this.createNumberInput(
+      'Resource Lifespan',
+      SimulationConfig.resources.limits.decayLifespan,
+      'resources.limits.decayLifespan',
+      1,
+      100,
+      1,
+      'Number of days a resource exists before it becomes eligible for natural decay',
+      true
+    ));
+
+    section.appendChild(this.createNumberInput(
+      'Decay Chance Per Frame',
+      SimulationConfig.resources.limits.decayChancePerFrame,
+      'resources.limits.decayChancePerFrame',
+      0,
+      0.1,
+      0.001,
+      'Probability per frame that an old resource will decay',
+      true
+    ));
+
+    // Resource bloom settings
+    section.appendChild(this.createNumberInput(
+      'Bloom Cluster Count',
+      SimulationConfig.resources.bloom.clusterCount,
+      'resources.bloom.clusterCount',
+      1,
+      20,
+      1,
+      'Number of distinct resource clusters to create during a bloom event',
+      true
+    ));
+
+    section.appendChild(this.createNumberInput(
+      'Bloom Primary Energy Multiplier',
+      SimulationConfig.resources.bloom.primaryEnergyMultiplier,
+      'resources.bloom.primaryEnergyMultiplier',
+      1,
+      5,
+      0.1,
+      'Energy value multiplier for resources in primary clusters',
+      true
+    ));
+
+    section.appendChild(this.createNumberInput(
+      'Bloom Secondary Energy Multiplier',
+      SimulationConfig.resources.bloom.secondaryEnergyMultiplier,
+      'resources.bloom.secondaryEnergyMultiplier',
+      1,
+      5,
+      0.1,
+      'Energy value multiplier for resources in secondary clusters',
+      true
+    ));
+
+    section.appendChild(this.createNumberInput(
+      'Bloom Duration',
+      SimulationConfig.resources.bloom.bloomDuration,
+      'resources.bloom.bloomDuration',
+      1,
+      50,
+      1,
+      'Number of days the bloom event lasts before returning to normal',
+      true
+    ));
 
     return section;
   }
@@ -379,15 +708,17 @@ export class SettingsPanel {
     section.appendChild(this.createNumberInput(
       'Base Speed',
       SimulationConfig.creatures.baseSpeed,
+      'creatures.baseSpeed',
       0.1,
-      10,
+      20,
       0.1,
       'Base movement speed for all creatures'
     ));
 
     section.appendChild(this.createNumberInput(
-      'Base Cost',
+      'Base Energy Cost',
       SimulationConfig.creatures.baseCost,
+      'creatures.baseCost',
       0.1,
       10,
       0.1,
@@ -397,10 +728,111 @@ export class SettingsPanel {
     section.appendChild(this.createNumberInput(
       'Movement Cost Multiplier',
       SimulationConfig.creatures.movementCostMultiplier,
+      'creatures.movementCostMultiplier',
       0.1,
-      5,
+      10,
       0.1,
       'Multiplier for movement energy cost'
+    ));
+
+    // Lifespan settings
+    section.appendChild(this.createNumberInput(
+      'Base Lifespan',
+      SimulationConfig.creatures.maxLifespan.base,
+      'creatures.maxLifespan.base',
+      10,
+      300,
+      10,
+      'Base lifespan in seconds for all creatures'
+    ));
+
+    section.appendChild(this.createNumberInput(
+      'Longevity Bonus',
+      SimulationConfig.creatures.maxLifespan.longevityBonus,
+      'creatures.maxLifespan.longevityBonus',
+      0,
+      200,
+      10,
+      'Additional seconds of lifespan granted at maximum longevity trait (1.0)'
+    ));
+
+    // Energy consumption multipliers
+    section.appendChild(this.createNumberInput(
+      'Predator Energy Consumption',
+      SimulationConfig.creatures.energyConsumption.predator,
+      'creatures.energyConsumption.predator',
+      0.1,
+      2,
+      0.1,
+      'Energy consumption multiplier for predators (lower = more efficient)',
+      true
+    ));
+
+    section.appendChild(this.createNumberInput(
+      'Prey Energy Consumption',
+      SimulationConfig.creatures.energyConsumption.prey,
+      'creatures.energyConsumption.prey',
+      0.1,
+      2,
+      0.1,
+      'Energy consumption multiplier for prey (lower = more efficient)',
+      true
+    ));
+
+    // Interaction ranges
+    section.appendChild(this.createNumberInput(
+      'Resource Consumption Range',
+      SimulationConfig.creatures.interactionRanges.resourceConsumption,
+      'creatures.interactionRanges.resourceConsumption',
+      1,
+      50,
+      1,
+      'Distance at which prey can consume resources',
+      true
+    ));
+
+    section.appendChild(this.createNumberInput(
+      'Prey Capture Range',
+      SimulationConfig.creatures.interactionRanges.preyCaptureRange,
+      'creatures.interactionRanges.preyCaptureRange',
+      1,
+      50,
+      1,
+      'Distance at which predators can attempt to capture prey',
+      true
+    ));
+
+    section.appendChild(this.createNumberInput(
+      'Predator Detection Range',
+      SimulationConfig.creatures.interactionRanges.preyDetectionRange,
+      'creatures.interactionRanges.preyDetectionRange',
+      10,
+      200,
+      10,
+      'Distance at which predators can detect prey',
+      true
+    ));
+
+    section.appendChild(this.createNumberInput(
+      'Resource Detection Range',
+      SimulationConfig.creatures.interactionRanges.preyResourceDetectionRange,
+      'creatures.interactionRanges.preyResourceDetectionRange',
+      10,
+      200,
+      10,
+      'Distance at which prey can detect resources',
+      true
+    ));
+
+    section.appendChild(this.createNumberInput(
+      'Predator Detection Range (Prey)',
+      SimulationConfig.creatures.interactionRanges.preyPredatorDetectionRange,
+      'creatures.interactionRanges.preyPredatorDetectionRange',
+      10,
+      200,
+      10,
+      'Distance at which prey can detect approaching predators',
+      true
     ));
 
     return section;
@@ -414,39 +846,128 @@ export class SettingsPanel {
     `);
 
     section.appendChild(this.createNumberInput(
-      'Hunting Speed Multiplier',
-      SimulationConfig.predator.huntingSpeedMultiplier,
-      0.1,
-      5,
-      0.1,
-      'Speed multiplier when chasing prey'
-    ));
-
-    section.appendChild(this.createNumberInput(
-      'Detection Range Multiplier',
-      SimulationConfig.predator.detectionRangeMultiplier,
-      0.1,
-      5,
-      0.1,
-      'Vision range multiplier for detecting prey'
-    ));
-
-    section.appendChild(this.createNumberInput(
-      'Energy Gain from Prey',
-      SimulationConfig.predator.energyGainFromPrey,
-      1,
+      'Max Energy',
+      SimulationConfig.predator.maxEnergy,
+      'predator.maxEnergy',
       100,
+      1000,
+      50,
+      'Maximum energy capacity for predators'
+    ));
+
+    // Default attributes
+    section.appendChild(this.createNumberInput(
+      'Default Strength',
+      SimulationConfig.predator.defaultAttributes.strength,
+      'predator.defaultAttributes.strength',
+      0,
       1,
-      'Energy gained from consuming prey'
+      0.05,
+      'Default physical power for newly spawned predators'
+    ));
+
+    section.appendChild(this.createNumberInput(
+      'Default Stealth',
+      SimulationConfig.predator.defaultAttributes.stealth,
+      'predator.defaultAttributes.stealth',
+      0,
+      1,
+      0.05,
+      'Default sneakiness for newly spawned predators'
+    ));
+
+    section.appendChild(this.createNumberInput(
+      'Default Learnability',
+      SimulationConfig.predator.defaultAttributes.learnability,
+      'predator.defaultAttributes.learnability',
+      0,
+      1,
+      0.05,
+      'Default adaptability for newly spawned predators'
+    ));
+
+    section.appendChild(this.createNumberInput(
+      'Default Longevity',
+      SimulationConfig.predator.defaultAttributes.longevity,
+      'predator.defaultAttributes.longevity',
+      0,
+      1,
+      0.05,
+      'Default lifespan factor for newly spawned predators'
+    ));
+
+    // Capture chance parameters
+    section.appendChild(this.createNumberInput(
+      'Strength Impact on Capture',
+      SimulationConfig.predator.captureChance.strengthMultiplier,
+      'predator.captureChance.strengthMultiplier',
+      0,
+      2,
+      0.1,
+      'Impact of strength trait on capture success'
     ));
 
     section.appendChild(this.createNumberInput(
       'Base Capture Chance',
       SimulationConfig.predator.captureChance.baseChance,
+      'predator.captureChance.baseChance',
       0,
       1,
       0.01,
       'Base probability of successfully catching prey'
+    ));
+
+    section.appendChild(this.createNumberInput(
+      'Minimum Capture Chance',
+      SimulationConfig.predator.captureChance.minChance,
+      'predator.captureChance.minChance',
+      0,
+      1,
+      0.01,
+      'Absolute minimum capture probability regardless of traits',
+      true
+    ));
+
+    section.appendChild(this.createNumberInput(
+      'Maximum Capture Chance',
+      SimulationConfig.predator.captureChance.maxChance,
+      'predator.captureChance.maxChance',
+      0,
+      1,
+      0.01,
+      'Absolute maximum capture probability regardless of traits',
+      true
+    ));
+
+    // Other predator parameters
+    section.appendChild(this.createNumberInput(
+      'Energy Gain from Prey',
+      SimulationConfig.predator.energyGainFromPrey,
+      'predator.energyGainFromPrey',
+      0,
+      1,
+      0.01,
+      'Proportion of prey\'s energy gained when consumed'
+    ));
+
+    section.appendChild(this.createNumberInput(
+      'Hunting Speed Boost',
+      SimulationConfig.predator.huntingSpeedMultiplier,
+      'predator.huntingSpeedMultiplier',
+      0,
+      2,
+      0.1,
+      'Speed boost factor when actively hunting'
+    ));
+
+    section.appendChild(this.createNumberInput(
+      'Detection Range Boost',
+      SimulationConfig.predator.detectionRangeMultiplier,
+      'predator.detectionRangeMultiplier',
+      0,
+      2,
+      0.1,
+      'Detection range increase factor when hungry'
     ));
 
     return section;
@@ -460,39 +981,105 @@ export class SettingsPanel {
     `);
 
     section.appendChild(this.createNumberInput(
-      'Predator Avoidance Multiplier',
-      SimulationConfig.prey.predatorAvoidanceMultiplier,
-      0.1,
-      5,
-      0.1,
-      'Speed multiplier when fleeing from predators'
+      'Max Energy',
+      SimulationConfig.prey.maxEnergy,
+      'prey.maxEnergy',
+      50,
+      500,
+      25,
+      'Maximum energy capacity for prey'
+    ));
+
+    // Default attributes
+    section.appendChild(this.createNumberInput(
+      'Default Strength',
+      SimulationConfig.prey.defaultAttributes.strength,
+      'prey.defaultAttributes.strength',
+      0,
+      1,
+      0.05,
+      'Default physical power for newly spawned prey'
     ));
 
     section.appendChild(this.createNumberInput(
-      'Predator Detection Multiplier',
-      SimulationConfig.prey.predatorDetectionMultiplier,
-      0.1,
-      5,
-      0.1,
-      'Vision range multiplier for detecting predators'
+      'Default Stealth',
+      SimulationConfig.prey.defaultAttributes.stealth,
+      'prey.defaultAttributes.stealth',
+      0,
+      1,
+      0.05,
+      'Default evasiveness for newly spawned prey'
     ));
 
+    section.appendChild(this.createNumberInput(
+      'Default Learnability',
+      SimulationConfig.prey.defaultAttributes.learnability,
+      'prey.defaultAttributes.learnability',
+      0,
+      1,
+      0.05,
+      'Default adaptability for newly spawned prey'
+    ));
+
+    section.appendChild(this.createNumberInput(
+      'Default Longevity',
+      SimulationConfig.prey.defaultAttributes.longevity,
+      'prey.defaultAttributes.longevity',
+      0,
+      1,
+      0.05,
+      'Default lifespan factor for newly spawned prey'
+    ));
+
+    // Other prey parameters
     section.appendChild(this.createNumberInput(
       'Resource Energy Bonus',
       SimulationConfig.prey.resourceEnergyBonus,
+      'prey.resourceEnergyBonus',
       1,
-      50,
-      1,
-      'Additional energy gained from consuming resources'
+      5,
+      0.1,
+      'Multiplier for energy gained from consuming resources'
+    ));
+
+    section.appendChild(this.createNumberInput(
+      'Predator Avoidance Speed',
+      SimulationConfig.prey.predatorAvoidanceMultiplier,
+      'prey.predatorAvoidanceMultiplier',
+      0.5,
+      3,
+      0.1,
+      'Speed boost factor when fleeing from predators'
+    ));
+
+    section.appendChild(this.createNumberInput(
+      'Predator Detection Boost',
+      SimulationConfig.prey.predatorDetectionMultiplier,
+      'prey.predatorDetectionMultiplier',
+      0.5,
+      3,
+      0.1,
+      'Factor for how much stealth improves predator detection range'
     ));
 
     section.appendChild(this.createNumberInput(
       'Escape Base Chance',
       SimulationConfig.prey.escapeBaseChance,
+      'prey.escapeBaseChance',
       0,
       1,
       0.01,
-      'Base probability of escaping from predators'
+      'Base probability of escaping when caught by a predator'
+    ));
+
+    section.appendChild(this.createNumberInput(
+      'Escape Energy Cost',
+      SimulationConfig.prey.escapeEnergyConsumption,
+      'prey.escapeEnergyConsumption',
+      0,
+      50,
+      1,
+      'Energy cost when attempting to escape from a predator'
     ));
 
     return section;
@@ -508,6 +1095,7 @@ export class SettingsPanel {
     section.appendChild(this.createNumberInput(
       'Learning Rate',
       SimulationConfig.learning.learningRate,
+      'learning.learningRate',
       0.01,
       1,
       0.01,
@@ -517,19 +1105,31 @@ export class SettingsPanel {
     section.appendChild(this.createNumberInput(
       'Maximum Learning Amount',
       SimulationConfig.learning.maxLearningAmount,
-      0,
-      100,
-      1,
-      'Maximum amount of learning possible'
+      'learning.maxLearningAmount',
+      0.01,
+      0.5,
+      0.01,
+      'Maximum trait change possible from a single learning event'
     ));
 
     section.appendChild(this.createNumberInput(
       'Chance Multiplier',
       SimulationConfig.learning.chanceMultiplier,
+      'learning.chanceMultiplier',
       0,
-      5,
-      0.1,
-      'Multiplier for learning probability'
+      1,
+      0.01,
+      'Base probability multiplier for learning'
+    ));
+
+    section.appendChild(this.createNumberInput(
+      'Energy Cost',
+      SimulationConfig.learning.energyCost,
+      'learning.energyCost',
+      0,
+      50,
+      1,
+      'Energy cost for learning from others'
     ));
 
     return section;
@@ -542,40 +1142,168 @@ export class SettingsPanel {
       </svg>
     `);
 
+    // Basic mutation settings
     section.appendChild(this.createNumberInput(
-      'Energy Threshold (Prey)',
-      SimulationConfig.reproduction.energyThreshold.prey,
-      10,
-      200,
-      10,
-      'Minimum energy required for prey reproduction'
-    ));
-
-    section.appendChild(this.createNumberInput(
-      'Energy Threshold (Predator)',
-      SimulationConfig.reproduction.energyThreshold.predator,
-      10,
-      200,
-      10,
-      'Minimum energy required for predator reproduction'
+      'Standard Mutation Range',
+      SimulationConfig.reproduction.mutationRange,
+      'reproduction.mutationRange',
+      0,
+      1,
+      0.01,
+      'Standard mutation range for offspring traits'
     ));
 
     section.appendChild(this.createNumberInput(
       'Mutation Chance',
       SimulationConfig.reproduction.mutationChance,
+      'reproduction.mutationChance',
       0,
       1,
       0.01,
-      'Probability of trait mutation during reproduction'
+      'Probability of a significant mutation occurring'
     ));
 
     section.appendChild(this.createNumberInput(
-      'Mutation Range',
-      SimulationConfig.reproduction.mutationRange,
+      'Significant Mutation Range',
+      SimulationConfig.reproduction.significantMutationRange,
+      'reproduction.significantMutationRange',
+      0,
+      1,
+      0.05,
+      'Range for significant mutations',
+      true
+    ));
+
+    section.appendChild(this.createNumberInput(
+      'Energy Capacity Mutation',
+      SimulationConfig.reproduction.energyCapacityMutationRange,
+      'reproduction.energyCapacityMutationRange',
       0,
       1,
       0.01,
-      'Range of possible mutation changes'
+      'Standard mutation range for max energy',
+      true
+    ));
+
+    section.appendChild(this.createNumberInput(
+      'Significant Energy Mutation',
+      SimulationConfig.reproduction.significantEnergyCapacityMutationRange,
+      'reproduction.significantEnergyCapacityMutationRange',
+      0,
+      1,
+      0.05,
+      'Range for significant max energy mutations',
+      true
+    ));
+
+    // Energy thresholds
+    section.appendChild(this.createNumberInput(
+      'Prey Energy Threshold',
+      SimulationConfig.reproduction.energyThreshold.prey,
+      'reproduction.energyThreshold.prey',
+      0,
+      1,
+      0.05,
+      'Energy percentage threshold for high reproduction chance in prey'
+    ));
+
+    section.appendChild(this.createNumberInput(
+      'Predator Energy Threshold',
+      SimulationConfig.reproduction.energyThreshold.predator,
+      'reproduction.energyThreshold.predator',
+      0,
+      1,
+      0.05,
+      'Energy percentage threshold for high reproduction chance in predators'
+    ));
+
+    // Reproduction probabilities
+    section.appendChild(this.createNumberInput(
+      'Prey High Energy Reproduction',
+      SimulationConfig.reproduction.probability.highEnergy.prey,
+      'reproduction.probability.highEnergy.prey',
+      0,
+      1,
+      0.01,
+      'Probability per update for prey above energy threshold',
+      true
+    ));
+
+    section.appendChild(this.createNumberInput(
+      'Predator High Energy Reproduction',
+      SimulationConfig.reproduction.probability.highEnergy.predator,
+      'reproduction.probability.highEnergy.predator',
+      0,
+      1,
+      0.01,
+      'Probability per update for predators above energy threshold',
+      true
+    ));
+
+    section.appendChild(this.createNumberInput(
+      'Prey Low Energy Reproduction',
+      SimulationConfig.reproduction.probability.lowEnergy.prey,
+      'reproduction.probability.lowEnergy.prey',
+      0,
+      0.05,
+      0.001,
+      'Probability per update for prey with moderate energy',
+      true
+    ));
+
+    section.appendChild(this.createNumberInput(
+      'Predator Low Energy Reproduction',
+      SimulationConfig.reproduction.probability.lowEnergy.predator,
+      'reproduction.probability.lowEnergy.predator',
+      0,
+      0.05,
+      0.001,
+      'Probability per update for predators with moderate energy',
+      true
+    ));
+
+    // Cooldown periods
+    section.appendChild(this.createNumberInput(
+      'Prey Reproduction Cooldown',
+      SimulationConfig.reproduction.cooldown.prey,
+      'reproduction.cooldown.prey',
+      1,
+      30,
+      1,
+      'Days until prey can reproduce again at full probability'
+    ));
+
+    section.appendChild(this.createNumberInput(
+      'Predator Reproduction Cooldown',
+      SimulationConfig.reproduction.cooldown.predator,
+      'reproduction.cooldown.predator',
+      1,
+      30,
+      1,
+      'Days until predators can reproduce again at full probability'
+    ));
+
+    // Juvenile settings
+    section.appendChild(this.createNumberInput(
+      'Juvenile Maturity',
+      SimulationConfig.reproduction.juvenileMaturity,
+      'reproduction.juvenileMaturity',
+      0,
+      1,
+      0.05,
+      'Proportion of lifespan before creature can reproduce',
+      true
+    ));
+
+    section.appendChild(this.createNumberInput(
+      'Juvenile Reproduction Probability',
+      SimulationConfig.reproduction.juvenileReproductionProbability,
+      'reproduction.juvenileReproductionProbability',
+      0,
+      0.1,
+      0.01,
+      'Low probability for juvenile reproduction if it occurs',
+      true
     ));
 
     return section;
@@ -588,23 +1316,37 @@ export class SettingsPanel {
       </svg>
     `);
 
-    section.appendChild(this.createNumberInput(
-      'Prey Energy Threshold',
-      SimulationConfig.starvation.prey.thresholds[0].energyPercent,
-      0,
-      100,
-      5,
-      'Energy percentage at which prey start starving'
-    ));
+    // Prey starvation thresholds
+    for (let i = 0; i < SimulationConfig.starvation.prey.thresholds.length; i++) {
+      const threshold = SimulationConfig.starvation.prey.thresholds[i];
+      
+      section.appendChild(this.createNumberInput(
+        `Prey Energy ${threshold.energyPercent * 100}%`,
+        threshold.probability,
+        `starvation.prey.thresholds.${i}.probability`,
+        0,
+        0.1,
+        0.0001,
+        `Death probability per update at ${threshold.energyPercent * 100}% energy for prey`,
+        i > 2 // Only first 3 thresholds are basic, rest are advanced
+      ));
+    }
 
-    section.appendChild(this.createNumberInput(
-      'Predator Energy Threshold',
-      SimulationConfig.starvation.predator.thresholds[0].energyPercent,
-      0,
-      100,
-      5,
-      'Energy percentage at which predators start starving'
-    ));
+    // Predator starvation thresholds
+    for (let i = 0; i < SimulationConfig.starvation.predator.thresholds.length; i++) {
+      const threshold = SimulationConfig.starvation.predator.thresholds[i];
+      
+      section.appendChild(this.createNumberInput(
+        `Predator Energy ${threshold.energyPercent * 100}%`,
+        threshold.probability,
+        `starvation.predator.thresholds.${i}.probability`,
+        0,
+        0.5,
+        0.001,
+        `Death probability per update at ${threshold.energyPercent * 100}% energy for predators`,
+        i > 2 // Only first 3 thresholds are basic, rest are advanced
+      ));
+    }
 
     return section;
   }
@@ -616,27 +1358,77 @@ export class SettingsPanel {
       </svg>
     `);
 
+    // Resource clustering
     section.appendChild(this.createNumberInput(
       'Resource Clusters',
       SimulationConfig.clusteredSpawning.resources.clusterCount,
+      'clusteredSpawning.resources.clusterCount',
       1,
       20,
       1,
-      'Number of resource clusters'
+      'Number of resource clusters to create during initial spawning'
+    ));
+
+    // Prey clustering
+    section.appendChild(this.createNumberInput(
+      'Minimum Prey Clusters',
+      SimulationConfig.clusteredSpawning.prey.minClusters,
+      'clusteredSpawning.prey.minClusters',
+      1,
+      10,
+      1,
+      'Minimum number of prey clusters to create during initial spawning',
+      true
+    ));
+
+    section.appendChild(this.createNumberInput(
+      'Maximum Prey Clusters',
+      SimulationConfig.clusteredSpawning.prey.maxClusters,
+      'clusteredSpawning.prey.maxClusters',
+      1,
+      10,
+      1,
+      'Maximum number of prey clusters to create during initial spawning',
+      true
     ));
 
     section.appendChild(this.createNumberInput(
       'Prey Cluster Radius',
       SimulationConfig.clusteredSpawning.prey.radius,
+      'clusteredSpawning.prey.radius',
       10,
       200,
       10,
       'Radius of prey spawn clusters'
     ));
 
+    // Predator clustering
+    section.appendChild(this.createNumberInput(
+      'Minimum Predator Clusters',
+      SimulationConfig.clusteredSpawning.predator.minClusters,
+      'clusteredSpawning.predator.minClusters',
+      1,
+      5,
+      1,
+      'Minimum number of predator clusters to create during initial spawning',
+      true
+    ));
+
+    section.appendChild(this.createNumberInput(
+      'Maximum Predator Clusters',
+      SimulationConfig.clusteredSpawning.predator.maxClusters,
+      'clusteredSpawning.predator.maxClusters',
+      1,
+      5,
+      1,
+      'Maximum number of predator clusters to create during initial spawning',
+      true
+    ));
+
     section.appendChild(this.createNumberInput(
       'Predator Cluster Radius',
       SimulationConfig.clusteredSpawning.predator.radius,
+      'clusteredSpawning.predator.radius',
       10,
       200,
       10,
@@ -653,37 +1445,221 @@ export class SettingsPanel {
       </svg>
     `);
 
+    // Enable/disable species conversion
+    section.appendChild(this.createCheckboxInput(
+      'Enable Species Conversion',
+      SimulationConfig.speciesConversion.enabled,
+      'speciesConversion.enabled',
+      'Master toggle for species conversion feature'
+    ));
+
+    // Contact tracking parameters
     section.appendChild(this.createNumberInput(
       'Contact Window',
       SimulationConfig.speciesConversion.contactTracking.frameWindow,
+      'speciesConversion.contactTracking.frameWindow',
       10,
       1000,
       10,
-      'Time window for tracking species interactions'
+      'Number of frames to analyze for contact history'
     ));
 
     section.appendChild(this.createNumberInput(
       'Required Same-Species Contacts',
       SimulationConfig.speciesConversion.contactTracking.sameSpeciesContactRequired,
+      'speciesConversion.contactTracking.sameSpeciesContactRequired',
       1,
-      50,
-      1,
-      'Number of same-species contacts required for conversion'
+      1000,
+      10,
+      'Minimum same-species contacts needed in window'
+    ));
+
+    section.appendChild(this.createCheckboxInput(
+      'Reset on Opposite Contact',
+      SimulationConfig.speciesConversion.contactTracking.resetOnOppositeContact,
+      'speciesConversion.contactTracking.resetOnOppositeContact',
+      'Whether to reset contact counter when meeting opposite species',
+      true
+    ));
+
+    section.appendChild(this.createNumberInput(
+      'Contact Memory Duration',
+      SimulationConfig.speciesConversion.contactTracking.contactMemoryDuration,
+      'speciesConversion.contactTracking.contactMemoryDuration',
+      100,
+      2000,
+      100,
+      'Maximum frames to remember contact history',
+      true
     ));
 
     section.appendChild(this.createNumberInput(
       'Isolation Threshold',
       SimulationConfig.speciesConversion.contactTracking.isolationThreshold,
-      0,
+      'speciesConversion.contactTracking.isolationThreshold',
       100,
-      1,
-      'Contact threshold for considering a creature isolated'
+      1000,
+      50,
+      'Frames without opposite species contact to consider isolated'
+    ));
+
+    // Conversion probability
+    section.appendChild(this.createNumberInput(
+      'Base Conversion Probability',
+      SimulationConfig.speciesConversion.baseProbability,
+      'speciesConversion.baseProbability',
+      0,
+      0.5,
+      0.01,
+      'Base probability for conversion check per eligible creature'
+    ));
+
+    // Population conditions
+    section.appendChild(this.createCheckboxInput(
+      'Enable Population Conditions',
+      SimulationConfig.speciesConversion.populationConditions.enabled,
+      'speciesConversion.populationConditions.enabled',
+      'Whether to enable population-based conversion triggers',
+      true
+    ));
+
+    section.appendChild(this.createNumberInput(
+      'Cooldown Period',
+      SimulationConfig.speciesConversion.evolutionCooldown,
+      'speciesConversion.evolutionCooldown',
+      10,
+      2000,
+      50,
+      'Frames before converted creature is eligible for conversion again',
+      true
     ));
 
     return section;
   }
 
+  private updateAdvancedVisibility(): void {
+    const advancedElements = document.querySelectorAll('.advanced-setting');
+    advancedElements.forEach((element) => {
+      (element as HTMLElement).style.display = this.showAdvanced ? 'block' : 'none';
+      
+      // Special handling for flex items
+      if ((element as HTMLElement).style.display === 'flex') {
+        (element as HTMLElement).style.display = this.showAdvanced ? 'flex' : 'none';
+      }
+    });
+  }
+
+  private restoreDefaults(): void {
+    // Deep copy the default config
+    this.currentConfig = JSON.parse(JSON.stringify(this.defaultConfig));
+    
+    // Update all input elements with default values
+    const inputs = this.panel.querySelectorAll('input');
+    inputs.forEach((input) => {
+      const configPath = input.dataset.configPath;
+      if (configPath) {
+        const value = this.getConfigValue(this.defaultConfig, configPath);
+        if (input.type === 'checkbox') {
+          (input as HTMLInputElement).checked = value as boolean;
+        } else {
+          input.value = value.toString();
+        }
+      }
+    });
+  }
+
+  private getConfigValue(config: any, path: string): any {
+    const parts = path.split('.');
+    let result = config;
+    
+    for (const part of parts) {
+      if (part.includes('[')) {
+        // Handle array paths (e.g., "starvation.prey.thresholds.0.probability")
+        const arrayName = part.split('[')[0];
+        const index = parseInt(part.split('[')[1].split(']')[0]);
+        result = result[arrayName][index];
+      } else {
+        result = result[part];
+      }
+      
+      if (result === undefined) {
+        console.error(`Path ${path} not found in config`);
+        return null;
+      }
+    }
+    
+    return result;
+  }
+
+  private setConfigValue(path: string, value: any): void {
+    if (!this.currentConfig) {
+      // Initialize with current config if empty
+      this.currentConfig = JSON.parse(JSON.stringify(SimulationConfig));
+    }
+    
+    const parts = path.split('.');
+    let current = this.currentConfig;
+    
+    // Navigate to the correct nested object
+    for (let i = 0; i < parts.length - 1; i++) {
+      const part = parts[i];
+      
+      if (part.includes('[')) {
+        // Handle array paths
+        const arrayName = part.split('[')[0];
+        const index = parseInt(part.split('[')[1].split(']')[0]);
+        
+        if (!current[arrayName]) {
+          current[arrayName] = [];
+        }
+        
+        if (!current[arrayName][index]) {
+          current[arrayName][index] = {};
+        }
+        
+        current = current[arrayName][index];
+      } else {
+        if (!current[part]) {
+          current[part] = {};
+        }
+        current = current[part];
+      }
+    }
+    
+    // Set the value on the final property
+    const lastPart = parts[parts.length - 1];
+    if (lastPart.includes('[')) {
+      const arrayName = lastPart.split('[')[0];
+      const index = parseInt(lastPart.split('[')[1].split(']')[0]);
+      
+      if (!current[arrayName]) {
+        current[arrayName] = [];
+      }
+      
+      current[arrayName][index] = value;
+    } else {
+      current[lastPart] = value;
+    }
+  }
+
   show(): void {
+    // Initialize current config from SimulationConfig
+    this.currentConfig = JSON.parse(JSON.stringify(SimulationConfig));
+    
+    // Update UI inputs with current config values
+    const inputs = this.panel.querySelectorAll('input');
+    inputs.forEach((input) => {
+      const configPath = input.dataset.configPath;
+      if (configPath) {
+        const value = this.getConfigValue(SimulationConfig, configPath);
+        if (input.type === 'checkbox') {
+          (input as HTMLInputElement).checked = value as boolean;
+        } else {
+          input.value = value.toString();
+        }
+      }
+    });
+    
     if (this.panel instanceof HTMLElement) {
       this.panel.style.display = 'block';
       const overlay = this.panel.previousElementSibling;
@@ -710,10 +1686,10 @@ export class SettingsPanel {
   }
 
   private saveSettings(): void {
-    // TODO: Gather all input values and create updated config
     if (this.onSaveCallback) {
-      // this.onSaveCallback(updatedConfig);
+      // Apply changes from currentConfig
+      this.onSaveCallback(this.currentConfig);
     }
     this.hide();
   }
-} 
+}
