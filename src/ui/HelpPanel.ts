@@ -48,7 +48,7 @@ export class HelpPanel {
     closeButton.addEventListener('click', () => this.hide());
     this.panel.appendChild(closeButton);
 
-    // Add title with icons
+    // Add title section
     const titleSection = document.createElement('div');
     titleSection.style.cssText = `
       text-align: center;
@@ -56,57 +56,17 @@ export class HelpPanel {
       padding-top: 10px;
     `;
 
-    const titleIcons = document.createElement('div');
-    titleIcons.style.cssText = `
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 15px;
-      margin-bottom: 15px;
+    // Add logo
+    const logo = document.createElement('img');
+    logo.src = '/assets/logo-nobg.png';
+    logo.alt = 'Preylife Logo';
+    logo.style.cssText = `
+      width: 300px;
+      height: auto;
+      margin-bottom: 20px;
     `;
 
-    // Add entity icons
-    const icons = [
-      { shape: 'circle', color: '#5588ff', size: 24 },
-      { shape: 'pentagon', color: '#ff5555', size: 28 },
-      { shape: 'square', color: '#55cc55', size: 20 }
-    ];
-
-    icons.forEach(icon => {
-      const iconContainer = document.createElement('div');
-      if (icon.shape === 'pentagon') {
-        iconContainer.innerHTML = `
-          <svg width="${icon.size}" height="${icon.size}" viewBox="0 0 24 24" fill="${icon.color}">
-            <path d="M12 2 L22 9 L19 20 L5 20 L2 9 Z"/>
-          </svg>
-        `;
-      } else if (icon.shape === 'circle') {
-        iconContainer.innerHTML = `
-          <svg width="${icon.size}" height="${icon.size}" viewBox="0 0 24 24" fill="${icon.color}">
-            <circle cx="12" cy="12" r="10"/>
-          </svg>
-        `;
-      } else {
-        iconContainer.innerHTML = `
-          <svg width="${icon.size}" height="${icon.size}" viewBox="0 0 24 24" fill="${icon.color}">
-            <rect x="2" y="2" width="20" height="20"/>
-          </svg>
-        `;
-      }
-      titleIcons.appendChild(iconContainer);
-    });
-
-    const title = document.createElement('h1');
-    title.textContent = 'Preylife: Evolutionary Ecosystem';
-    title.style.cssText = `
-      margin: 0;
-      font-size: 32px;
-      font-weight: bold;
-      color: #fff;
-    `;
-
-    titleSection.appendChild(titleIcons);
-    titleSection.appendChild(title);
+    titleSection.appendChild(logo);
     this.panel.appendChild(titleSection);
 
     // Create content sections

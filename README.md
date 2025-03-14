@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="assets/logo.png" alt="Preylife Logo" width="600">
+</div>
+
 # 🌿 Preylife
 
 An evolutionary ecosystem simulation where complex behaviors emerge from simple rules.
@@ -17,6 +21,11 @@ For detailed information about the simulation, check out our [comprehensive guid
 - 📊 Population monitoring
 - 🎨 Beautiful visual feedback
 - ⚙️ Customizable parameters
+
+<div align="center">
+  <img src="assets/screenshot.png" alt="Preylife gameplay" width="600">
+</div>
+
 
 ## 🚀 Getting Started
 
