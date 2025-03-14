@@ -570,6 +570,69 @@ Capped_Escape_Chance = min(0.75, max(0.15, Escape_Chance))
 - Maintains ecosystem diversity by preventing evolutionary convergence
 - More realistic modeling of adaptation and specialization in nature
 
+### Species Conversion Evolutionary Mechanism
+
+The ecosystem now features a revolutionary evolutionary mechanism that allows creatures to evolve into a different species under specific conditions, introducing a natural recovery system from extinction events:
+
+#### Core Concept
+In extremely rare circumstances, a single creature with exceptional traits isolated from the opposite type may undergo an extraordinary evolutionary leap:
+- Prey with exceptionally high strength/stealth might evolve into a predator
+- Predators with exceptionally low strength/stealth might evolve into prey
+
+This mechanism is designed as a natural "extinction failsafe" that operates on evolutionary principles rather than artificial respawning.
+
+#### The Three Preconditions
+For a creature to even be considered for species conversion, ALL THREE preconditions must be met:
+
+1. **Isolation from Opposite Type**: The creature must not have contacted the opposite type for an extended period (30+ seconds)
+2. **Prolonged Same-Species Contact**: The creature must have maintained extended contact with same-species individuals (10+ seconds)
+3. **Extreme Trait Specialization**:
+   - Prey must have exceptionally high attributes (avg > 0.85) to become predators
+   - Predators must have exceptionally low attributes (avg < 0.25) to become prey
+
+#### The Lottery Trigger
+When ALL preconditions are met, the creature enters an extremely low-probability "lottery":
+- Base probability is just 0.01% per update (1 in 10,000)
+- Maximum probability is capped at 0.5% (1 in 200) even with extreme traits
+- For truly exceptional traits (>0.9 or <0.1), probability is multiplied by 100x
+- Only 1 conversion maximum can occur in a single update
+
+#### Additional Limitations
+- Only activates when one species falls below 5% of total population (critical extinction risk)
+- Deactivates when population recovers to 15% of total population
+- 60-second cooldown period for newly converted creatures
+- Creature undergoes a 3-second visual transformation effect
+
+#### Probability Calculation Example
+```
+// Start with extremely low base probability
+baseProbability = 0.0001 (0.01%)
+
+// For prey with strength 0.95 (exceptional)
+extremeTraitMultiplier = 100
+adjustedProbability = 0.0001 * 100 = 0.01 (1%)
+
+// Apply trait influence (small further adjustments)
+traitInfluence = (0.95 * 0.2) = 0.19
+probability = 0.01 + 0.0019 = 0.0119 (1.19%)
+
+// Cap at maximum allowed probability
+finalProbability = min(0.0119, 0.005) = 0.005 (0.5%)
+```
+
+#### Visual Effects
+- **Prey → Predator**: Pulsating red glow and size increase during transformation
+- **Predator → Prey**: Pulsating blue glow and size increase during transformation
+- **Duration**: Transformation visual effects last for 2 seconds
+
+#### Ecological Significance
+- Creates natural extinction recovery mechanism through evolutionary principles
+- Avoids artificial "respawn" mechanics while maintaining ecosystem balance
+- Rewards specialized individuals with ecological niche transitions
+- Increases unpredictability and emergent behavior in the ecosystem
+- Models real-world evolutionary transitions (herbivores → carnivores and vice versa)
+- Allows continuous simulation without manual intervention, even after extinction events
+
 #### Balance Adjustments for Predator-Prey Dynamics
 To maintain ecosystem balance while preventing predator extinction, several key parameters have been adjusted:
 
