@@ -2,8 +2,12 @@ import { SimulationConfig } from '../config';
 
 export class SettingsPanel {
   private panel: HTMLElement;
-  private isVisible: boolean = false;
+  private _isVisible: boolean = false;
   private onSaveCallback: ((config: typeof SimulationConfig) => void) | null = null;
+  
+  get isVisible(): boolean {
+    return this._isVisible;
+  }
 
   constructor(container: HTMLElement) {
     // Create the panel container
@@ -687,7 +691,7 @@ export class SettingsPanel {
         overlay.style.display = 'block';
       }
     }
-    this.isVisible = true;
+    this._isVisible = true;
   }
 
   hide(): void {
@@ -698,7 +702,7 @@ export class SettingsPanel {
         overlay.style.display = 'none';
       }
     }
-    this.isVisible = false;
+    this._isVisible = false;
   }
 
   onSave(callback: (config: typeof SimulationConfig) => void): void {

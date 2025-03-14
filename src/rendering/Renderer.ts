@@ -17,7 +17,7 @@ export class Renderer {
   private hoveredEntity: Entity | null = null;
   
   constructor(
-    private container: HTMLElement,
+    container: HTMLElement,
     private width: number = window.innerWidth,
     private height: number = window.innerHeight,
     private simulation: SimulationEngine
