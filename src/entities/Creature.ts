@@ -31,8 +31,8 @@ export abstract class Creature extends Entity {
     attributes: GeneticAttributes
   ) {
     super(type, x, y);
-    this.energy = energy * 0.5; // Start with 50% of max energy
     this.maxEnergy = energy;
+    this.energy = energy * 0.5; // Start with 50% of max energy
     this.attributes = attributes;
     
     // Set initial velocity with random direction
@@ -124,7 +124,10 @@ export abstract class Creature extends Entity {
     // Check if energy level has dropped to starvation threshold levels
     // Apply random chance of death based on thresholds in config
     
-    const thresholds = SimulationConfig.starvation.thresholds;
+    // Get the appropriate thresholds based on creature type
+    const thresholds = this.type === EntityType.PREY 
+      ? SimulationConfig.starvation.prey.thresholds 
+      : SimulationConfig.starvation.predator.thresholds;
     
     // Check against each threshold from lowest energy to highest
     for (const threshold of thresholds) {
@@ -179,6 +182,21 @@ export abstract class Creature extends Entity {
     
     // Calculate energy ratio
     const energyRatio = this.energy / this.maxEnergy;
+    
+    // Get threshold for lottery-like probabilities
+    // (We're reusing the isPreyType variable defined above)
+      
+    // Apply lottery-like odds for critically low energy
+    if (energyRatio < 0.1) {
+      // Critically low energy (below 10%) - near-zero chance
+      return Math.random() < 0.00001; // 0.001% chance (1 in 100,000)
+    } 
+    else if (energyRatio < 0.2) {
+      // Very low energy (10-20%) - extremely rare
+      return Math.random() < 0.0001; // 0.01% chance (1 in 10,000)
+    }
+    // For energy between 20% and the threshold, we'll continue with the
+    // normal probability calculation below (using config's lowEnergy values)
     
     // Base reproduction probability
     let reproductionProbability;

@@ -9,18 +9,27 @@ export const SimulationConfig = {
   // Initial population
   initialPopulation: {
     resources: 250,
-    prey: 60,
-    predators: 15
+    prey: 150,
+    predators: 30
   },
   
   // Resource settings
   resources: {
-    defaultEnergy: 15,
+    defaultEnergy: 12,
     regenerationChance: 0.02, // % chance each frame
     emergencyRegenerationThreshold: 0.2, // % of initial prey
     emergencyRegenerationChance: 0.05, // % chance each frame
     emergencyEnergyBonus: 1.5, // multiplier for emergency resources
     decayChance: 0.1, // % chance of resources decaying when no prey
+    
+    // Resource limitation settings
+    limits: {
+      maxCount: 2000,           // Maximum number of resources allowed in the simulation
+      enableDecay: true,        // Whether resources decay naturally over time
+      decayLifespan: 30,        // Lifespan of resources in days before they start decaying
+      decayChancePerFrame: 0.005, // Chance per frame that an old resource will decay
+      enforcementThreshold: 0.9, // When resource count reaches 90% of maxCount, start enforcing limits
+    },
     
     // Seasonal bloom settings
     bloom: {
@@ -48,7 +57,7 @@ export const SimulationConfig = {
     
     // Energy consumption multipliers by type
     energyConsumption: {
-      predator: 2.5,
+      predator: 2.25,
       prey: 0.7
     },
     
@@ -64,11 +73,11 @@ export const SimulationConfig = {
   
   // Predator settings
   predator: {
-    maxEnergy: 420,
+    maxEnergy: 560,
     defaultAttributes: {
       strength: 0.5,
       stealth: 0.4,
-      learnability: 0.3,
+      learnability: 0.1,
       longevity: 0.5
     },
     captureChance: {
@@ -77,20 +86,20 @@ export const SimulationConfig = {
       minChance: 0.1,
       maxChance: 0.5
     },
-    energyGainFromPrey: 0.7, // % of prey's energy gained
+    energyGainFromPrey: 0.75, // % of prey's energy gained
   },
   
   // Prey settings
   prey: {
-    maxEnergy: 200,
+    maxEnergy: 175,
     defaultAttributes: {
       strength: 0.5,
       stealth: 0.5,
-      learnability: 0.3,
+      learnability: 0.05,
       longevity: 0.5
     },
     resourceEnergyBonus: 1.2, // multiplier for energy from resources
-    predatorAvoidanceMultiplier: 1.15, // Speed boost when fleeing from predators
+    predatorAvoidanceMultiplier: 1.1, // Speed boost when fleeing from predators
     predatorDetectionMultiplier: 1.1, // How much stealth improves predator detection
   },
   
@@ -113,21 +122,21 @@ export const SimulationConfig = {
     // Probabilistic reproduction parameters
     energyThreshold: {
       prey: 0.8,    // 80% energy threshold for high reproduction probability
-      predator: 0.7 // 70% energy threshold for high reproduction probability
+      predator: 0.75 // 70% energy threshold for high reproduction probability
     },
     probability: {
       highEnergy: {  // When energy is above threshold
         prey: 0.2,   // 20% chance per update when above threshold
         predator: 0.3 // 30% chance per update when above threshold
       },
-      lowEnergy: {   // When energy is below threshold
-        prey: 0.03,   // 3% chance per update when below threshold
-        predator: 0.05 // 5% chance per update when below threshold
+      lowEnergy: {   // When energy is below threshold but above 20%
+        prey: 0.001,   // 0.1% chance per update when between 20% and threshold
+        predator: 0.002 // 0.1% chance per update when between 20% and threshold
       }
     },
     cooldown: {
       prey: 7,      // 7 days until full reproduction probability is restored
-      predator: 3    // 3 days until full reproduction probability is restored
+      predator: 3    // 6 days until full reproduction probability is restored
     },
     juvenileMaturity: 0.15, // Percentage of lifespan before creature is mature enough to reproduce
     juvenileReproductionProbability: 0.01 // Very low probability for juveniles to reproduce
@@ -135,15 +144,32 @@ export const SimulationConfig = {
   
   // Starvation settings
   starvation: {
-    // Starvation probability thresholds (energy % : probability of death per update)
-    thresholds: [
-      { energyPercent: 0.5, probability: 0.0001 }, // 50% energy: 0.01% chance per update
-      { energyPercent: 0.4, probability: 0.0001 }, // 40% energy: 0.01% chance per update
-      { energyPercent: 0.3, probability: 0.002 }, // 30% energy: 0.2% chance per update
-      { energyPercent: 0.2, probability: 0.015 },  // 20% energy: 1.5% chance per update
-      { energyPercent: 0.1, probability: 0.025 },  // 10% energy: 2.5% chance per update
-      { energyPercent: 0.05, probability: 0.15 }   // 5% energy: 15% chance per update
-    ]
+    // Separate starvation thresholds for prey and predators
+    prey: {
+      // Prey starvation probability thresholds (energy % : probability of death per update)
+      // Prey are more resilient to starvation (lower probabilities)
+      thresholds: [
+        { energyPercent: 0.5, probability: 0.0001 }, // 50% energy: 0.01% chance per update
+        { energyPercent: 0.4, probability: 0.0001 }, // 40% energy: 0.01% chance per update
+        { energyPercent: 0.3, probability: 0.001 },  // 30% energy: 0.1% chance per update
+        { energyPercent: 0.2, probability: 0.005 },   // 20% energy: 1% chance per update
+        { energyPercent: 0.1, probability: 0.02 },   // 10% energy: 2% chance per update
+        { energyPercent: 0.05, probability: 0.01 }    // 5% energy: 10% chance per update
+      ]
+    },
+    
+    predator: {
+      // Predator starvation probability thresholds (energy % : probability of death per update)
+      // Predators are more vulnerable to starvation (higher probabilities)
+      thresholds: [
+        { energyPercent: 0.5, probability: 0.001 }, // 50% energy: 0.1% chance per update
+        { energyPercent: 0.4, probability: 0.002 },  // 40% energy: 0.2% chance per update
+        { energyPercent: 0.3, probability: 0.005 },  // 30% energy: 0.5% chance per update
+        { energyPercent: 0.2, probability: 0.02 },   // 20% energy: 2% chance per update
+        { energyPercent: 0.1, probability: 0.08 },   // 10% energy: 8% chance per update
+        { energyPercent: 0.05, probability: 0.25 }    // 5% energy: 25% chance per update
+      ]
+    }
   },
   
   // Clustered spawning settings

@@ -300,16 +300,33 @@ export class SimulationEngine {
   
   // Method to spawn resources
   spawnResources(count: number = 20): void {
-    for (let i = 0; i < count; i++) {
+    // Check resource cap before spawning
+    const maxResources = SimulationConfig.resources.limits.maxCount;
+    const enforcementThreshold = maxResources * SimulationConfig.resources.limits.enforcementThreshold;
+    
+    // Determine how many resources we can safely add
+    const availableSpace = Math.max(0, enforcementThreshold - this.resources.length);
+    const actualCount = Math.min(count, availableSpace);
+    
+    // Spawn resources up to the limit
+    for (let i = 0; i < actualCount; i++) {
       const x = Math.random() * this.environmentWidth - this.environmentWidth/2;
       const y = Math.random() * this.environmentHeight - this.environmentHeight/2;
-      this.resources.push(new Resource(x, y));
+      
+      const resource = new Resource(x, y);
+      resource.creationTime = this.days; // Set creation timestamp
+      this.resources.push(resource);
     }
     
     // Update total spawned count
-    this.totalSpawned.resources += count;
+    this.totalSpawned.resources += actualCount;
     
-    console.log(`Spawned ${count} new resources. Total resources: ${this.resources.length}`);
+    console.log(`Spawned ${actualCount} new resources. Total resources: ${this.resources.length}`);
+    
+    // Alert if we hit the resource cap
+    if (actualCount < count) {
+      console.log(`Resource cap prevented spawning ${count - actualCount} resources. Current limit: ${maxResources}`);
+    }
   }
   
   initialize(): void {
@@ -334,25 +351,37 @@ export class SimulationEngine {
     const resourceClusterCount = 4;
     const resourcesPerCluster = Math.floor(this.initialResourceCount / resourceClusterCount);
     
+    // Respect the resource cap even during initialization
+    const maxResources = SimulationConfig.resources.limits.maxCount;
+    const actualInitialCount = Math.min(this.initialResourceCount, maxResources);
+    
     for (let cluster = 0; cluster < resourceClusterCount; cluster++) {
       const centerX = Math.random() * this.environmentWidth - this.environmentWidth/2;
       const centerY = Math.random() * this.environmentHeight - this.environmentHeight/2;
       
       for (let i = 0; i < resourcesPerCluster; i++) {
+        if (this.resources.length >= actualInitialCount) break;
+        
         const radius = Math.random() * 100;
         const angle = Math.random() * Math.PI * 2;
         const x = centerX + Math.cos(angle) * radius;
         const y = centerY + Math.sin(angle) * radius;
-        this.resources.push(new Resource(x, y));
+        
+        const resource = new Resource(x, y);
+        resource.creationTime = this.days; // Initial resources created at day 0
+        this.resources.push(resource);
       }
     }
     
-    // Add remaining resources randomly
-    const remainingResources = this.initialResourceCount - (resourceClusterCount * resourcesPerCluster);
-    for (let i = 0; i < remainingResources; i++) {
+    // Add remaining resources randomly up to the cap
+    const remainingCount = actualInitialCount - this.resources.length;
+    for (let i = 0; i < remainingCount; i++) {
       const x = Math.random() * this.environmentWidth - this.environmentWidth/2;
       const y = Math.random() * this.environmentHeight - this.environmentHeight/2;
-      this.resources.push(new Resource(x, y));
+      
+      const resource = new Resource(x, y);
+      resource.creationTime = this.days; // Initial resources created at day 0
+      this.resources.push(resource);
     }
     
     // Update resources spawned count
@@ -440,11 +469,40 @@ export class SimulationEngine {
   update(deltaTime: number): void {
     if (!this.isRunning) return;
     
-    // Update all prey - now passing predator information so prey can avoid them
-    this.prey.forEach(prey => prey.update(deltaTime, this.resources, this.predators));
-    
-    // Update all predators
-    this.predators.forEach(predator => predator.update(deltaTime, this.prey));
+    try {
+      // Update all prey - passing predator information and other nearby prey
+      this.prey.forEach(prey => {
+        try {
+          // Find nearby prey for this individual (for anti-clumping)
+          const nearbyPrey = this.prey.filter(otherPrey => 
+            otherPrey !== prey && 
+            prey.position.distanceTo(otherPrey.position) < 50 // Consider prey within 50 units
+          );
+          
+          // Update prey with all relevant context
+          prey.update(deltaTime, this.resources, this.predators, nearbyPrey);
+        } catch (error) {
+          console.error("Error updating prey:", error);
+        }
+      });
+      
+      // Update all predators
+      this.predators.forEach(predator => {
+        try {
+          // Find nearby predators for anti-clumping
+          const nearbyPredators = this.predators.filter(otherPredator => 
+            otherPredator !== predator && 
+            predator.position.distanceTo(otherPredator.position) < 50
+          );
+          
+          predator.update(deltaTime, this.prey, nearbyPredators);
+        } catch (error) {
+          console.error("Error updating predator:", error);
+        }
+      });
+    } catch (error) {
+      console.error("Error in simulation update:", error);
+    }
     
     // Handle resource consumption
     this.handleResourceConsumption();
@@ -485,50 +543,77 @@ export class SimulationEngine {
       
       console.log(`=== Day ${this.days}: MAJOR SEASONAL RESOURCE BLOOM ===`);
       
-      // Spawn resource clusters based on config
-      const clusterCount = SimulationConfig.resources.bloom.clusterCount;
-      const resourcesPerCluster = Math.floor(this.seasonResourceSpawnAmount / clusterCount);
+      // Check resource cap before spawning
+      const maxResources = SimulationConfig.resources.limits.maxCount;
+      const enforcementThreshold = maxResources * SimulationConfig.resources.limits.enforcementThreshold;
+      const availableSpace = Math.max(0, enforcementThreshold - this.resources.length);
       
-      // Create dense resource clusters in random locations
-      for (let cluster = 0; cluster < clusterCount; cluster++) {
-        // Choose a random location for the cluster
-        const centerX = Math.random() * this.environmentWidth - this.environmentWidth/2;
-        const centerY = Math.random() * this.environmentHeight - this.environmentHeight/2;
-        
-        // Create a primary dense cluster at the center
-        const primaryClusterSize = Math.floor(resourcesPerCluster * SimulationConfig.resources.bloom.primaryDensity);
-        for (let i = 0; i < primaryClusterSize; i++) {
-          // Very tight clustering for primary resources
-          const radius = Math.random() * SimulationConfig.resources.bloom.primaryClusterRadius;
-          const angle = Math.random() * Math.PI * 2;
-          const x = centerX + Math.cos(angle) * radius;
-          const y = centerY + Math.sin(angle) * radius;
-          
-          // Seasonal resources have much more energy during these major blooms
-          this.resources.push(new Resource(x, y, Resource.DEFAULT_ENERGY * SimulationConfig.resources.bloom.primaryEnergyMultiplier));
-        }
-        
-        // Create a secondary sparse cluster surrounding the primary cluster
-        const secondaryClusterSize = resourcesPerCluster - primaryClusterSize;
-        for (let i = 0; i < secondaryClusterSize; i++) {
-          // Wider spread for secondary resources
-          const radius = SimulationConfig.resources.bloom.primaryClusterRadius + 
-                        (Math.random() * (SimulationConfig.resources.bloom.secondaryClusterRadius - 
-                                         SimulationConfig.resources.bloom.primaryClusterRadius));
-          const angle = Math.random() * Math.PI * 2;
-          const x = centerX + Math.cos(angle) * radius;
-          const y = centerY + Math.sin(angle) * radius;
-          
-          // Secondary resources have less energy than primary but still more than normal
-          this.resources.push(new Resource(x, y, Resource.DEFAULT_ENERGY * SimulationConfig.resources.bloom.secondaryEnergyMultiplier));
-        }
+      // Calculate how many resources to spawn based on available space
+      const desiredAmount = this.seasonResourceSpawnAmount;
+      const actualAmount = Math.min(desiredAmount, availableSpace);
+      const resourcesSpawned = Math.max(0, actualAmount);
+      
+      if (resourcesSpawned < desiredAmount) {
+        console.log(`Resource cap limited bloom to ${resourcesSpawned} resources instead of ${desiredAmount}`);
       }
       
-      // Update total spawned resources count
-      this.totalSpawned.resources += this.seasonResourceSpawnAmount;
+      if (resourcesSpawned > 0) {
+        // Spawn resource clusters based on config
+        const clusterCount = SimulationConfig.resources.bloom.clusterCount;
+        const resourcesPerCluster = Math.floor(resourcesSpawned / clusterCount);
+        
+        // Create dense resource clusters in random locations
+        for (let cluster = 0; cluster < clusterCount; cluster++) {
+          // Choose a random location for the cluster
+          const centerX = Math.random() * this.environmentWidth - this.environmentWidth/2;
+          const centerY = Math.random() * this.environmentHeight - this.environmentHeight/2;
+          
+          // Create a primary dense cluster at the center
+          const primaryClusterSize = Math.floor(resourcesPerCluster * SimulationConfig.resources.bloom.primaryDensity);
+          for (let i = 0; i < primaryClusterSize; i++) {
+            // Break if we've reached the resource cap
+            if (this.resources.length >= enforcementThreshold) break;
+            
+            // Very tight clustering for primary resources
+            const radius = Math.random() * SimulationConfig.resources.bloom.primaryClusterRadius;
+            const angle = Math.random() * Math.PI * 2;
+            const x = centerX + Math.cos(angle) * radius;
+            const y = centerY + Math.sin(angle) * radius;
+            
+            // Seasonal resources have much more energy during these major blooms
+            const resource = new Resource(x, y, Resource.DEFAULT_ENERGY * SimulationConfig.resources.bloom.primaryEnergyMultiplier);
+            resource.creationTime = this.days; // Set creation timestamp
+            this.resources.push(resource);
+          }
+          
+          // Create a secondary sparse cluster surrounding the primary cluster
+          const secondaryClusterSize = resourcesPerCluster - primaryClusterSize;
+          for (let i = 0; i < secondaryClusterSize; i++) {
+            // Break if we've reached the resource cap
+            if (this.resources.length >= enforcementThreshold) break;
+            
+            // Wider spread for secondary resources
+            const radius = SimulationConfig.resources.bloom.primaryClusterRadius + 
+                          (Math.random() * (SimulationConfig.resources.bloom.secondaryClusterRadius - 
+                                           SimulationConfig.resources.bloom.primaryClusterRadius));
+            const angle = Math.random() * Math.PI * 2;
+            const x = centerX + Math.cos(angle) * radius;
+            const y = centerY + Math.sin(angle) * radius;
+            
+            // Secondary resources have less energy than primary but still more than normal
+            const resource = new Resource(x, y, Resource.DEFAULT_ENERGY * SimulationConfig.resources.bloom.secondaryEnergyMultiplier);
+            resource.creationTime = this.days; // Set creation timestamp
+            this.resources.push(resource);
+          }
+        }
+        
+        // Count actual resources spawned
+        const actualSpawned = Math.min(resourcesSpawned, enforcementThreshold - (this.resources.length - resourcesSpawned));
+        this.totalSpawned.resources += actualSpawned;
+      }
       
       // Announce the bloom in the console with more detail
-      console.log(`Spawned ${this.seasonResourceSpawnAmount} resources in ${clusterCount} rich clusters`);
+      console.log(`Spawned resources in ${SimulationConfig.resources.bloom.clusterCount} rich clusters. Total resources: ${this.resources.length}`);
       console.log(`Primary resource energy: ${Resource.DEFAULT_ENERGY * SimulationConfig.resources.bloom.primaryEnergyMultiplier}`);
       console.log(`Secondary resource energy: ${Resource.DEFAULT_ENERGY * SimulationConfig.resources.bloom.secondaryEnergyMultiplier}`);
       
@@ -699,10 +784,48 @@ export class SimulationEngine {
       console.log(`${newPrey.length} new prey born through reproduction. Total spawned: ${this.totalSpawned.prey}`);
     }
     
+    // DEBUG: Monitor predator energy levels when no prey exist
+    if (this.prey.length === 0 && this.predators.length > 0) {
+      // Calculate and log average energy
+      const energyLevels = this.predators.map(p => p.energy / p.maxEnergy);
+      const averageEnergy = energyLevels.reduce((sum, e) => sum + e, 0) / energyLevels.length;
+      const minEnergy = Math.min(...energyLevels);
+      const maxEnergy = Math.max(...energyLevels);
+      
+      console.log(`ENERGY MONITOR - Day ${this.days} - Predators: ${this.predators.length}`);
+      console.log(`  Average Energy: ${(averageEnergy * 100).toFixed(1)}%`);
+      console.log(`  Min Energy: ${(minEnergy * 100).toFixed(1)}%, Max Energy: ${(maxEnergy * 100).toFixed(1)}%`);
+      
+      // Count predators with various energy levels
+      const criticallyLow = energyLevels.filter(e => e < 0.1).length;
+      const veryLow = energyLevels.filter(e => e >= 0.1 && e < 0.2).length;
+      const low = energyLevels.filter(e => e >= 0.2 && e < 0.5).length;
+      const medium = energyLevels.filter(e => e >= 0.5 && e < 0.75).length;
+      const high = energyLevels.filter(e => e >= 0.75).length;
+      
+      console.log(`  Energy Distribution:`);
+      console.log(`    <10%: ${criticallyLow}, 10-20%: ${veryLow}, 20-50%: ${low}, 50-75%: ${medium}, >75%: ${high}`);
+    }
+    
     // Handle predator reproduction
     const newPredators: Predator[] = [];
+    let lowEnergyChecks = 0;
+    
     for (const predator of this.predators) {
+      // Additional debug log for checking reproduction probability
+      if (predator.energy / predator.maxEnergy < 0.2) {
+        lowEnergyChecks++;
+        // Log only for the first few low-energy predators to avoid console spam
+        if (lowEnergyChecks <= 3) {
+          const energyPercentage = (predator.energy / predator.maxEnergy * 100).toFixed(1);
+          console.log(`DEBUG: Low energy predator (${energyPercentage}%) being checked for reproduction`);
+        }
+      }
+      
       if (predator.canReproduce()) {
+        const energyPercentage = (predator.energy / predator.maxEnergy * 100).toFixed(1);
+        console.log(`*** Predator with ${energyPercentage}% energy REPRODUCING ***`);
+        
         const offspring = predator.reproduce();
         newPredators.push(offspring);
       }
@@ -774,15 +897,25 @@ export class SimulationEngine {
   
   // Helper method to spawn resources around a location
   private spawnResourcesAtLocation(x: number, y: number, count: number, spread: number): void {
-    for (let i = 0; i < count; i++) {
+    // Check resource cap before spawning
+    const maxResources = SimulationConfig.resources.limits.maxCount;
+    const enforcementThreshold = maxResources * SimulationConfig.resources.limits.enforcementThreshold;
+    
+    // Determine how many resources we can safely add
+    const availableSpace = Math.max(0, enforcementThreshold - this.resources.length);
+    const actualCount = Math.min(count, availableSpace);
+    
+    for (let i = 0; i < actualCount; i++) {
       // Calculate position with random spread around the death location
       const angle = Math.random() * Math.PI * 2;
       const distance = Math.random() * spread;
       const resourceX = x + Math.cos(angle) * distance;
       const resourceY = y + Math.sin(angle) * distance;
       
-      // Create the new resource
-      this.resources.push(new Resource(resourceX, resourceY));
+      // Create the new resource and set its creation time
+      const resource = new Resource(resourceX, resourceY);
+      resource.creationTime = this.days; // Set creation timestamp
+      this.resources.push(resource);
       this.totalSpawned.resources++;
     }
   }
@@ -802,6 +935,18 @@ export class SimulationEngine {
     for (let i = 0; i < creatures.length; i++) {
       const learner = creatures[i];
       
+      // Skip learning process for highly specialized creatures (preserves specialization)
+      // This prevents specialized traits from being diluted through learning
+      const isSpecialized = learner.attributes.strength > 0.75 || 
+                            learner.attributes.stealth > 0.75 || 
+                            learner.attributes.longevity > 0.75;
+                            
+      // Specialized creatures only learn with much lower probability
+      // The higher the specialization, the less likely they are to change
+      if (isSpecialized && Math.random() < 0.8) {
+        continue; // Skip learning for this specialized creature 80% of the time
+      }
+      
       // Chance to learn based on learnability
       if (Math.random() < learner.attributes.learnability * 0.1) {
         // Find a random other creature to learn from
@@ -809,28 +954,43 @@ export class SimulationEngine {
         if (teacherIndex !== i) {
           const teacher = creatures[teacherIndex];
           
-          // Select a random attribute to learn
-          const attributes = ['strength', 'stealth', 'longevity'] as const;
-          const attributeToLearn = attributes[Math.floor(Math.random() * attributes.length)];
+          // Identify if the teacher has strong specialization in any attribute
+          const teacherSpecializedAttributes = [];
+          if (teacher.attributes.strength > 0.7) teacherSpecializedAttributes.push('strength');
+          if (teacher.attributes.stealth > 0.7) teacherSpecializedAttributes.push('stealth');
+          if (teacher.attributes.longevity > 0.7) teacherSpecializedAttributes.push('longevity');
+          
+          // Determine attribute to learn
+          let attributeToLearn: 'strength' | 'stealth' | 'longevity';
+          
+          if (teacherSpecializedAttributes.length > 0 && Math.random() < 0.7) {
+            // 70% chance to learn a specialized attribute from the teacher (if any)
+            attributeToLearn = teacherSpecializedAttributes[Math.floor(Math.random() * teacherSpecializedAttributes.length)] as 'strength' | 'stealth' | 'longevity';
+          } else {
+            // Otherwise choose a random attribute
+            const attributes = ['strength', 'stealth', 'longevity'] as const;
+            attributeToLearn = attributes[Math.floor(Math.random() * attributes.length)];
+          }
           
           // Calculate how much to learn
-          // Higher learnability = more learning
           const teacherValue = teacher.attributes[attributeToLearn];
           const learnerValue = learner.attributes[attributeToLearn];
           
-          // Only learn if the teacher has a higher attribute
-          if (teacherValue > learnerValue) {
-            // Calculate learning amount
+          // Only learn if the difference is significant
+          // This prevents regression to the mean by only learning meaningful differences
+          if (Math.abs(teacherValue - learnerValue) > 0.15) {
+            // Calculate learning amount - higher learning for larger differences
             const learningAmount = (teacherValue - learnerValue) * learner.attributes.learnability * 0.2;
             
             // Cap the learning to avoid huge jumps
-            const cappedLearning = Math.min(learningAmount, 0.05);
+            const cappedLearning = Math.min(Math.abs(learningAmount), 0.05) * Math.sign(learningAmount);
             
             // Apply learning
             learner.attributes[attributeToLearn] += cappedLearning;
+            learner.attributes[attributeToLearn] = Math.max(0, Math.min(1, learner.attributes[attributeToLearn]));
             
-            // Learning costs energy
-            learner.energy = Math.max(0, learner.energy - (cappedLearning * 10));
+            // Learning costs energy - higher cost for larger changes
+            learner.energy = Math.max(0, learner.energy - (Math.abs(cappedLearning) * 10));
           }
         }
       }
@@ -838,8 +998,16 @@ export class SimulationEngine {
   }
   
   private regenerateResources(): void {
-    // Only regenerate if prey still exist, otherwise let resources decay
-    if (this.prey.length > 0) {
+    // Handle resource decay before generating new ones
+    this.processResourceDecay();
+    
+    // Check if we can add more resources (below max limit)
+    const maxResources = SimulationConfig.resources.limits.maxCount;
+    const enforcementThreshold = maxResources * SimulationConfig.resources.limits.enforcementThreshold;
+    const canAddResources = this.resources.length < enforcementThreshold;
+    
+    // Only regenerate if prey still exist and we're below the resource cap
+    if (this.prey.length > 0 && canAddResources) {
       // During resource bloom, much higher regeneration rate
       if (this.resourceBloom) {
         // 10% chance of adding a resource during bloom
@@ -853,20 +1021,27 @@ export class SimulationEngine {
             
             // Spawn the cluster
             for (let i = 0; i < clusterSize; i++) {
+              // Check resource cap during cluster spawning
+              if (this.resources.length >= enforcementThreshold) break;
+              
               const radius = Math.random() * 30; // Small cluster radius
               const angle = Math.random() * Math.PI * 2;
               const x = centerX + Math.cos(angle) * radius;
               const y = centerY + Math.sin(angle) * radius;
               
               // During bloom, resources have more energy
-              this.resources.push(new Resource(x, y, Resource.DEFAULT_ENERGY * 1.5));
+              const resource = new Resource(x, y, Resource.DEFAULT_ENERGY * 1.5);
+              resource.creationTime = this.days; // Set creation timestamp
+              this.resources.push(resource);
               this.totalSpawned.resources++;
             }
           } else {
             // Just spawn a single resource
             const x = Math.random() * this.environmentWidth - this.environmentWidth/2;
             const y = Math.random() * this.environmentHeight - this.environmentHeight/2;
-            this.resources.push(new Resource(x, y, Resource.DEFAULT_ENERGY * 1.5));
+            const resource = new Resource(x, y, Resource.DEFAULT_ENERGY * 1.5);
+            resource.creationTime = this.days; // Set creation timestamp
+            this.resources.push(resource);
             this.totalSpawned.resources++;
           }
         }
@@ -875,7 +1050,9 @@ export class SimulationEngine {
         if (Math.random() < 0.005) { // Only 0.5% chance of adding a resource each frame
           const x = Math.random() * this.environmentWidth - this.environmentWidth/2;
           const y = Math.random() * this.environmentHeight - this.environmentHeight/2;
-          this.resources.push(new Resource(x, y));
+          const resource = new Resource(x, y);
+          resource.creationTime = this.days; // Set creation timestamp
+          this.resources.push(resource);
           this.totalSpawned.resources++;
         }
       }
@@ -888,20 +1065,49 @@ export class SimulationEngine {
         const centerY = Math.random() * this.environmentHeight - this.environmentHeight/2;
         
         for (let i = 0; i < clusterSize; i++) {
+          // Check resource cap during cluster spawning
+          if (this.resources.length >= enforcementThreshold) break;
+          
           const radius = Math.random() * 25; // Small cluster radius
           const angle = Math.random() * Math.PI * 2;
           const x = centerX + Math.cos(angle) * radius;
           const y = centerY + Math.sin(angle) * radius;
           
           // High-energy resources to help prey recover
-          this.resources.push(new Resource(x, y, Resource.DEFAULT_ENERGY * 2.0));
+          const resource = new Resource(x, y, Resource.DEFAULT_ENERGY * 2.0);
+          resource.creationTime = this.days; // Set creation timestamp
+          this.resources.push(resource);
           this.totalSpawned.resources++;
         }
       }
-    } else {
+    } else if (this.prey.length === 0) {
       // If no prey left, resources should slowly vanish (simulate decay)
       if (this.resources.length > 0 && Math.random() < 0.1) {
         this.resources.splice(Math.floor(Math.random() * this.resources.length), 1); // Remove a random resource
+      }
+    }
+    
+    // If we're above the max limit, strictly enforce the cap by removing oldest resources
+    if (this.resources.length > maxResources) {
+      // Sort resources by age (oldest first)
+      this.resources.sort((a, b) => a.creationTime - b.creationTime);
+      
+      // Remove resources until we're back to the limit
+      const excessCount = this.resources.length - maxResources;
+      this.resources.splice(0, excessCount); // Remove oldest resources
+      
+      console.log(`Resource cap enforced: removed ${excessCount} oldest resources`);
+    }
+  }
+  
+  // Process natural decay of resources based on their age
+  private processResourceDecay(): void {
+    if (!SimulationConfig.resources.limits.enableDecay) return;
+    
+    // Check each resource for age-based decay
+    for (let i = this.resources.length - 1; i >= 0; i--) {
+      if (this.resources[i].shouldDecay(this.days)) {
+        this.resources.splice(i, 1); // Remove decayed resource
       }
     }
   }

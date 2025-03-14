@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { Vector2 } from 'three';
 import { Creature, GeneticAttributes } from './Creature';
 import { EntityType } from './Entity';
 import { Resource } from './Resource';
@@ -81,16 +82,37 @@ export class Prey extends Creature {
   
   // New method to determine if prey can escape using stealth after being caught
   canEscapeWithStealth(predator: Predator): boolean {
-    // Calculate escape chance based on prey's stealth vs predator's stealth
-    // Higher prey stealth = better chance to escape
-    // Higher predator stealth = harder for prey to escape
+    // Calculate escape chance based on prey's attributes vs predator's attributes
+    // Higher prey stealth or strength = better chance to escape
     
-    // Base escape chance is prey stealth minus predator stealth plus a small bonus
+    // Base stealth difference (stealth-based escape)
     const stealthDifference = this.attributes.stealth - predator.attributes.stealth;
-    const escapeChance = stealthDifference * 0.8 + 0.3; // 30% base chance + stealth boost
     
-    // Cap escape chance between 10-70%
-    const cappedEscapeChance = Math.min(0.7, Math.max(0.1, escapeChance));
+    // Base strength difference (strength-based resistance)
+    const strengthDifference = this.attributes.strength - predator.attributes.strength;
+    
+    // Specialized trait bonus - reward either high stealth OR high strength
+    // This creates multiple viable evolutionary strategies
+    let specializedBonus = 0;
+    
+    // If prey has high stealth (>0.7) or high strength (>0.7), give bonus
+    if (this.attributes.stealth > 0.7 || this.attributes.strength > 0.7) {
+      // The higher the specialization, the bigger the bonus
+      const stealthBonus = Math.max(0, (this.attributes.stealth - 0.7) * 1.5);
+      const strengthBonus = Math.max(0, (this.attributes.strength - 0.7) * 1.5);
+      specializedBonus = Math.max(stealthBonus, strengthBonus);
+    }
+    
+    // Determine primary escape factor (use the better of stealth or strength)
+    const primaryEscapeFactor = stealthDifference > strengthDifference 
+      ? stealthDifference * 0.8  // Stealth-based escape
+      : strengthDifference * 0.5; // Strength-based resistance (slightly less effective)
+    
+    // Calculate total escape chance with base chance, primary factor and specialized bonus
+    const escapeChance = 0.3 + primaryEscapeFactor + specializedBonus; // 30% base chance + attribute bonus
+    
+    // Cap escape chance between 15-75% (increased from 10-70%)
+    const cappedEscapeChance = Math.min(0.75, Math.max(0.15, escapeChance));
     
     // Stealth escape attempt consumes energy
     this.energy = Math.max(0, this.energy - 5);
@@ -144,7 +166,7 @@ export class Prey extends Creature {
   }
   
   // Override update to include resource detection, predator avoidance, and movement
-  update(deltaTime: number, resources: Resource[] = [], predators: Predator[] = []): void {
+  update(deltaTime: number, resources: Resource[] = [], predators: Predator[] = [], nearbyPrey: Prey[] = []): void {
     
     // Check for nearby predators first - survival takes priority over feeding
     const nearbyPredator = this.detectPredator(predators);
@@ -158,6 +180,55 @@ export class Prey extends Creature {
       this.velocity.set(Math.cos(angle), Math.sin(angle)).normalize().multiplyScalar(this.speed);
     }
     
+    // Add mild repulsion between prey to prevent clumping
+    // This is a lower priority than predator avoidance and food seeking
+    if (!nearbyPredator && nearbyPrey.length > 0) {
+      // Calculate repulsion vector (away from other prey)
+      const repulsionVector = new Vector2(0, 0);
+      
+      // Only consider very close prey (personal space radius)
+      const personalSpaceRadius = 20; // Units of personal space
+      let tooCloseCount = 0;
+      
+      for (const otherPrey of nearbyPrey) {
+        // Skip self
+        if (otherPrey === this) continue;
+        
+        const distance = this.position.distanceTo(otherPrey.position);
+        if (distance < personalSpaceRadius) {
+          // Calculate vector away from this prey
+          const awayVector = this.position.clone().sub(otherPrey.position).normalize();
+          
+          // Closer prey have stronger repulsion effect
+          const repulsionStrength = 1 - (distance / personalSpaceRadius);
+          awayVector.multiplyScalar(repulsionStrength);
+          
+          repulsionVector.add(awayVector);
+          tooCloseCount++;
+        }
+      }
+      
+      // If there are nearby prey, apply a mild repulsion effect
+      if (tooCloseCount > 0) {
+        // Only normalize if the vector is not zero length
+        if (repulsionVector.lengthSq() > 0.0001) {
+          repulsionVector.normalize();
+          
+          // Repulsion is a mild effect (10% of normal movement) and decreases when hunting for food
+          const repulsionFactor = 0.1 * Math.min(1, energyRatio * 2); // Stronger when full, weaker when hungry
+          
+          // Add the repulsion component to the velocity (don't replace it)
+          const repulsionComponent = repulsionVector.clone().multiplyScalar(this.speed * repulsionFactor);
+          this.velocity.add(repulsionComponent);
+          
+          // Only normalize if velocity is not zero length
+          if (this.velocity.lengthSq() > 0.0001) {
+            this.velocity.normalize().multiplyScalar(this.speed);
+          }
+        }
+      }
+    }
+    
     // If a predator is nearby, flee from it
     if (nearbyPredator) {
       // Direction away from predator
@@ -166,14 +237,64 @@ export class Prey extends Creature {
       // Get avoidance multiplier from config (default to 1.5 if not set)
       const avoidanceMultiplier = SimulationConfig.prey.predatorAvoidanceMultiplier || 1.5;
       
-      // Boost speed based on stealth and avoidance multiplier
-      const fleeSpeed = this.speed * (1 + this.attributes.stealth * 0.5) * avoidanceMultiplier;
+      // Calculate flee bonus based on prey attributes
+      // High stealth prey are better at evading
+      // High strength prey are better at running fast
       
-      // Set velocity to flee
-      this.velocity.copy(fleeDirection).multiplyScalar(fleeSpeed);
+      // Calculate specialized fleeing bonus
+      let specializedFleeBonus = 0;
       
-      // Fleeing consumes more energy
-      this.energy = Math.max(0, this.energy - (2 * deltaTime));
+      // Stealth-based evasion: enhanced directional changes and unpredictability
+      if (this.attributes.stealth > 0.6) {
+        // Add some randomness to the flee direction for stealthy prey
+        // This simulates erratic movement patterns that make them harder to catch
+        const randomAngle = (Math.random() - 0.5) * Math.PI * this.attributes.stealth;
+        const originalX = fleeDirection.x;
+        const originalY = fleeDirection.y;
+        
+        // Apply rotation matrix
+        fleeDirection.x = Math.cos(randomAngle) * originalX - Math.sin(randomAngle) * originalY;
+        fleeDirection.y = Math.sin(randomAngle) * originalX + Math.cos(randomAngle) * originalY;
+        
+        // Ensure we have a valid direction
+        if (fleeDirection.lengthSq() > 0.0001) {
+          fleeDirection.normalize();
+        }
+        
+        // Stealth specialists get additional flee bonus
+        if (this.attributes.stealth > 0.7) {
+          specializedFleeBonus = (this.attributes.stealth - 0.7) * 0.5;
+        }
+      }
+      
+      // Strength-based flight: faster sustained running
+      let strengthFleeBonus = this.attributes.strength * 0.5;
+      
+      // Strength specialists get additional flee bonus
+      if (this.attributes.strength > 0.7) {
+        strengthFleeBonus += (this.attributes.strength - 0.7) * 0.8;
+      }
+      
+      // Determine which attribute provides better fleeing advantage
+      const fleeBonus = Math.max(this.attributes.stealth * 0.5, strengthFleeBonus);
+      
+      // Boost speed based on best attribute and avoidance multiplier
+      const fleeSpeed = this.speed * (1 + fleeBonus + specializedFleeBonus) * avoidanceMultiplier;
+      
+      // Only apply the flee direction if it's valid
+      if (fleeDirection.lengthSq() > 0.0001) {
+        // Set velocity to flee
+        this.velocity.copy(fleeDirection).multiplyScalar(fleeSpeed);
+      } else {
+        // In the rare case of an invalid flee direction, just move in a random direction
+        const angle = Math.random() * Math.PI * 2;
+        this.velocity.set(Math.cos(angle), Math.sin(angle)).normalize().multiplyScalar(fleeSpeed);
+      }
+      
+      // Fleeing consumes more energy - high strength prey use more energy when fleeing
+      // This creates a trade-off: stronger prey flee faster but deplete energy quicker
+      const fleeingEnergyCost = 2 * (1 + this.attributes.strength * 0.5) * deltaTime;
+      this.energy = Math.max(0, this.energy - fleeingEnergyCost);
     }
     // If no predator nearby, focus on foraging based on hunger level
     else {

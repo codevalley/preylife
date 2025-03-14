@@ -159,51 +159,202 @@ A browser-based simulation modeling predator-prey dynamics with evolutionary mec
 
 #### Detection Calculation
 ```
-Detection_Chance = Predator_Stealth - Prey_Stealth + Base_Detection_Rate (0.3)
+// Basic detection formula
+Base_Detection_Chance = Predator_Stealth - Prey_Stealth + 0.25
+
+// For highly stealthy prey (>0.7)
+High_Stealth_Penalty = (Prey_Stealth - 0.7) * 2.0
+Detection_Chance = Predator_Stealth - Prey_Stealth + 0.25 - High_Stealth_Penalty
 ```
 - If Detection_Chance > 0: Prey may be detected based on a probability check (Math.random() < Detection_Chance)
-- If detected, a detection score is calculated based on distance and stealth advantage
+- If detected, a detection score is calculated based on distance (70%) and stealth advantage (30%)
 - Predators target the prey with the highest detection score (closest and most detectable)
+- Very stealthy prey (>0.7) receive a significant additional bonus to avoid detection
+- This creates a viable evolutionary niche for highly stealthy prey
 
 #### Capture Calculation
 ```
-Catch_Chance = (Predator_Strength - Prey_Strength) * 0.6 + 0.2
-Capped_Chance = min(0.5, max(0.1, Catch_Chance))
+// Determine best hunting attribute
+Primary_Catch_Factor = max(
+  Stealth_Difference * 0.4,  // Stealth-based hunting
+  Strength_Difference * 0.5  // Strength-based hunting
+)
+
+// Calculate specialized trait bonus
+Specialized_Bonus = 0
+if (Predator_Stealth > 0.7 || Predator_Strength > 0.7) {
+  Stealth_Bonus = max(0, (Predator_Stealth - 0.7) * 0.8)
+  Strength_Bonus = max(0, (Predator_Strength - 0.7) * 0.8)
+  Specialized_Bonus = max(Stealth_Bonus, Strength_Bonus)
+}
+
+// Final calculation
+Catch_Chance = 0.15 + Primary_Catch_Factor + Specialized_Bonus
+Capped_Chance = min(0.45, max(0.05, Catch_Chance))
 ```
 - The capture chance is probabilistic: Math.random() < Capped_Chance
-- Minimum 10% and maximum 50% chance of capture regardless of strength difference
-- This ensures predators always have some chance to catch prey while giving prey the opportunity to escape
+- Minimum 5% and maximum 45% chance of capture (reduced from 10-50%)
+- Specialized predators (high strength or high stealth) get additional capture bonus
+- Predators can evolve either stealth or strength-based hunting strategies
+- Balanced to give prey a better chance to survive
 
-#### Stealth Escape Mechanism
+#### Stealth/Strength Escape Mechanism
 Even after a successful capture, prey have a second chance to escape:
 ```
-Escape_Chance = (Prey_Stealth - Predator_Stealth) * 0.8 + 0.3
-Capped_Escape_Chance = min(0.7, max(0.1, Escape_Chance))
+// Determine best escape attribute
+Primary_Escape_Factor = max(
+  Stealth_Difference * 0.8,  // Stealth-based escape
+  Strength_Difference * 0.5  // Strength-based resistance
+)
+
+// Calculate specialized trait bonus
+Specialized_Bonus = 0
+if (Prey_Stealth > 0.7 || Prey_Strength > 0.7) {
+  Stealth_Bonus = max(0, (Prey_Stealth - 0.7) * 1.5)
+  Strength_Bonus = max(0, (Prey_Strength - 0.7) * 1.5)
+  Specialized_Bonus = max(Stealth_Bonus, Strength_Bonus)
+}
+
+// Final calculation
+Escape_Chance = 0.3 + Primary_Escape_Factor + Specialized_Bonus
+Capped_Escape_Chance = min(0.75, max(0.15, Escape_Chance))
 ```
 - The escape chance is probabilistic: Math.random() < Capped_Escape_Chance
-- Minimum 10% and maximum 70% chance of escape
-- Successful escape temporarily boosts prey speed to flee from the predator
+- Minimum 15% and maximum 75% chance of escape (increased from 10-70%)
+- Specialized prey (high strength or high stealth) get a significant escape bonus
+- This creates protected niches for specialized prey
 - Escape attempts cost energy (5 energy units)
 
-#### Learning Calculation
-When two creatures of the same type (prey-prey or predator-predator) encounter each other:
+#### Fleeing Mechanics
+When fleeing from predators, prey use different strategies based on their attributes:
 ```
-Learning_Chance = Creature1_Learnability * Encounter_Duration_Factor
-```
-- If Learning_Chance > Random(0,1): Learning occurs
+// Stealth-based evasion (>0.6)
+Random_Movement_Angle = (random(-0.5,0.5) * PI * Prey_Stealth)
+Direction_With_Randomness = apply_rotation(Flee_Direction, Random_Movement_Angle)
 
-If learning occurs:
+// Specialized stealth bonus (>0.7)
+Stealth_Flee_Bonus = (Prey_Stealth - 0.7) * 0.5
+
+// Strength-based flight
+Strength_Flee_Bonus = Prey_Strength * 0.5
+if (Prey_Strength > 0.7)
+  Strength_Flee_Bonus += (Prey_Strength - 0.7) * 0.8
+
+// Best attribute determines flee method
+Flee_Bonus = max(Prey_Stealth * 0.5, Strength_Flee_Bonus)
+Flee_Speed = Base_Speed * (1 + Flee_Bonus + Specialized_Flee_Bonus) * Avoidance_Multiplier
+
+// Energy cost (higher for strength-based fleeing)
+Fleeing_Energy_Cost = 2 * (1 + Prey_Strength * 0.5) * deltaTime
 ```
-Max_Attribute_Shift = Current_Attribute * 0.15  // Maximum 15% change in any direction
-Attribute_Shift = (Target_Attribute - Current_Attribute) * Learnability * Learning_Factor
-Capped_Shift = min(abs(Attribute_Shift), Max_Attribute_Shift) * sign(Attribute_Shift)
-New_Attribute = Current_Attribute + Capped_Shift
-Energy_Cost = Learning_Cost_Base + (abs(Capped_Shift) * Energy_Multiplier)
+- High stealth prey (>0.6) use erratic movement patterns when fleeing
+- High strength prey use faster sustained running
+- Specialized prey (>0.7 in either attribute) get additional flee bonuses
+- Strength-based fleeing costs more energy, creating a trade-off
+- This ensures multiple viable evolutionary strategies for prey
+
+#### Enhanced Learning System
+Learning has been improved to preserve specialization and prevent regression to the mean:
+
 ```
-- Learning applies to one randomly selected attribute (strength, stealth, or energy capacity)
-- Learning occurs regardless of whether the target attribute is "better" - the creature simply adapts toward the encountered creature
-- Attribute shifts are capped at 15% of current value to prevent drastic changes
-- More significant changes cost proportionally more energy
+// Check if creature is highly specialized
+Is_Specialized = (Strength > 0.75 || Stealth > 0.75 || Longevity > 0.75)
+
+// Specialized creatures only learn with much lower probability
+if (Is_Specialized && Random(0,1) < 0.8) {
+  Skip_Learning(); // 80% chance to skip learning for specialized creatures
+}
+
+// Base learning chance calculation
+Learning_Chance = Creature1_Learnability * 0.1
+```
+
+Attribute selection is biased toward specialization:
+```
+// Identify specialized attributes in the teacher
+Specialized_Attributes = []
+if (Teacher_Strength > 0.7) Add "strength" to Specialized_Attributes
+if (Teacher_Stealth > 0.7) Add "stealth" to Specialized_Attributes
+if (Teacher_Longevity > 0.7) Add "longevity" to Specialized_Attributes
+
+// 70% chance to learn a specialized attribute (if any exist)
+if (Specialized_Attributes.length > 0 && Random(0,1) < 0.7) {
+  Attribute_To_Learn = Random_From(Specialized_Attributes)
+} else {
+  Attribute_To_Learn = Random_From(["strength", "stealth", "longevity"])
+}
+```
+
+Learning only occurs for significant differences:
+```
+// Only learn if the difference is meaningful (prevents dilution of traits)
+if (abs(Teacher_Value - Learner_Value) > 0.15) {
+  Learning_Amount = (Teacher_Value - Learner_Value) * Learnability * 0.2
+  Capped_Learning = min(abs(Learning_Amount), 0.05) * sign(Learning_Amount)
+  
+  // Apply learning
+  New_Attribute = Learner_Value + Capped_Learning
+  
+  // Learning costs energy - higher cost for larger changes
+  Energy_Cost = abs(Capped_Learning) * 10
+}
+```
+
+Benefits of the enhanced learning system:
+- Preserves specialized traits by reducing learning probability for specialized creatures
+- Encourages distinct evolutionary niches by prioritizing learning of specialized attributes
+- Prevents regression to the mean by only learning when differences are significant
+- Creates natural evolutionary pressure toward specialization
+- Allows diverse strategies to coexist in the ecosystem
+
+#### Anti-Clumping System
+Creatures now apply mild repulsion forces to avoid excessive clumping:
+
+```
+// Personal space radius
+Personal_Space = 20 // For prey (30 for predators)
+
+// Calculate repulsion vector
+Repulsion_Vector = (0, 0)
+Too_Close_Count = 0
+
+// Check each nearby creature
+for each Nearby_Creature {
+  Distance = position.distanceTo(Nearby_Creature.position)
+  
+  if (Distance < Personal_Space) {
+    // Direction away from nearby creature
+    Away_Vector = normalize(position - Nearby_Creature.position)
+    
+    // Strength based on proximity (closer = stronger)
+    Repulsion_Strength = 1 - (Distance / Personal_Space)
+    Away_Vector *= Repulsion_Strength
+    
+    Repulsion_Vector += Away_Vector
+    Too_Close_Count++
+  }
+}
+
+// Apply repulsion if creatures are too close
+if (Too_Close_Count > 0) {
+  Repulsion_Vector = normalize(Repulsion_Vector)
+  
+  // Repulsion factor varies with hunger (weaker when hungry)
+  Energy_Ratio = current_energy / max_energy
+  Repulsion_Factor = 0.1 * min(1, Energy_Ratio * 2) // 0.15 for predators
+  
+  // Add repulsion to velocity (don't replace it)
+  Velocity += Repulsion_Vector * Speed * Repulsion_Factor
+  Velocity = normalize(Velocity) * Speed
+}
+```
+
+Benefits of the anti-clumping system:
+- Prevents unrealistic clustering of same-type creatures
+- Promotes better spatial distribution of the population
+- Reduces competition between same-type individuals
+- Creates more realistic territorial behavior
+- Decreases priority when hungry (food-seeking takes precedence)
 
 ### Reproduction System
 - **Probabilistic Reproduction**: Based on multiple factors rather than simple energy threshold
@@ -290,6 +441,109 @@ Energy_Cost = Learning_Cost_Base + (abs(Capped_Shift) * Energy_Multiplier)
   - Interactions are calculated
   - Starvation probability is applied
   - Reproduction is checked
+
+## Recent Upgrades and Enhancements
+
+### Differentiated Starvation Systems
+Separate starvation mechanics have been implemented for predators and prey:
+- Predators now face higher starvation risk (up to 20% chance at 5% energy)
+- Prey have lower starvation risk (maximum 10% chance at 5% energy)
+- Type-specific thresholds at multiple energy levels
+- Models real-world differences between primary and secondary consumers
+- Enables fine-tuning of predator-prey balance
+
+### Enhanced Learning System with Specialization Preservation
+The learning system has been completely redesigned to protect and encourage evolutionary specialization:
+- Highly specialized creatures (>0.75 in any attribute) have 80% chance to skip learning completely
+- Learning biased toward specialization (70% chance to learn specialized attributes from teachers)
+- Learning only occurs with significant attribute differences (>0.15)
+- Promotes the emergence of distinct evolutionary niches and strategies
+- Prevents genetic drift toward mediocrity (regression to the mean)
+
+### Anti-Clumping Behavior
+A mild social repulsion system has been implemented to prevent unrealistic clumping:
+- Personal space radius for each creature type (20 units for prey, 30 for predators)
+- Repulsion strength based on proximity (closer creatures create stronger repulsion)
+- Hunger-dependent priority (weaker when hungry, stronger when satiated)
+- Creates more realistic spatial distribution and reduces competition
+- Simulates basic territorial behavior with minimal computational overhead
+
+### Probabilistic Reproduction System
+Reproduction has been made fully probabilistic, reflecting real-world biological processes:
+- Energy-based probability tiers:
+  - High energy threshold (prey: 80%, predator: 70%)
+  - Higher probability above threshold (prey: 20%, predator: 30% per update)
+  - Lower probability below threshold (prey: 3%, predator: 5% per update)
+- Age-based maturity requirements:
+  - Juvenile period (0-15% of lifespan) with very low reproduction chance (1%)
+  - Adult period with normal energy-based probabilities
+- Reproduction cooldown periods:
+  - Prey: 7-day cooldown after reproduction
+  - Predator: 3-day cooldown after reproduction
+  - Probability gradually increases as cooldown period progresses
+
+These mechanics prevent unrealistic population explosions and create more natural population dynamics.
+
+### Energy Capacity Evolution
+Energy capacity has been made evolvable through reproduction, allowing creatures to adapt their energy storage based on environmental pressures:
+- Offspring inherit parent's energy capacity with small variation (±5%)
+- 10% chance of significant mutation (±20%)
+- Boundaries: 50-200% of baseline capacity
+- Higher capacity = better survival in seasonal environments
+- Lower capacity = faster reproduction cycles
+
+### Enhanced Energy Consumption Model
+The energy consumption model has been refined to include multiple factors:
+- Base metabolism (influenced by longevity)
+- Movement cost (influenced by strength)
+- Activity cost (based on velocity and strength)
+- Age-related inefficiency (separate factors for metabolism and activity)
+- Type multiplier (predators have higher energy costs than prey)
+
+This creates a more realistic and balanced energy economy.
+
+### Differentiated Starvation Systems
+Separate starvation mechanics have been implemented for predators and prey:
+
+#### Prey Starvation Model:
+```
+// Prey starvation thresholds
+thresholds = [
+  { 50% energy: 0.01% death chance per update },
+  { 40% energy: 0.01% death chance per update },
+  { 30% energy: 0.1% death chance per update },
+  { 20% energy: 1.0% death chance per update },
+  { 10% energy: 2.0% death chance per update },
+  { 5% energy:  10% death chance per update }
+]
+```
+
+#### Predator Starvation Model:
+```
+// Predator starvation thresholds (higher risk)
+thresholds = [
+  { 50% energy: 0.02% death chance per update },
+  { 40% energy: 0.1% death chance per update },
+  { 30% energy: 0.5% death chance per update },
+  { 20% energy: 2.0% death chance per update },
+  { 10% energy: 5.0% death chance per update },
+  { 5% energy:  20% death chance per update }
+]
+```
+
+Benefits of differentiated starvation systems:
+- Predators face higher starvation risk, reflecting their position as secondary consumers
+- Creates ecosystem pressure on predators to maintain efficient hunting strategies
+- Allows prey populations to be more resilient to resource fluctuations
+- Enables fine-tuning of predator-prey balance without changing other mechanics
+- Creates realistic boom-bust population cycles influenced by starvation dynamics
+
+### Enhanced Predator-Prey Balance
+The predator-prey interaction mechanics have been refined to create better balance and prevent prey extinction:
+- Improved stealth and strength-based escape mechanisms
+- More favorable escape chances for highly specialized prey (very high stealth or strength)
+- Balanced capture and escape probabilities to ensure prey have reasonable survival chances
+- Protected niches for different evolutionary strategies
 
 ## Visual Representation
 

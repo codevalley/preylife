@@ -6,14 +6,35 @@ import { SimulationConfig } from '../config';
 export class Resource extends Entity {
   static readonly DEFAULT_ENERGY: number = SimulationConfig.resources.defaultEnergy;
   
+  // Time tracking for decay
+  creationTime: number = 0; // Will be set by the simulation engine when spawned
+  
   constructor(x: number, y: number, energy: number = Resource.DEFAULT_ENERGY) {
     super(EntityType.RESOURCE, x, y);
     this.energy = energy;
     this.maxEnergy = energy;
   }
   
+  // Check if the resource should decay based on its age
+  shouldDecay(currentDay: number): boolean {
+    if (!SimulationConfig.resources.limits.enableDecay) {
+      return false;
+    }
+    
+    // Calculate the age of this resource in days
+    const ageInDays = currentDay - this.creationTime;
+    
+    // If resource is young, don't decay it
+    if (ageInDays < SimulationConfig.resources.limits.decayLifespan) {
+      return false;
+    }
+    
+    // Older resources have a chance to decay each frame
+    return Math.random() < SimulationConfig.resources.limits.decayChancePerFrame;
+  }
+  
   update(_deltaTime: number): void {
-    // Resources are static, no need to update
+    // Resources are now occasionally updated for decay, but still static otherwise
   }
   
   createMesh(): THREE.Mesh {
