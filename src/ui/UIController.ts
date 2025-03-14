@@ -23,7 +23,17 @@ export class UIController {
   private predatorCountElement: HTMLElement;
   private resourceCountElement: HTMLElement;
   private daysElement: HTMLElement;
-  private extinctionsElement: HTMLElement;
+  private eventsCountElement: HTMLElement;
+  
+  // Ecology events tracking
+  private ecologyEvents: Array<{
+    type: 'extinction' | 'evolution',
+    species: 'prey' | 'predator',
+    day: number,
+    preyCount: number,
+    predatorCount: number,
+    resourceCount: number
+  }> = [];
   
   // Total spawned elements
   private preySpawnedElement: HTMLElement;
@@ -87,12 +97,12 @@ export class UIController {
           <svg width="16" height="16" viewBox="0 0 24 24" fill="#aaa" style="margin-right: 6px;">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
           </svg>
-          <span style="font-weight: bold; margin-right: 6px;">Extinctions</span>
-          <span id="extinctions-count" class="badge" style="background: rgba(80, 80, 80, 0.7); padding: 2px 6px; border-radius: 10px; font-size: 11px;">0</span>
+          <span style="font-weight: bold; margin-right: 6px;">Ecology Events</span>
+          <span id="events-count" class="badge" style="background: rgba(80, 80, 80, 0.7); padding: 2px 6px; border-radius: 10px; font-size: 11px;">0</span>
         </div>
         
-        <div id="extinction-table" style="width: 100%; font-size: 12px;">
-          <!-- Extinction events will be added here -->
+        <div id="ecology-events-table" style="width: 100%; font-size: 12px;">
+          <!-- Ecology events (extinctions and evolutions) will be added here -->
         </div>
       </div>
     `;
@@ -220,7 +230,7 @@ export class UIController {
     this.predatorCountElement = document.getElementById('predator-count') as HTMLElement;
     this.resourceCountElement = document.getElementById('resource-count') as HTMLElement;
     this.daysElement = document.getElementById('days-count') as HTMLElement;
-    this.extinctionsElement = document.getElementById('extinctions-count') as HTMLElement;
+    this.eventsCountElement = document.getElementById('events-count') as HTMLElement;
     
     // Get total spawned elements
     this.preySpawnedElement = document.getElementById('prey-spawned') as HTMLElement;
@@ -329,6 +339,7 @@ export class UIController {
     const days = this.simulation.getDays();
     const totalSpawned = this.simulation.getTotalSpawned();
     const extinctionEvents = this.simulation.getExtinctionEvents();
+    const evolutionEvents = this.simulation.getEvolutionEvents();
     const resourceBloom = this.simulation.isResourceBloom();
     const reproductionStats = this.simulation.getReproductionStats();
     
@@ -340,8 +351,56 @@ export class UIController {
     // Update days
     this.daysElement.textContent = days.toString();
     
-    // Update extinctions
-    this.extinctionsElement.textContent = extinctionEvents.length.toString();
+    // Check for new extinction events to add to our ecology events
+    for (const event of extinctionEvents) {
+      // Check if we already have this event in our list
+      const existingEvent = this.ecologyEvents.find(e => 
+        e.type === 'extinction' && 
+        e.species === event.type && 
+        e.day === event.day
+      );
+      
+      if (!existingEvent) {
+        // Add this extinction event to our list
+        const newEvent = {
+          type: 'extinction' as const,
+          species: event.type as 'prey' | 'predator',
+          day: event.day,
+          preyCount: event.type === 'prey' ? 0 : ('preyCount' in event ? event.preyCount : stats.preyCount),
+          predatorCount: event.type === 'predator' ? 0 : ('predatorCount' in event ? event.predatorCount : stats.predatorCount),
+          resourceCount: 'resourceCount' in event ? event.resourceCount : stats.resourceCount
+        };
+        
+        this.ecologyEvents.push(newEvent);
+      }
+    }
+    
+    // Check for new evolution events to add to our ecology events
+    for (const event of evolutionEvents) {
+      // Check if we already have this event in our list
+      const existingEvent = this.ecologyEvents.find(e => 
+        e.type === 'evolution' && 
+        e.species === event.fromType && 
+        e.day === event.day
+      );
+      
+      if (!existingEvent) {
+        // Add this evolution event to our list
+        const newEvent = {
+          type: 'evolution' as const,
+          species: event.fromType as 'prey' | 'predator',
+          day: event.day,
+          preyCount: event.preyCount,
+          predatorCount: event.predatorCount,
+          resourceCount: event.resourceCount
+        };
+        
+        this.ecologyEvents.push(newEvent);
+      }
+    }
+    
+    // Update events count
+    this.eventsCountElement.textContent = this.ecologyEvents.length.toString();
     
     // Update total spawned with formatted numbers
     this.preySpawnedElement.textContent = this.formatNumber(totalSpawned.prey);
@@ -359,48 +418,104 @@ export class UIController {
       }
     }
     
-    // Update extinction table
-    const extinctionTableElement = document.getElementById('extinction-table');
-    if (extinctionTableElement) {
+    // Update ecology events table
+    const ecologyEventsTableElement = document.getElementById('ecology-events-table');
+    if (ecologyEventsTableElement) {
       let tableHTML = '';
       
-      if (extinctionEvents.length > 0) {
+      if (this.ecologyEvents.length > 0) {
+        // Show newest events at the top
+        const sortedEvents = [...this.ecologyEvents].sort((a, b) => b.day - a.day);
+        
+        // Create scrollable container if there are more than 6 events
+        const needsScroll = sortedEvents.length > 6;
+        const maxHeight = needsScroll ? 'max-height: 140px; overflow-y: auto;' : '';
+        
         tableHTML = `
-          <div style="display: grid; grid-template-columns: auto 1fr auto; gap: 8px; margin-top: 5px;">
-            <div style="font-weight: bold; font-size: 11px; color: #777;">Type</div>
-            <div style="font-weight: bold; font-size: 11px; color: #777;">Day</div>
-            <div style="font-weight: bold; font-size: 11px; color: #777;">Status</div>
+          <div style="margin-top: 5px;">
+            <div style="display: grid; grid-template-columns: auto 1fr auto; gap: 8px; margin-bottom: 5px;">
+              <div style="font-weight: bold; font-size: 11px; color: #777;">Event</div>
+              <div style="font-weight: bold; font-size: 11px; color: #777;">Day</div>
+              <div style="font-weight: bold; font-size: 11px; color: #777;">Population</div>
+            </div>
+            
+            <div style="${maxHeight} overflow-x: hidden; scrollbar-width: thin; scrollbar-color: #444 #222;">
+              <div style="display: grid; grid-template-columns: auto 1fr auto; gap: 8px;">
         `;
         
-        // Show newest events at the top
-        const sortedEvents = [...extinctionEvents].reverse();
-        
         sortedEvents.forEach(event => {
-          const color = event.type === 'prey' ? '#5588ff' : '#ff5555';
-          let statusText = '';
+          // Choose color based on species
+          const color = event.species === 'prey' ? '#5588ff' : '#ff5555';
           
-          // Use the counts captured at the time of extinction
-          if (event.type === 'prey' && 'predatorCount' in event) {
-            statusText = `${event.predatorCount} predators`;
-          } else if (event.type === 'predator' && 'preyCount' in event) {
-            statusText = `${event.preyCount} prey`;
+          // Create event description
+          let eventText = '';
+          if (event.type === 'extinction') {
+            eventText = `${event.species.charAt(0).toUpperCase() + event.species.slice(1)} extinct`;
+          } else if (event.type === 'evolution') {
+            if (event.species === 'prey') {
+              eventText = 'Prey → Predator';
+            } else {
+              eventText = 'Predator → Prey';
+            }
           }
           
+          // Create population status with icons
+          const populationText = `
+            <span style="display: flex; align-items: center; font-size: 10px; white-space: nowrap;">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="#5588ff" style="margin: 0 2px;">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"/>
+              </svg>${event.preyCount}
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="#ff5555" style="margin: 0 2px 0 4px;">
+                <path d="M12 2 L22 9 L19 20 L5 20 L2 9 Z"/>
+              </svg>${event.predatorCount}
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="#55cc55" style="margin: 0 2px 0 4px;">
+                <rect x="4" y="4" width="16" height="16" />
+              </svg>${event.resourceCount}
+            </span>
+          `;
+          
           tableHTML += `
-            <div style="color: ${color}; font-weight: bold; font-size: 11px; display: flex; align-items: center;">
-              ${event.type.charAt(0).toUpperCase() + event.type.slice(1)}
+            <div style="color: ${color}; font-weight: bold; font-size: 11px; display: flex; align-items: center; padding: 3px 0;">
+              ${eventText}
             </div>
-            <div style="font-size: 11px;">${event.day}</div>
-            <div style="font-size: 11px; color: #888;">${statusText}</div>
+            <div style="font-size: 11px; padding: 3px 0;">${event.day}</div>
+            <div style="font-size: 11px; padding: 3px 0;">${populationText}</div>
           `;
         });
         
-        tableHTML += `</div>`;
+        tableHTML += `
+              </div>
+            </div>
+          </div>
+        `;
+        
+        // Add custom scrollbar styles
+        if (needsScroll) {
+          tableHTML += `
+            <style>
+              #ecology-events-table div::-webkit-scrollbar {
+                width: 6px;
+                height: 6px;
+              }
+              #ecology-events-table div::-webkit-scrollbar-track {
+                background: #222;
+                border-radius: 3px;
+              }
+              #ecology-events-table div::-webkit-scrollbar-thumb {
+                background: #444;
+                border-radius: 3px;
+              }
+              #ecology-events-table div::-webkit-scrollbar-thumb:hover {
+                background: #555;
+              }
+            </style>
+          `;
+        }
       } else {
-        tableHTML = `<div style="color: #666; font-style: italic; font-size: 11px; text-align: center; margin-top: 5px;">No extinction events</div>`;
+        tableHTML = `<div style="color: #666; font-style: italic; font-size: 11px; text-align: center; margin-top: 5px;">No ecological events yet</div>`;
       }
       
-      extinctionTableElement.innerHTML = tableHTML;
+      ecologyEventsTableElement.innerHTML = tableHTML;
     }
     
     // Update reproduction stats

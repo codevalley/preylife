@@ -40,8 +40,16 @@ export class SimulationEngine {
   private seasonResourceSpawnAmount: number = SimulationConfig.resources.bloom.resourcesPerBloom; // Resources to spawn each season
   private resourceBloom: boolean = false; // Whether we're in a resource bloom period
   
-  // Extinction and spawn tracking
+  // Ecology tracking - extinctions, evolutions, and spawning
   private extinctionEvents: {type: string, day: number}[] = [];
+  private evolutionEvents: {
+    fromType: string, 
+    toType: string, 
+    day: number, 
+    preyCount: number, 
+    predatorCount: number, 
+    resourceCount: number
+  }[] = [];
   private totalSpawned: {
     prey: number,
     predators: number,
@@ -643,6 +651,18 @@ export class SimulationEngine {
     return [...this.extinctionEvents]; // Return a copy
   }
   
+  // Getter for evolution events
+  getEvolutionEvents(): {
+    fromType: string, 
+    toType: string, 
+    day: number, 
+    preyCount: number, 
+    predatorCount: number, 
+    resourceCount: number
+  }[] {
+    return [...this.evolutionEvents]; // Return a copy
+  }
+  
   // Getter for total spawned counts
   getTotalSpawned(): {prey: number, predators: number, resources: number} {
     return {...this.totalSpawned}; // Return a copy
@@ -1102,13 +1122,16 @@ export class SimulationEngine {
       });
       console.info(`=== EVOLUTIONARY EVENT COMPLETED ===`);
       console.info(`Day ${this.days}: ${newPredators.length} prey evolved into predators!`);
-      //console.log(`Current population - Prey: ${this.prey.length}, Predators: ${this.predators.length}`);
       
-      // Verify the predator was actually added
-      //console.log(`Predator count verification: ${this.predators.length}`);
-      // if (this.predators.length > 0) {
-      //   console.log(`First predator ID: ${this.predators[0].id}`);
-      // }
+      // Track this evolution event
+      this.evolutionEvents.push({
+        fromType: 'prey',
+        toType: 'predator',
+        day: this.days,
+        preyCount: this.prey.length,
+        predatorCount: this.predators.length,
+        resourceCount: this.resources.length
+      });
     }
     
     if (newPrey.length > 0) {
@@ -1119,10 +1142,16 @@ export class SimulationEngine {
       });
       console.info(`=== EVOLUTIONARY EVENT COMPLETED ===`);
       console.info(`Day ${this.days}: ${newPrey.length} predators evolved into prey!`);
-      //console.log(`Current population - Prey: ${this.prey.length}, Predators: ${this.predators.length}`);
       
-      // Verify the prey was actually added
-      //console.log(`Prey count verification: ${this.prey.length}`);
+      // Track this evolution event
+      this.evolutionEvents.push({
+        fromType: 'predator',
+        toType: 'prey',
+        day: this.days,
+        preyCount: this.prey.length,
+        predatorCount: this.predators.length,
+        resourceCount: this.resources.length
+      });
     }
   }
   
