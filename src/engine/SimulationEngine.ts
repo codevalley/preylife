@@ -812,7 +812,6 @@ export class SimulationEngine {
     // DEBUG: Monitor predator energy levels when no prey exist
     if (this.prey.length === 0 && this.predators.length > 0) {
       // Calculate and log average energy
-      const energyLevels = this.predators.map(p => p.energy / p.maxEnergy);
       // const averageEnergy = energyLevels.reduce((sum, e) => sum + e, 0) / energyLevels.length;
       // const minEnergy = Math.min(...energyLevels);
       // const maxEnergy = Math.max(...energyLevels);

@@ -4,7 +4,7 @@ import { DashboardPanel } from './DashboardPanel';
 export class UIController {
   // Dashboard panels
   private controlPanel: DashboardPanel;
-  private populationPanel: DashboardPanel;
+  private ecologyPanel: DashboardPanel;
   
   // Control buttons
   private playPauseButton: HTMLButtonElement;
@@ -13,17 +13,17 @@ export class UIController {
   // Simulation state
   private isSimulationRunning: boolean = false;
   
-  // Spawn buttons
-  private spawnPreyButton: HTMLButtonElement;
-  private spawnPredatorButton: HTMLButtonElement;
-  private spawnResourceButton: HTMLButtonElement;
-  
   // Dashboard elements
   private preyCountElement: HTMLElement;
   private predatorCountElement: HTMLElement;
   private resourceCountElement: HTMLElement;
   private daysElement: HTMLElement;
   private eventsCountElement: HTMLElement;
+  
+  // Total spawned elements
+  private preySpawnedElement: HTMLElement;
+  private predatorSpawnedElement: HTMLElement;
+  private resourceSpawnedElement: HTMLElement;
   
   // Ecology events tracking
   private ecologyEvents: Array<{
@@ -34,11 +34,6 @@ export class UIController {
     predatorCount: number,
     resourceCount: number
   }> = [];
-  
-  // Total spawned elements
-  private preySpawnedElement: HTMLElement;
-  private predatorSpawnedElement: HTMLElement;
-  private resourceSpawnedElement: HTMLElement;
   
   // Add helper method for number formatting
   private formatNumber(num: number): string {
@@ -55,163 +50,88 @@ export class UIController {
     
     // Create dashboard panels
     this.controlPanel = new DashboardPanel('Simulation Controls', 'control', uiContainer);
-    // Population panel (Organisms) is created later
+    this.ecologyPanel = new DashboardPanel('Ecology Events', 'ecology', uiContainer);
     
     // Set up control panel
     const controlContent = this.controlPanel.getContentElement();
     controlContent.innerHTML = `
-      <div style="display: flex; align-items: center; margin-bottom: 15px; background-color: rgba(40, 40, 40, 0.6); border-radius: 4px; padding: 6px 10px;">
-        <!-- Day display with consistent styling -->
-        <div class="control-button" style="display: flex; align-items: center; background-color: rgba(60, 60, 60, 0.7); border-radius: 4px; padding: 4px 8px; margin-right: 8px; min-width: 60px;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="#aaa" style="margin-right: 4px;">
-            <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7v-5z"/>
-          </svg>
-          <span id="days-count" style="font-weight: bold; min-width: 18px; text-align: center;">0</span>
-        </div>
-        
-        <!-- Play/Pause button with consistent styling -->
-        <button id="play-pause-btn" class="control-button" style="background-color: rgba(50, 120, 70, 0.7); border: none; width: 30px; height: 30px; padding: 0; margin-right: 8px; display: flex; align-items: center; justify-content: center; border-radius: 4px;">
+      <!-- First row: Controls -->
+      <div style="display: flex; align-items: center; margin-bottom: 8px; background-color: rgba(40, 40, 40, 0.6); border-radius: 4px; padding: 6px 10px; gap: 8px;">
+        <!-- Play/Pause button -->
+        <button id="play-pause-btn" class="control-button" style="background-color: rgba(50, 120, 70, 0.7); border: none; width: 34px; height: 34px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 4px;">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
             <path id="play-icon" d="M8 5v14l11-7z" style="display: block;"/>
             <path id="pause-icon" d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" style="display: none;"/>
           </svg>
         </button>
         
-        <!-- Reset button with consistent styling -->
-        <button id="reset-btn" class="control-button" style="background-color: rgba(60, 60, 60, 0.7); border: none; width: 30px; height: 30px; padding: 0; margin-right: 8px; display: flex; align-items: center; justify-content: center; border-radius: 4px;">
+        <!-- Reset button -->
+        <button id="reset-btn" class="control-button" style="background-color: rgba(60, 60, 60, 0.7); border: none; width: 34px; height: 34px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 4px;">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
             <path d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
           </svg>
         </button>
-        
-        <!-- Resource bloom icon with consistent styling (hidden when inactive) -->
-        <div id="resource-bloom" class="control-button" style="display: none; background-color: rgba(50, 120, 70, 0.7); border-radius: 4px; width: 30px; height: 30px; padding: 0; align-items: center; justify-content: center;">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="#55cc55">
-            <path d="M12 22c4.97 0 9-4.03 9-9-4.97 0-9 4.03-9 9zM5.6 10.25c0 1.38 1.12 2.5 2.5 2.5.53 0 1.01-.16 1.42-.44l-.02.19c0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5l-.02-.19c.4.28.89.44 1.42.44 1.38 0 2.5-1.12 2.5-2.5 0-1-.59-1.85-1.43-2.25.84-.4 1.43-1.25 1.43-2.25 0-1.38-1.12-2.5-2.5-2.5-.53 0-1.01.16-1.42.44l.02-.19C14.5 2.12 13.38 1 12 1S9.5 2.12 9.5 3.5l.02.19c-.4-.28-.89-.44-1.42-.44-1.38 0-2.5 1.12-2.5 2.5 0 1 .59 1.85 1.43 2.25-.84.4-1.43 1.25-1.43 2.25zM12 5.5c1.38 0 2.5 1.12 2.5 2.5s-1.12 2.5-2.5 2.5S9.5 9.38 9.5 8s1.12-2.5 2.5-2.5z"/>
+
+        <!-- Custom/Settings button -->
+        <button id="custom-btn" class="control-button" style="background-color: rgba(60, 60, 60, 0.7); border: none; width: 34px; height: 34px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 4px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
           </svg>
+        </button>
+
+        <!-- Day display -->
+        <div class="control-button" style="display: flex; align-items: center; background-color: rgba(60, 60, 60, 0.7); border-radius: 4px; padding: 0 12px; height: 34px; line-height: 34px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="#aaa" style="margin-right: 4px;">
+            <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.2 3.2.8-1.3-4.5-2.7V7z"/>
+          </svg>
+          <span id="days-count" style="font-weight: bold; min-width: 18px; text-align: center;">0</span>
         </div>
       </div>
-      
-      <div style="margin-bottom: 15px; background-color: rgba(40, 40, 40, 0.6); border-radius: 4px; padding: 8px 10px;">
-        <div style="display: flex; align-items: center; margin-bottom: 6px;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="#aaa" style="margin-right: 6px;">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+
+      <!-- Second row: Stats -->
+      <div style="display: flex; align-items: center; background-color: rgba(40, 40, 40, 0.6); border-radius: 4px; padding: 6px 10px; gap: 8px;">
+        <!-- Prey stats -->
+        <div id="prey-widget" style="display: flex; align-items: center; background-color: rgba(40, 70, 130, 0.3); border-radius: 4px; padding: 4px 8px; flex: 1; cursor: pointer; transition: background-color 0.2s;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="#5588ff" style="margin-right: 4px;">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"/>
           </svg>
-          <span style="font-weight: bold; margin-right: 6px;">Ecology Events</span>
-          <span id="events-count" class="badge" style="background: rgba(80, 80, 80, 0.7); padding: 2px 6px; border-radius: 10px; font-size: 11px;">0</span>
+          <span id="prey-count" style="color: #5588ff; font-weight: bold;">0</span>
+          <span style="color: #777; margin: 0 4px;">/</span>
+          <span id="prey-spawned" style="color: #5588ff;">0</span>
         </div>
-        
-        <div id="ecology-events-table" style="width: 100%; font-size: 12px;">
-          <!-- Ecology events (extinctions and evolutions) will be added here -->
+
+        <!-- Predator stats -->
+        <div id="predator-widget" style="display: flex; align-items: center; background-color: rgba(130, 40, 40, 0.3); border-radius: 4px; padding: 4px 8px; flex: 1; cursor: pointer; transition: background-color 0.2s;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="#ff5555" style="margin-right: 4px;">
+            <path d="M12 2 L22 9 L19 20 L5 20 L2 9 Z"/>
+          </svg>
+          <span id="predator-count" style="color: #ff5555; font-weight: bold;">0</span>
+          <span style="color: #777; margin: 0 4px;">/</span>
+          <span id="predator-spawned" style="color: #ff5555;">0</span>
+        </div>
+
+        <!-- Resource stats -->
+        <div id="resource-widget" style="display: flex; align-items: center; background-color: rgba(40, 130, 40, 0.3); border-radius: 4px; padding: 4px 8px; flex: 1; cursor: pointer; transition: background-color 0.2s;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="#55cc55" style="margin-right: 4px;">
+            <rect x="4" y="4" width="16" height="16" />
+          </svg>
+          <span id="resource-count" style="color: #55cc55; font-weight: bold;">0</span>
+          <span style="color: #777; margin: 0 4px;">/</span>
+          <span id="resource-spawned" style="color: #55cc55;">0</span>
         </div>
       </div>
     `;
-    
-    // Set up population panel with new name "Organisms"
-    this.populationPanel = new DashboardPanel('Organisms', 'population', uiContainer);
-    const populationContent = this.populationPanel.getContentElement();
-    populationContent.innerHTML = `
-      <div class="population-grid" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
-        <!-- Prey Box -->
-        <div style="background-color: rgba(40, 70, 130, 0.3); border: 1px solid rgba(85, 136, 255, 0.5); border-radius: 4px; padding: 8px;">
-          <div style="font-weight: bold; color: #5588ff; margin-bottom: 5px; font-size: 14px; display: flex; align-items: center;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="#5588ff" style="margin-right: 4px;">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"/>
-            </svg>
-            Prey
-          </div>
-          <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
-            <span style="display: flex; align-items: center;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="#5588ff" style="margin-right: 4px;">
-                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-              </svg>
-              <span style="color: #aaaaaa; font-size: 11px; margin-right: 4px;">Live:</span>
-            </span>
-            <span id="prey-count" style="color: #5588ff; font-size: 11px;">0</span>
-          </div>
-          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-            <span style="display: flex; align-items: center;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2" style="margin-right: 4px;">
-                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-              </svg>
-              <span style="color: #aaaaaa; font-size: 11px; margin-right: 4px;">Total:</span>
-            </span>
-            <span id="prey-spawned" style="color: #5588ff; font-size: 11px;">0</span>
-          </div>
-          <button id="spawn-prey-btn" title="Spawn 10 Prey" style="width: 100%; font-size: 12px; display: flex; align-items: center; justify-content: center;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 4px;">
-              <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
-            </svg>
-            10
-          </button>
+
+    // Set up ecology panel
+    const ecologyContent = this.ecologyPanel.getContentElement();
+    ecologyContent.innerHTML = `
+      <div style="display: flex; flex-direction: column; height: 100%; max-height: 300px;">
+        <div style="display: flex; align-items: center; margin-bottom: 6px;">
+          <span id="events-count" class="badge" style="background: rgba(80, 80, 80, 0.7); padding: 2px 6px; border-radius: 10px; font-size: 11px; margin-left: auto;">0</span>
         </div>
         
-        <!-- Predator Box -->
-        <div style="background-color: rgba(130, 40, 40, 0.3); border: 1px solid rgba(255, 85, 85, 0.5); border-radius: 4px; padding: 8px;">
-          <div style="font-weight: bold; color: #ff5555; margin-bottom: 5px; font-size: 14px; display: flex; align-items: center;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="#ff5555" style="margin-right: 4px;">
-              <path d="M12 2 L22 9 L19 20 L5 20 L2 9 Z"/>
-            </svg>
-            Predators
-          </div>
-          <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
-            <span style="display: flex; align-items: center;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="#ff5555" style="margin-right: 4px;">
-                <path d="M12 2 L22 9 L19 20 L5 20 L2 9 Z"/>
-              </svg>
-              <span style="color: #aaaaaa; font-size: 11px; margin-right: 4px;">Live:</span>
-            </span>
-            <span id="predator-count" style="color: #ff5555; font-size: 11px;">0</span>
-          </div>
-          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-            <span style="display: flex; align-items: center;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2" style="margin-right: 4px;">
-                <path d="M12 2 L22 9 L19 20 L5 20 L2 9 Z"/>
-              </svg>
-              <span style="color: #aaaaaa; font-size: 11px; margin-right: 4px;">Total:</span>
-            </span>
-            <span id="predator-spawned" style="color: #ff5555; font-size: 11px;">0</span>
-          </div>
-          <button id="spawn-predator-btn" title="Spawn 5 Predators" style="width: 100%; font-size: 12px; display: flex; align-items: center; justify-content: center;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 4px;">
-              <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
-            </svg>
-            5
-          </button>
-        </div>
-        
-        <!-- Resource Box -->
-        <div style="background-color: rgba(40, 130, 40, 0.3); border: 1px solid rgba(85, 204, 85, 0.5); border-radius: 4px; padding: 8px;">
-          <div style="font-weight: bold; color: #55cc55; margin-bottom: 5px; font-size: 14px; display: flex; align-items: center;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="#55cc55" style="margin-right: 4px;">
-              <rect x="4" y="4" width="16" height="16" />
-            </svg>
-            Food
-          </div>
-          <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
-            <span style="display: flex; align-items: center;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="#55cc55" style="margin-right: 4px;">
-                <rect x="4" y="4" width="16" height="16" />
-              </svg>
-              <span style="color: #aaaaaa; font-size: 11px; margin-right: 4px;">Active:</span>
-            </span>
-            <span id="resource-count" style="color: #55cc55; font-size: 11px;">0</span>
-          </div>
-          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-            <span style="display: flex; align-items: center;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2" style="margin-right: 4px;">
-                <rect x="4" y="4" width="16" height="16" />
-              </svg>
-              <span style="color: #aaaaaa; font-size: 11px; margin-right: 4px;">Total:</span>
-            </span>
-            <span id="resource-spawned" style="color: #55cc55; font-size: 11px;">0</span>
-          </div>
-          <button id="spawn-resource-btn" title="Spawn 20 Resources" style="width: 100%; font-size: 12px; display: flex; align-items: center; justify-content: center;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 4px;">
-              <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
-            </svg>
-            20
-          </button>
+        <div id="ecology-events-table" style="flex: 1; overflow: hidden; font-size: 12px;">
+          <!-- Ecology events (extinctions and evolutions) will be added here -->
         </div>
       </div>
     `;
@@ -219,11 +139,6 @@ export class UIController {
     // Get control buttons
     this.playPauseButton = document.getElementById('play-pause-btn') as HTMLButtonElement;
     this.resetButton = document.getElementById('reset-btn') as HTMLButtonElement;
-    
-    // Get spawn buttons
-    this.spawnPreyButton = document.getElementById('spawn-prey-btn') as HTMLButtonElement;
-    this.spawnPredatorButton = document.getElementById('spawn-predator-btn') as HTMLButtonElement;
-    this.spawnResourceButton = document.getElementById('spawn-resource-btn') as HTMLButtonElement;
     
     // Get dashboard elements
     this.preyCountElement = document.getElementById('prey-count') as HTMLElement;
@@ -240,17 +155,59 @@ export class UIController {
     // Add tooltips to buttons
     this.playPauseButton.title = 'Play (Space)';
     this.resetButton.title = 'Reset Simulation (R)';
-    this.spawnPreyButton.title = 'Spawn 10 Prey';
-    this.spawnPredatorButton.title = 'Spawn 5 Predators';
-    this.spawnResourceButton.title = 'Spawn 20 Resources';
+    
+    // Add tooltip for custom button
+    const customButton = document.getElementById('custom-btn') as HTMLButtonElement;
+    if (customButton) {
+      customButton.title = 'Customize Simulation';
+      
+      // Add hover effect
+      customButton.addEventListener('mouseenter', () => {
+        customButton.style.backgroundColor = 'rgba(80, 80, 80, 0.7)';
+      });
+      customButton.addEventListener('mouseleave', () => {
+        customButton.style.backgroundColor = 'rgba(60, 60, 60, 0.7)';
+      });
+    }
     
     // Set up event listeners
     this.playPauseButton.addEventListener('click', this.onPlayPauseClick.bind(this));
     this.resetButton.addEventListener('click', this.onResetClick.bind(this));
-    this.spawnPreyButton.addEventListener('click', this.onSpawnPreyClick.bind(this));
-    this.spawnPredatorButton.addEventListener('click', this.onSpawnPredatorClick.bind(this));
-    this.spawnResourceButton.addEventListener('click', this.onSpawnResourceClick.bind(this));
     
+    // Add click handlers for spawning
+    document.getElementById('prey-widget')?.addEventListener('click', () => {
+      this.simulation.spawnPrey(1);
+      this.updateStats();
+    });
+
+    document.getElementById('predator-widget')?.addEventListener('click', () => {
+      this.simulation.spawnPredators(1);
+      this.updateStats();
+    });
+
+    document.getElementById('resource-widget')?.addEventListener('click', () => {
+      this.simulation.spawnResources(10);
+      this.updateStats();
+    });
+
+    // Add hover effects for the widgets
+    const widgets = ['prey-widget', 'predator-widget', 'resource-widget'];
+    widgets.forEach(id => {
+      const widget = document.getElementById(id);
+      if (widget) {
+        widget.addEventListener('mouseenter', () => {
+          widget.style.backgroundColor = id === 'prey-widget' ? 'rgba(40, 70, 130, 0.5)' :
+                                      id === 'predator-widget' ? 'rgba(130, 40, 40, 0.5)' :
+                                      'rgba(40, 130, 40, 0.5)';
+        });
+        widget.addEventListener('mouseleave', () => {
+          widget.style.backgroundColor = id === 'prey-widget' ? 'rgba(40, 70, 130, 0.3)' :
+                                      id === 'predator-widget' ? 'rgba(130, 40, 40, 0.3)' :
+                                      'rgba(40, 130, 40, 0.3)';
+        });
+      }
+    });
+
     // Setup keyboard shortcuts
     window.addEventListener('keydown', (event) => {
       // Spacebar to toggle play/pause
@@ -319,21 +276,6 @@ export class UIController {
     this.updateStats();
   }
   
-  private onSpawnPreyClick(): void {
-    this.simulation.spawnPrey(10);
-    this.updateStats();
-  }
-  
-  private onSpawnPredatorClick(): void {
-    this.simulation.spawnPredators(5);
-    this.updateStats();
-  }
-  
-  private onSpawnResourceClick(): void {
-    this.simulation.spawnResources(20);
-    this.updateStats();
-  }
-  
   updateStats(): void {
     const stats = this.simulation.getStats();
     const days = this.simulation.getDays();
@@ -366,9 +308,9 @@ export class UIController {
           type: 'extinction' as const,
           species: event.type as 'prey' | 'predator',
           day: event.day,
-          preyCount: event.type === 'prey' ? 0 : ('preyCount' in event ? event.preyCount : stats.preyCount),
-          predatorCount: event.type === 'predator' ? 0 : ('predatorCount' in event ? event.predatorCount : stats.predatorCount),
-          resourceCount: 'resourceCount' in event ? event.resourceCount : stats.resourceCount
+          preyCount: event.type === 'prey' ? 0 : stats.preyCount,
+          predatorCount: event.type === 'predator' ? 0 : stats.predatorCount,
+          resourceCount: stats.resourceCount
         };
         
         this.ecologyEvents.push(newEvent);
@@ -399,8 +341,9 @@ export class UIController {
       }
     }
     
-    // Update events count
+    // Update events count and panel title
     this.eventsCountElement.textContent = this.ecologyEvents.length.toString();
+    this.ecologyPanel.setTitle(`Ecology Events (${this.ecologyEvents.length})`);
     
     // Update total spawned with formatted numbers
     this.preySpawnedElement.textContent = this.formatNumber(totalSpawned.prey);
@@ -427,19 +370,16 @@ export class UIController {
         // Show newest events at the top
         const sortedEvents = [...this.ecologyEvents].sort((a, b) => b.day - a.day);
         
-        // Create scrollable container if there are more than 6 events
-        const needsScroll = sortedEvents.length > 6;
-        const maxHeight = needsScroll ? 'max-height: 140px; overflow-y: auto;' : '';
-        
+        // Always create scrollable container
         tableHTML = `
-          <div style="margin-top: 5px;">
-            <div style="display: grid; grid-template-columns: auto 1fr auto; gap: 8px; margin-bottom: 5px;">
+          <div style="height: 100%;">
+            <div style="display: grid; grid-template-columns: auto 1fr auto; gap: 8px; margin-bottom: 5px; position: sticky; top: 0; background-color: rgba(0, 0, 0, 0.7); padding: 5px 0;">
               <div style="font-weight: bold; font-size: 11px; color: #777;">Event</div>
               <div style="font-weight: bold; font-size: 11px; color: #777;">Day</div>
               <div style="font-weight: bold; font-size: 11px; color: #777;">Population</div>
             </div>
             
-            <div style="${maxHeight} overflow-x: hidden; scrollbar-width: thin; scrollbar-color: #444 #222;">
+            <div style="max-height: 240px; overflow-y: auto; overflow-x: hidden; scrollbar-width: thin; scrollbar-color: #444 #222;">
               <div style="display: grid; grid-template-columns: auto 1fr auto; gap: 8px;">
         `;
         
@@ -490,27 +430,25 @@ export class UIController {
         `;
         
         // Add custom scrollbar styles
-        if (needsScroll) {
-          tableHTML += `
-            <style>
-              #ecology-events-table div::-webkit-scrollbar {
-                width: 6px;
-                height: 6px;
-              }
-              #ecology-events-table div::-webkit-scrollbar-track {
-                background: #222;
-                border-radius: 3px;
-              }
-              #ecology-events-table div::-webkit-scrollbar-thumb {
-                background: #444;
-                border-radius: 3px;
-              }
-              #ecology-events-table div::-webkit-scrollbar-thumb:hover {
-                background: #555;
-              }
-            </style>
-          `;
-        }
+        tableHTML += `
+          <style>
+            #ecology-events-table div::-webkit-scrollbar {
+              width: 6px;
+              height: 6px;
+            }
+            #ecology-events-table div::-webkit-scrollbar-track {
+              background: #222;
+              border-radius: 3px;
+            }
+            #ecology-events-table div::-webkit-scrollbar-thumb {
+              background: #444;
+              border-radius: 3px;
+            }
+            #ecology-events-table div::-webkit-scrollbar-thumb:hover {
+              background: #555;
+            }
+          </style>
+        `;
       } else {
         tableHTML = `<div style="color: #666; font-style: italic; font-size: 11px; text-align: center; margin-top: 5px;">No ecological events yet</div>`;
       }

@@ -1,263 +1,266 @@
-// Simulation configuration parameters
+// Simulation configuration parameters - Core settings for the predator-prey simulation
 export const SimulationConfig = {
-  // Environment settings
+  // Environment settings - Define the simulation world boundaries
+  // don't show in dashboard
   environment: {
-    width: 1000,
-    height: 600,
+    width: 1000,    // Width of the simulation area in units (affects creature movement and resource distribution)
+    height: 600,    // Height of the simulation area in units (affects creature movement and resource distribution)
   },
   
-  // Initial population
+  // Initial population - Starting counts for the simulation entities
   initialPopulation: {
-    resources: 250,
-    prey: 150,
-    predators: 0
+    resources: 250, // Initial number of food resources to spawn at simulation start
+    prey: 150,      // Initial number of prey creatures to spawn at simulation start
+    predators: 0    // Initial number of predator creatures to spawn at simulation start (0 for prey-only ecosystem)
   },
   
-  // Resource settings
+  // Resource settings - Configuration for food sources in the ecosystem
   resources: {
-    defaultEnergy: 12,
-    regenerationChance: 0.02, // % chance each frame
-    emergencyRegenerationThreshold: 0.2, // % of initial prey
-    emergencyRegenerationChance: 0.05, // % chance each frame
-    emergencyEnergyBonus: 1.5, // multiplier for emergency resources
-    decayChance: 0.1, // % chance of resources decaying when no prey
+    defaultEnergy: 12,                 // Energy value of each standard resource (how much energy prey gain when consumed)
+    regenerationChance: 0.02,          // Probability (0-1) of a new resource spawning on each frame
+    emergencyRegenerationThreshold: 0.2, // When prey population falls below this % of initial count, trigger emergency resources
+    emergencyRegenerationChance: 0.05,   // Higher probability (0-1) of resource spawning during emergency conditions
+    emergencyEnergyBonus: 1.5,           // Energy multiplier for resources spawned during emergency conditions
+    decayChance: 0.1,                    // Probability (0-1) of resources decaying when no prey exist in the ecosystem
     
-    // Resource limitation settings
+    // Resource limitation settings - Controls to prevent resource overpopulation
     limits: {
-      maxCount: 2000,           // Maximum number of resources allowed in the simulation
-      enableDecay: true,        // Whether resources decay naturally over time
-      decayLifespan: 30,        // Lifespan of resources in days before they start decaying
-      decayChancePerFrame: 0.005, // Chance per frame that an old resource will decay
-      enforcementThreshold: 0.9, // When resource count reaches 90% of maxCount, start enforcing limits
+      maxCount: 2000,               // Absolute maximum number of resources allowed in simulation at once
+      enableDecay: true,            // Whether resources naturally decay over time (true) or persist indefinitely (false)
+      decayLifespan: 30,            // Number of days a resource exists before it becomes eligible for natural decay
+      decayChancePerFrame: 0.005,   // Probability (0-1) per frame that an old resource (beyond decayLifespan) will decay
+      enforcementThreshold: 0.9,    // When resources reach this % of maxCount, start enforcing limits more strictly
     },
     
-    // Seasonal bloom settings
+    // Seasonal bloom settings - Periodic bursts of abundant resources
     bloom: {
-      clusterCount: 5,           // Number of resource clusters during bloom
-      primaryEnergyMultiplier: 2.0,  // Energy multiplier for primary cluster resources
-      secondaryEnergyMultiplier: 1.5, // Energy multiplier for secondary cluster resources
-      primaryClusterRadius: 60,  // Radius of primary dense clusters
-      secondaryClusterRadius: 160, // Max radius of secondary sparse clusters
-      bloomDuration: 10,         // How many days the bloom lasts
-      resourcesPerBloom: 75,    // Total resources spawned during bloom
-      primaryDensity: 0.6        // Percentage of resources in primary clusters (0.6 = 60%)
+      clusterCount: 5,                  // Number of distinct resource clusters to create during a bloom event
+      primaryEnergyMultiplier: 2.0,     // Energy value multiplier for resources in primary (dense) clusters
+      secondaryEnergyMultiplier: 1.5,   // Energy value multiplier for resources in secondary (sparse) clusters
+      primaryClusterRadius: 60,         // Radius in units for dense primary resource clusters
+      secondaryClusterRadius: 160,      // Radius in units for sparse secondary resource clusters
+      bloomDuration: 10,                // Number of days the bloom event lasts before returning to normal
+      resourcesPerBloom: 75,            // Total number of new resources spawned during each bloom event
+      primaryDensity: 0.6               // Proportion (0-1) of bloom resources allocated to primary dense clusters
     }
   },
   
-  // Creature settings
+  // Creature settings - General parameters that apply to both prey and predators
   creatures: {
-    // General creature settings
-    baseSpeed: 8, // Base movement speed in units per second
-    baseCost: 1.0, // base energy consumption per second
-    movementCostMultiplier: 2.0, // how much strength affects movement cost
+    // General creature settings - Base movement and energy parameters
+    baseSpeed: 8,                  // Base movement speed in units per second (before trait modifications)
+    baseCost: 1.0,                 // Base energy consumption rate per second (before trait modifications)
+    movementCostMultiplier: 2.0,   // How much the strength trait affects movement energy cost
     maxLifespan: {
-      base: 60, // seconds
-      longevityBonus: 40 // additional seconds at max longevity
+      base: 60,                    // Base lifespan in seconds for all creatures
+      longevityBonus: 40           // Additional seconds of lifespan granted at maximum longevity trait (1.0)
     },
     
-    // Energy consumption multipliers by type
+    // Energy consumption multipliers by type - Balances energy use between species
     energyConsumption: {
-      predator: 0.9, // Reduced from 2.25 to give predators more longevity
-      prey: 0.7
+      predator: 0.9,               // Energy consumption multiplier for predators (lower = more efficient)
+      prey: 0.7                    // Energy consumption multiplier for prey (lower = more efficient)
     },
     
-    // Detection and interaction ranges
+    // Detection and interaction ranges - Distances for various interactions
     interactionRanges: {
-      resourceConsumption: 10,
-      preyCaptureRange: 15,
-      preyDetectionRange: 80,
-      preyResourceDetectionRange: 50,
-      preyPredatorDetectionRange: 100 // How far prey can detect predators
+      resourceConsumption: 10,         // Distance in units at which prey can consume resources
+      preyCaptureRange: 15,            // Distance in units at which predators can attempt to capture prey
+      preyDetectionRange: 80,          // Distance in units at which predators can detect prey
+      preyResourceDetectionRange: 50,  // Distance in units at which prey can detect resources
+      preyPredatorDetectionRange: 100  // Distance in units at which prey can detect approaching predators
     }
   },
   
-  // Predator settings
+  // Predator settings - Parameters specific to predator behavior and attributes
   predator: {
-    maxEnergy: 560,
-    defaultAttributes: {
-      strength: 0.5,
-      stealth: 0.4,
-      learnability: 0.1,
-      longevity: 0.5
+    maxEnergy: 560,                // Maximum energy capacity for predators (how much energy they can store)
+    defaultAttributes: {           // Default genetic traits for newly spawned predators (0-1 scale)
+      strength: 0.5,               // Physical power - affects movement speed, hunting success, and energy cost
+      stealth: 0.4,                // Sneakiness - affects ability to approach prey undetected
+      learnability: 0.1,           // Adaptability - affects ability to learn from other predators
+      longevity: 0.5               // Lifespan - affects maximum age and metabolic efficiency
     },
-    captureChance: {
-      strengthMultiplier: 0.6,
-      baseChance: 0.2,
-      minChance: 0.1,
-      maxChance: 0.5
+    captureChance: {               // Parameters determining success rate when capturing prey
+      strengthMultiplier: 0.6,     // Impact of strength trait on capture success (higher = more impact)
+      baseChance: 0.2,             // Minimum capture probability before trait modifications
+      minChance: 0.1,              // Absolute minimum capture probability regardless of traits
+      maxChance: 0.5               // Absolute maximum capture probability regardless of traits
     },
-    energyGainFromPrey: 0.85, // % of prey's energy gained
-    huntingSpeedMultiplier: 0.5, // Speed boost multiplier when hunting (0.5 = up to 50% faster)
-    detectionRangeMultiplier: 0.5, // Detection range increase multiplier when hungry
+    energyGainFromPrey: 0.85,           // Proportion (0-1) of prey's energy gained when consumed
+    huntingSpeedMultiplier: 0.5,        // Speed boost factor when actively hunting (0.5 = up to 50% faster)
+    detectionRangeMultiplier: 0.5,      // Detection range increase factor when hungry (0.5 = up to 50% increase)
   },
   
-  // Prey settings
+  // Prey settings - Parameters specific to prey behavior and attributes
   prey: {
-    maxEnergy: 175,
-    defaultAttributes: {
-      strength: 0.5,
-      stealth: 0.5,
-      learnability: 0.05,
-      longevity: 0.5
+    maxEnergy: 175,                // Maximum energy capacity for prey (how much energy they can store)
+    defaultAttributes: {           // Default genetic traits for newly spawned prey (0-1 scale)
+      strength: 0.5,               // Physical power - affects movement speed and energy cost
+      stealth: 0.5,                // Evasiveness - affects ability to hide from predators
+      learnability: 0.05,          // Adaptability - affects ability to learn from other prey
+      longevity: 0.5               // Lifespan - affects maximum age and metabolic efficiency
     },
-    resourceEnergyBonus: 1.2, // multiplier for energy from resources
-    predatorAvoidanceMultiplier: 1.0, // Speed boost when fleeing from predators (reduced from 1.1)
-    predatorDetectionMultiplier: 1.1, // How much stealth improves predator detection
-    escapeBaseChance: 0.2, // Base probability of escaping when caught (reduced from 0.25)
-    escapeEnergyConsumption: 5, // Energy cost of escape attempt
+    resourceEnergyBonus: 1.2,            // Multiplier for energy gained from consuming resources
+    predatorAvoidanceMultiplier: 1.0,    // Speed boost factor when fleeing from predators (1.0 = no boost)
+    predatorDetectionMultiplier: 1.1,    // Factor for how much stealth improves predator detection range
+    escapeBaseChance: 0.2,               // Base probability (0-1) of escaping when caught by a predator
+    escapeEnergyConsumption: 5,          // Energy cost when attempting to escape from a predator
   },
   
-  // Learning settings
+  // Learning settings - Parameters for how creatures adapt traits from others
   learning: {
-    chanceMultiplier: 0.1, // base chance multiplied by learnability
-    learningRate: 0.2, // how much of the difference is learned
-    maxLearningAmount: 0.05, // maximum attribute change
-    energyCost: 10 // energy cost multiplier for learning
+    chanceMultiplier: 0.1,       // Base probability multiplier for learning (multiplied by learnability trait)
+    learningRate: 0.2,           // How much of the trait difference is adopted when learning occurs
+    maxLearningAmount: 0.05,     // Maximum trait change possible from a single learning event
+    energyCost: 10               // Energy cost multiplier for learning (higher = more energy used)
   },
   
-  // Reproduction settings
+  // Reproduction settings - Parameters for breeding and offspring traits
   reproduction: {
-    mutationRange: 0.1, // ±0.05 by default
-    mutationChance: 0.1, // chance of significant mutation
-    significantMutationRange: 0.4, // ±0.2 by default
-    energyCapacityMutationRange: 0.1, // ±5% by default
-    significantEnergyCapacityMutationRange: 0.4, // ±20% by default
+    mutationRange: 0.1,                   // Standard mutation range (±0.05 by default) for offspring traits
+    mutationChance: 0.1,                  // Probability (0-1) of a significant mutation occurring
+    significantMutationRange: 0.4,        // Range for significant mutations (±0.2 by default)
+    energyCapacityMutationRange: 0.1,     // Standard mutation range for max energy (±5% by default)
+    significantEnergyCapacityMutationRange: 0.4, // Range for significant max energy mutations (±20%)
     
-    // Probabilistic reproduction parameters
+    // Probabilistic reproduction parameters - Controls when creatures attempt to reproduce
     energyThreshold: {
-      prey: 0.8,    // 80% energy threshold for high reproduction probability
-      predator: 0.70 // 70% energy threshold for high reproduction probability
+      prey: 0.8,                   // Energy percentage (0-1) threshold for high reproduction chance in prey
+      predator: 0.70               // Energy percentage (0-1) threshold for high reproduction chance in predators
     },
     probability: {
-      highEnergy: {  // When energy is above threshold
-        prey: 0.2,   // 20% chance per update when above threshold
-        predator: 0.4 // 30% chance per update when above threshold
+      highEnergy: {                // Reproduction probabilities when energy is above threshold
+        prey: 0.2,                 // Probability (0-1) per update for prey above energy threshold
+        predator: 0.4              // Probability (0-1) per update for predators above energy threshold
       },
-      lowEnergy: {   // When energy is below threshold but above 20%
-        prey: 0.001,   // 0.1% chance per update when between 20% and threshold
-        predator: 0.002 // 0.1% chance per update when between 20% and threshold
+      lowEnergy: {                 // Reproduction probabilities when energy is below threshold but above 20%
+        prey: 0.001,               // Probability (0-1) per update for prey with moderate energy
+        predator: 0.002            // Probability (0-1) per update for predators with moderate energy
       }
     },
     cooldown: {
-      prey: 7,      // 7 days until full reproduction probability is restored
-      predator: 3    // 6 days until full reproduction probability is restored
+      prey: 7,                     // Days until prey can reproduce again at full probability
+      predator: 3                  // Days until predators can reproduce again at full probability
     },
-    juvenileMaturity: 0.15, // Percentage of lifespan before creature is mature enough to reproduce
-    juvenileReproductionProbability: 0.01 // Very low probability for juveniles to reproduce
+    juvenileMaturity: 0.15,                   // Proportion (0-1) of lifespan before creature can reproduce
+    juvenileReproductionProbability: 0.01     // Low probability (0-1) for juvenile reproduction if it occurs
   },
   
-  // Starvation settings
+  // Starvation settings - Parameters for energy-based mortality risk
   starvation: {
     // Separate starvation thresholds for prey and predators
     prey: {
-      // Prey starvation probability thresholds (energy % : probability of death per update)
+      // Prey starvation probability thresholds as array of {energy percentage : death probability per update}
       // Prey are more resilient to starvation (lower probabilities)
       thresholds: [
-        { energyPercent: 0.5, probability: 0.0001 }, // 50% energy: 0.01% chance per update
-        { energyPercent: 0.4, probability: 0.0001 }, // 40% energy: 0.01% chance per update
-        { energyPercent: 0.3, probability: 0.001 },  // 30% energy: 0.1% chance per update
-        { energyPercent: 0.2, probability: 0.005 },   // 20% energy: 1% chance per update
-        { energyPercent: 0.1, probability: 0.02 },   // 10% energy: 2% chance per update
-        { energyPercent: 0.05, probability: 0.01 }    // 5% energy: 10% chance per update
+        { energyPercent: 0.5, probability: 0.0001 }, // At 50% energy: 0.01% chance of death per update
+        { energyPercent: 0.4, probability: 0.0001 }, // At 40% energy: 0.01% chance of death per update
+        { energyPercent: 0.3, probability: 0.001 },  // At 30% energy: 0.1% chance of death per update
+        { energyPercent: 0.2, probability: 0.005 },  // At 20% energy: 0.5% chance of death per update
+        { energyPercent: 0.1, probability: 0.02 },   // At 10% energy: 2% chance of death per update
+        { energyPercent: 0.05, probability: 0.01 }   // At 5% energy: 1% chance of death per update
       ]
     },
     
     predator: {
-      // Predator starvation probability thresholds (energy % : probability of death per update)
+      // Predator starvation probability thresholds as array of {energy percentage : death probability per update}
       // Predators are more vulnerable to starvation (higher probabilities)
       thresholds: [
-        { energyPercent: 0.5, probability: 0.001 }, // 50% energy: 0.1% chance per update
-        { energyPercent: 0.4, probability: 0.002 },  // 40% energy: 0.2% chance per update
-        { energyPercent: 0.3, probability: 0.005 },  // 30% energy: 0.5% chance per update
-        { energyPercent: 0.2, probability: 0.02 },   // 20% energy: 2% chance per update
-        { energyPercent: 0.1, probability: 0.08 },   // 10% energy: 8% chance per update
-        { energyPercent: 0.05, probability: 0.25 }    // 5% energy: 25% chance per update
+        { energyPercent: 0.5, probability: 0.001 },  // At 50% energy: 0.1% chance of death per update
+        { energyPercent: 0.4, probability: 0.002 },  // At 40% energy: 0.2% chance of death per update
+        { energyPercent: 0.3, probability: 0.005 },  // At 30% energy: 0.5% chance of death per update
+        { energyPercent: 0.2, probability: 0.02 },   // At 20% energy: 2% chance of death per update
+        { energyPercent: 0.1, probability: 0.08 },   // At 10% energy: 8% chance of death per update
+        { energyPercent: 0.05, probability: 0.25 }   // At 5% energy: 25% chance of death per update
       ]
     }
   },
   
-  // Clustered spawning settings
+  // Clustered spawning settings - Controls how entities are distributed in groups at spawn
   clusteredSpawning: {
     resources: {
-      clusterCount: 4,
+      clusterCount: 4,             // Number of resource clusters to create during initial spawning
     },
     prey: {
-      minClusters: 2,
-      maxClusters: 3,
-      radius: 80,
+      minClusters: 2,              // Minimum number of prey clusters to create during initial spawning
+      maxClusters: 3,              // Maximum number of prey clusters to create during initial spawning
+      radius: 80,                  // Radius in units for each prey cluster
       attributes: {
-        strengthRange: [0.3, 0.7],
-        stealthRange: [0.3, 0.7],
-        learnabilityRange: [0.2, 0.6],
-        longevityRange: [0.3, 0.7],
-        variation: 0.2 // ±0.1 individual variation
+        // Range of possible trait values for each initial prey cluster [min, max]
+        strengthRange: [0.3, 0.7],     // Range for strength trait in newly spawned prey
+        stealthRange: [0.3, 0.7],      // Range for stealth trait in newly spawned prey
+        learnabilityRange: [0.2, 0.6], // Range for learnability trait in newly spawned prey
+        longevityRange: [0.3, 0.7],    // Range for longevity trait in newly spawned prey
+        variation: 0.2                 // Individual variation within a cluster (±0.1 around cluster value)
       }
     },
     predator: {
-      minClusters: 1,
-      maxClusters: 2,
-      radius: 60,
+      minClusters: 1,              // Minimum number of predator clusters to create during initial spawning
+      maxClusters: 2,              // Maximum number of predator clusters to create during initial spawning
+      radius: 60,                  // Radius in units for each predator cluster
       attributes: {
-        strengthRange: [0.4, 0.8],
-        stealthRange: [0.3, 0.7],
-        learnabilityRange: [0.2, 0.6],
-        longevityRange: [0.3, 0.7],
-        variation: 0.2 // ±0.1 individual variation
+        // Range of possible trait values for each initial predator cluster [min, max]
+        strengthRange: [0.4, 0.8],     // Range for strength trait in newly spawned predators
+        stealthRange: [0.3, 0.7],      // Range for stealth trait in newly spawned predators
+        learnabilityRange: [0.2, 0.6], // Range for learnability trait in newly spawned predators
+        longevityRange: [0.3, 0.7],    // Range for longevity trait in newly spawned predators
+        variation: 0.2                 // Individual variation within a cluster (±0.1 around cluster value)
       }
     }
   },
   
-  // Species conversion settings (evolutionary mutation mechanism)
+  // Species conversion settings - Parameters for evolutionary mutation between species types
   speciesConversion: {
-    enabled: true,                 // Master toggle for this feature
+    enabled: true,                 // Master toggle for species conversion feature (true = enabled)
     
-    // New species-level contact tracking system
+    // Contact tracking system - Determines how species interactions affect conversion eligibility
     contactTracking: {
-      frameWindow: 600,            // Window of frames to track contact history (10 seconds)
-      sameSpeciesContactRequired: 300,  // Minimum contacts with same species in window (50%)
-      resetOnOppositeContact: true,     // Reset counter on ANY contact with opposite species
-      contactMemoryDuration: 900,       // Maximum time to track contact history (15 seconds)
-      isolationThreshold: 450,          // Time without opposite species contact to consider isolated
+      frameWindow: 600,                 // Number of frames to analyze for contact history (10 seconds)
+      sameSpeciesContactRequired: 300,  // Minimum same-species contacts needed in window (50% of frames)
+      resetOnOppositeContact: true,     // Whether to reset contact counter when meeting opposite species
+      contactMemoryDuration: 900,       // Maximum frames to remember contact history (15 seconds)
+      isolationThreshold: 450,          // Frames without opposite species contact to consider isolated
     },
     
-    // Conversion probability settings
-    baseProbability: 0.05,         // Base probability for conversion check
+    // Base conversion probability - Starting chance before trait modifications
+    baseProbability: 0.05,         // Base probability (0-1) for conversion check per eligible creature
     
-    // Optional population conditions for enabling conversion (can be disabled)
+    // Population conditions - Optional rules for triggering conversions based on species ratios
     populationConditions: {
-      enabled: false,              // Enable population conditions for extinct species regeneration
-      enableRatio: 0.001,          // Trigger only when species is essentially extinct (0.1%)
-      minPopulationCheck: 10,      // Only check ratio when total population > 10
-      disableRatio: 0.05           // Disable when recovered to 5% of total population
+      enabled: false,              // Whether to enable population-based conversion triggers
+      enableRatio: 0.001,          // Species ratio threshold to enable conversion (0.1% of total population)
+      minPopulationCheck: 10,      // Minimum total population before ratio checks are applied
+      disableRatio: 0.05           // Species ratio threshold to disable conversion (5% of total population)
     },
     
-    // Trait influence on conversion probability
+    // Trait influence on conversion probability - How genetic traits affect species change
     traitInfluence: {
       prey: {
-        // Higher values in these traits increase chance of prey→predator conversion
-        strengthWeight: 1.0,       // Stronger prey more likely to become predators
-        stealthWeight: 1.0,        // Stealthier prey more likely to become predators
-        traitThreshold: 0.6,       // Threshold for trait qualifications
-        extremeTraitBonus: 500,    // Bonus for exceptional traits
-        maxProbability: 0.25       // Maximum possible conversion probability (25%)
+        // Parameters for prey-to-predator conversion based on traits
+        strengthWeight: 1.0,       // Weight of strength trait on conversion (higher = stronger effect)
+        stealthWeight: 1.0,        // Weight of stealth trait on conversion (higher = stronger effect)
+        traitThreshold: 0.6,       // Minimum average trait value needed to qualify for conversion
+        extremeTraitBonus: 500,    // Multiplier for conversion probability with exceptional traits
+        maxProbability: 0.25       // Maximum possible conversion probability (0-1) regardless of traits
       },
       predator: {
-        // Lower values in these traits increase chance of predator→prey conversion
-        strengthWeight: -1.0,      // Weaker predators more likely to become prey
-        stealthWeight: -1.0,       // Less stealthy predators more likely to become prey
-        traitThreshold: 0.5,       // Threshold for trait qualifications
-        extremeTraitBonus: 500,    // Bonus for exceptional traits
-        maxProbability: 0.15       // Maximum possible conversion probability (15%)
+        // Parameters for predator-to-prey conversion based on traits
+        strengthWeight: -1.0,      // Weight of strength trait on conversion (negative = inverse effect)
+        stealthWeight: -1.0,       // Weight of stealth trait on conversion (negative = inverse effect)
+        traitThreshold: 0.5,       // Maximum average trait value allowed to qualify for conversion
+        extremeTraitBonus: 500,    // Multiplier for conversion probability with exceptionally low traits
+        maxProbability: 0.15       // Maximum possible conversion probability (0-1) regardless of traits
       }
     },
     
-    // Debugging options
-    debugConversionChecks: false,   // Prints debug info about conversion checks
+    // Debugging and visualization options
+    debugConversionChecks: false,        // Whether to log detailed conversion check data to console
     
-    // Limits, cooldowns and visual effects
-    limitConversionsPerUpdate: false, // Whether to limit conversions per update (false = unlimited)
-    maxConversionsPerUpdate: 3,     // Maximum conversions per update cycle if limiting enabled
-    evolutionCooldown: 600,         // Cooldown after conversion before checking again (10 seconds)
-    visualEffectDuration: 3.0       // Duration of metamorphosis visual effect in seconds
+    // Limits and cooldowns - Control conversion frequency and visual feedback
+    limitConversionsPerUpdate: false,    // Whether to cap conversions per update cycle
+    maxConversionsPerUpdate: 3,          // Maximum conversions allowed per update if limiting is enabled
+    evolutionCooldown: 600,              // Frames before converted creature is eligible for conversion again
+    visualEffectDuration: 3.0            // Duration in seconds for the conversion animation effect
   }
 };

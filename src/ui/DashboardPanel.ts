@@ -1,6 +1,7 @@
 export class DashboardPanel {
   private container: HTMLElement;
   private isCollapsed: boolean = false;
+  private titleElement: HTMLElement;
   
   constructor(title: string, id: string, parent: HTMLElement) {
     // Create panel container
@@ -30,8 +31,8 @@ export class DashboardPanel {
       cursor: pointer;
     `;
     
-    const titleSpan = document.createElement('span');
-    titleSpan.textContent = title;
+    this.titleElement = document.createElement('span');
+    this.titleElement.textContent = title;
     
     const toggleButton = document.createElement('span');
     toggleButton.textContent = '▼';
@@ -40,7 +41,7 @@ export class DashboardPanel {
       transition: transform 0.3s ease;
     `;
     
-    header.appendChild(titleSpan);
+    header.appendChild(this.titleElement);
     header.appendChild(toggleButton);
     
     // Create content container
@@ -85,5 +86,9 @@ export class DashboardPanel {
   
   getContainer(): HTMLElement {
     return this.container;
+  }
+
+  setTitle(title: string): void {
+    this.titleElement.textContent = title;
   }
 }
