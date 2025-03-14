@@ -1,4 +1,4 @@
-import { Entity, EntityType } from '../entities/Entity';
+import { Entity } from '../entities/Entity';
 import { Resource } from '../entities/Resource';
 import { Prey } from '../entities/Prey';
 import { Predator } from '../entities/Predator';
@@ -124,7 +124,7 @@ export class SimulationEngine {
       const preyPerCluster = Math.floor(count / clusterCount);
       const remainder = count % clusterCount;
       
-      console.log(`Spawning ${count} prey in ${clusterCount} specialized clusters:`);
+      console.info(`Spawning ${count} prey in ${clusterCount} specialized clusters:`);
       
       for (let cluster = 0; cluster < clusterCount; cluster++) {
         // Generate a cluster center
@@ -135,7 +135,7 @@ export class SimulationEngine {
         const clusterType = clusterTypes[cluster];
         const clusterPreyCount = cluster < remainder ? preyPerCluster + 1 : preyPerCluster;
         
-        console.log(`- Cluster ${cluster+1}: ${clusterType.name} (${clusterPreyCount} prey)`);
+        //console.log(`- Cluster ${cluster+1}: ${clusterType.name} (${clusterPreyCount} prey)`);
         
         // Spawn prey in this cluster
         for (let i = 0; i < clusterPreyCount; i++) {
@@ -171,7 +171,7 @@ export class SimulationEngine {
       // The total spawned count is already updated in the addPrey method
       // No need to update it again here
       
-      console.log(`Total prey: ${this.prey.length}`);
+      //console.log(`Total prey: ${this.prey.length}`);
     } else {
       // Original random spawning
       for (let i = 0; i < count; i++) {
@@ -181,7 +181,7 @@ export class SimulationEngine {
         this.addPrey(newPrey);
       }
       
-      console.log(`Spawned ${count} new prey randomly. Total prey: ${this.prey.length}`);
+      console.info(`Spawned ${count} new prey randomly. Total prey: ${this.prey.length}`);
     }
   }
   
@@ -237,7 +237,7 @@ export class SimulationEngine {
       const predatorsPerCluster = Math.floor(count / clusterCount);
       const remainder = count % clusterCount;
       
-      console.log(`Spawning ${count} predators in ${clusterCount} specialized clusters:`);
+      //console.log(`Spawning ${count} predators in ${clusterCount} specialized clusters:`);
       
       for (let cluster = 0; cluster < clusterCount; cluster++) {
         // Generate a cluster center
@@ -248,7 +248,7 @@ export class SimulationEngine {
         const clusterType = clusterTypes[cluster];
         const clusterPredCount = cluster < remainder ? predatorsPerCluster + 1 : predatorsPerCluster;
         
-        console.log(`- Cluster ${cluster+1}: ${clusterType.name} (${clusterPredCount} predators)`);
+        //console.log(`- Cluster ${cluster+1}: ${clusterType.name} (${clusterPredCount} predators)`);
         
         // Spawn predators in this cluster
         for (let i = 0; i < clusterPredCount; i++) {
@@ -284,7 +284,7 @@ export class SimulationEngine {
       // The total spawned count is already updated in the addPredator method
       // No need to update it again here
       
-      console.log(`Total predators: ${this.predators.length}`);
+      //console.log(`Total predators: ${this.predators.length}`);
     } else {
       // Original random spawning
       for (let i = 0; i < count; i++) {
@@ -294,7 +294,7 @@ export class SimulationEngine {
         this.addPredator(newPredator);
       }
       
-      console.log(`Spawned ${count} new predators randomly. Total predators: ${this.predators.length}`);
+      //console.log(`Spawned ${count} new predators randomly. Total predators: ${this.predators.length}`);
     }
   }
   
@@ -321,12 +321,12 @@ export class SimulationEngine {
     // Update total spawned count
     this.totalSpawned.resources += actualCount;
     
-    console.log(`Spawned ${actualCount} new resources. Total resources: ${this.resources.length}`);
+    //console.log(`Spawned ${actualCount} new resources. Total resources: ${this.resources.length}`);
     
     // Alert if we hit the resource cap
-    if (actualCount < count) {
-      console.log(`Resource cap prevented spawning ${count - actualCount} resources. Current limit: ${maxResources}`);
-    }
+    // if (actualCount < count) {
+    //   console.log(`Resource cap prevented spawning ${count - actualCount} resources. Current limit: ${maxResources}`);
+    // }
   }
   
   initialize(): void {
@@ -392,12 +392,12 @@ export class SimulationEngine {
     this.spawnPredators(this.initialPredatorCount, true);
     
     // Log initial conditions
-    console.log("=== SIMULATION INITIALIZED ===");
-    console.log("Initial Resources:", this.resources.length);
-    console.log("Initial Prey:", this.prey.length);
-    console.log("Initial Predators:", this.predators.length);
-    console.log("Initial Prey Attributes:", this.calculateAverageAttributes(this.prey));
-    console.log("Initial Predator Attributes:", this.calculateAverageAttributes(this.predators));
+    console.info("=== SIMULATION INITIALIZED ===");
+    console.info("Initial Resources:", this.resources.length);
+    console.info("Initial Prey:", this.prey.length);
+    console.info("Initial Predators:", this.predators.length);
+    console.info("Initial Prey Attributes:", this.calculateAverageAttributes(this.prey));
+    console.info("Initial Predator Attributes:", this.calculateAverageAttributes(this.predators));
     
     // Reset last counts
     this.lastPreyCount = this.prey.length;
@@ -466,7 +466,7 @@ export class SimulationEngine {
     ];
   }
   
-  update(deltaTime: number): void {
+  async update(deltaTime: number): Promise<void> {
     if (!this.isRunning) return;
     
     try {
@@ -503,6 +503,11 @@ export class SimulationEngine {
     } catch (error) {
       console.error("Error in simulation update:", error);
     }
+    
+    // Handle species conversion (evolutionary mutations between species)
+    await this.handleSpeciesConversion().catch(error => {
+      console.error("Error in species conversion:", error);
+    });
     
     // Handle resource consumption
     this.handleResourceConsumption();
@@ -541,7 +546,7 @@ export class SimulationEngine {
     if (this.days % this.seasonLength === 0) {
       this.resourceBloom = true;
       
-      console.log(`=== Day ${this.days}: MAJOR SEASONAL RESOURCE BLOOM ===`);
+      //console.log(`=== Day ${this.days}: MAJOR SEASONAL RESOURCE BLOOM ===`);
       
       // Check resource cap before spawning
       const maxResources = SimulationConfig.resources.limits.maxCount;
@@ -553,9 +558,9 @@ export class SimulationEngine {
       const actualAmount = Math.min(desiredAmount, availableSpace);
       const resourcesSpawned = Math.max(0, actualAmount);
       
-      if (resourcesSpawned < desiredAmount) {
-        console.log(`Resource cap limited bloom to ${resourcesSpawned} resources instead of ${desiredAmount}`);
-      }
+      // if (resourcesSpawned < desiredAmount) {
+      //   //console.log(`Resource cap limited bloom to ${resourcesSpawned} resources instead of ${desiredAmount}`);
+      // }
       
       if (resourcesSpawned > 0) {
         // Spawn resource clusters based on config
@@ -613,17 +618,17 @@ export class SimulationEngine {
       }
       
       // Announce the bloom in the console with more detail
-      console.log(`Spawned resources in ${SimulationConfig.resources.bloom.clusterCount} rich clusters. Total resources: ${this.resources.length}`);
-      console.log(`Primary resource energy: ${Resource.DEFAULT_ENERGY * SimulationConfig.resources.bloom.primaryEnergyMultiplier}`);
-      console.log(`Secondary resource energy: ${Resource.DEFAULT_ENERGY * SimulationConfig.resources.bloom.secondaryEnergyMultiplier}`);
+      //console.log(`Spawned resources in ${SimulationConfig.resources.bloom.clusterCount} rich clusters. Total resources: ${this.resources.length}`);
+      //console.log(`Primary resource energy: ${Resource.DEFAULT_ENERGY * SimulationConfig.resources.bloom.primaryEnergyMultiplier}`);
+      //console.log(`Secondary resource energy: ${Resource.DEFAULT_ENERGY * SimulationConfig.resources.bloom.secondaryEnergyMultiplier}`);
       
       // Get bloom duration from config
       const bloomDuration = SimulationConfig.resources.bloom.bloomDuration;
-      console.log(`Resource bloom will last for ${bloomDuration} days`);
+      //console.log(`Resource bloom will last for ${bloomDuration} days`);
       
       setTimeout(() => {
         this.resourceBloom = false;
-        console.log(`=== Day ${this.days}: Resource bloom has ended ===`);
+        //console.log(`=== Day ${this.days}: Resource bloom has ended ===`);
       }, bloomDuration * this.framesPerDay * 1000 / 60); // Convert to milliseconds (assuming 60fps)
     }
   }
@@ -659,11 +664,11 @@ export class SimulationEngine {
         resourceCount: this.resources.length
       });
       
-      console.log("=== PREY EXTINCTION ===");
-      console.log("Day:", this.days);
-      console.log("Final Predator Count:", this.predators.length);
-      console.log("Final Resource Count:", this.resources.length);
-      console.log("Final Predator Attributes:", this.calculateAverageAttributes(this.predators));
+      console.info("=== PREY EXTINCTION ===");
+      console.info("Day:", this.days);
+      console.info("Final Predator Count:", this.predators.length);
+      console.info("Final Resource Count:", this.resources.length);
+      console.info("Final Predator Attributes:", this.calculateAverageAttributes(this.predators));
     }
     
     // Check if predators went extinct
@@ -676,11 +681,11 @@ export class SimulationEngine {
         resourceCount: this.resources.length
       });
       
-      console.log("=== PREDATOR EXTINCTION ===");
-      console.log("Day:", this.days);
-      console.log("Final Prey Count:", this.prey.length);
-      console.log("Final Resource Count:", this.resources.length);
-      console.log("Final Prey Attributes:", this.calculateAverageAttributes(this.prey));
+      console.info("=== PREDATOR EXTINCTION ===");
+      console.info("Day:", this.days);
+      console.info("Final Prey Count:", this.prey.length);
+      console.info("Final Resource Count:", this.resources.length);
+      console.info("Final Prey Attributes:", this.calculateAverageAttributes(this.prey));
     }
     
     // Update last counts
@@ -746,7 +751,7 @@ export class SimulationEngine {
                 break; // Each predator can only catch one prey per update
               } else {
                 // Prey escapes using stealth!
-                console.log("Prey escaped using stealth!");
+                //console.log("Prey escaped using stealth!");
                 
                 // Give the prey a speed boost to escape (temporary)
                 const escapeDirection = prey.position.clone().sub(predator.position).normalize();
@@ -781,30 +786,30 @@ export class SimulationEngine {
     }
     
     if (newPrey.length > 0) {
-      console.log(`${newPrey.length} new prey born through reproduction. Total spawned: ${this.totalSpawned.prey}`);
+      //console.log(`${newPrey.length} new prey born through reproduction. Total spawned: ${this.totalSpawned.prey}`);
     }
     
     // DEBUG: Monitor predator energy levels when no prey exist
     if (this.prey.length === 0 && this.predators.length > 0) {
       // Calculate and log average energy
       const energyLevels = this.predators.map(p => p.energy / p.maxEnergy);
-      const averageEnergy = energyLevels.reduce((sum, e) => sum + e, 0) / energyLevels.length;
-      const minEnergy = Math.min(...energyLevels);
-      const maxEnergy = Math.max(...energyLevels);
+      // const averageEnergy = energyLevels.reduce((sum, e) => sum + e, 0) / energyLevels.length;
+      // const minEnergy = Math.min(...energyLevels);
+      // const maxEnergy = Math.max(...energyLevels);
       
-      console.log(`ENERGY MONITOR - Day ${this.days} - Predators: ${this.predators.length}`);
-      console.log(`  Average Energy: ${(averageEnergy * 100).toFixed(1)}%`);
-      console.log(`  Min Energy: ${(minEnergy * 100).toFixed(1)}%, Max Energy: ${(maxEnergy * 100).toFixed(1)}%`);
+      // console.log(`ENERGY MONITOR - Day ${this.days} - Predators: ${this.predators.length}`);
+      // console.log(`  Average Energy: ${(averageEnergy * 100).toFixed(1)}%`);
+      // console.log(`  Min Energy: ${(minEnergy * 100).toFixed(1)}%, Max Energy: ${(maxEnergy * 100).toFixed(1)}%`);
       
       // Count predators with various energy levels
-      const criticallyLow = energyLevels.filter(e => e < 0.1).length;
-      const veryLow = energyLevels.filter(e => e >= 0.1 && e < 0.2).length;
-      const low = energyLevels.filter(e => e >= 0.2 && e < 0.5).length;
-      const medium = energyLevels.filter(e => e >= 0.5 && e < 0.75).length;
-      const high = energyLevels.filter(e => e >= 0.75).length;
+      // const criticallyLow = energyLevels.filter(e => e < 0.1).length;
+      // const veryLow = energyLevels.filter(e => e >= 0.1 && e < 0.2).length;
+      // const low = energyLevels.filter(e => e >= 0.2 && e < 0.5).length;
+      // const medium = energyLevels.filter(e => e >= 0.5 && e < 0.75).length;
+      // const high = energyLevels.filter(e => e >= 0.75).length;
       
-      console.log(`  Energy Distribution:`);
-      console.log(`    <10%: ${criticallyLow}, 10-20%: ${veryLow}, 20-50%: ${low}, 50-75%: ${medium}, >75%: ${high}`);
+      // console.log(`  Energy Distribution:`);
+      // console.log(`    <10%: ${criticallyLow}, 10-20%: ${veryLow}, 20-50%: ${low}, 50-75%: ${medium}, >75%: ${high}`);
     }
     
     // Handle predator reproduction
@@ -816,15 +821,15 @@ export class SimulationEngine {
       if (predator.energy / predator.maxEnergy < 0.2) {
         lowEnergyChecks++;
         // Log only for the first few low-energy predators to avoid console spam
-        if (lowEnergyChecks <= 3) {
-          const energyPercentage = (predator.energy / predator.maxEnergy * 100).toFixed(1);
-          console.log(`DEBUG: Low energy predator (${energyPercentage}%) being checked for reproduction`);
-        }
+        // if (lowEnergyChecks <= 3) {
+        //   const energyPercentage = (predator.energy / predator.maxEnergy * 100).toFixed(1);
+        //   //console.log(`DEBUG: Low energy predator (${energyPercentage}%) being checked for reproduction`);
+        // }
       }
       
       if (predator.canReproduce()) {
-        const energyPercentage = (predator.energy / predator.maxEnergy * 100).toFixed(1);
-        console.log(`*** Predator with ${energyPercentage}% energy REPRODUCING ***`);
+        // const energyPercentage = (predator.energy / predator.maxEnergy * 100).toFixed(1);
+        // console.info(`*** Predator with ${energyPercentage}% energy REPRODUCING ***`);
         
         const offspring = predator.reproduce();
         newPredators.push(offspring);
@@ -837,7 +842,7 @@ export class SimulationEngine {
     }
     
     if (newPredators.length > 0) {
-      console.log(`${newPredators.length} new predators born through reproduction. Total spawned: ${this.totalSpawned.predators}`);
+      //console.log(`${newPredators.length} new predators born through reproduction. Total spawned: ${this.totalSpawned.predators}`);
     }
   }
   
@@ -926,6 +931,199 @@ export class SimulationEngine {
     
     // Learning process for predators
     this.handleCreatureLearning(this.predators);
+  }
+  
+  private async handleSpeciesConversion(): Promise<void> {
+    // Skip if species conversion is disabled
+    if (!SimulationConfig.speciesConversion.enabled) return;
+    
+    // Log conversion attempt
+    //console.log(`\n=== CHECKING FOR SPECIES CONVERSIONS (Day ${this.days}) ===`);
+    //console.log(`Current populations - Prey: ${this.prey.length}, Predators: ${this.predators.length}`);
+    
+    // Create a population stats object for conversion checks
+    const populationStats = {
+      prey: this.prey.length,
+      predators: this.predators.length
+    };
+    
+    // Check which prey are near predators (used for isolation check)
+    const preyNearPredatorMap = new Map<Prey, boolean>();
+    
+    // Generate data for all prey
+    this.prey.forEach(prey => {
+      // Check if any predators are nearby
+      const nearPredator = this.predators.some(predator => 
+        prey.position.distanceTo(predator.position) < 60 // Larger detection radius
+      );
+      preyNearPredatorMap.set(prey, nearPredator);
+    });
+    
+    // Check for new prey → predator conversions and immediately handle them
+    // We'll collect all newly created predators to add them at once
+    const newPredators: Predator[] = [];
+    const conversionPromises: Promise<void>[] = [];
+    
+    // Only check a subset of prey for conversion to reduce performance impact
+    const maxPreyToCheck = Math.min(20, this.prey.length);
+    const preyToCheck = [];
+    
+    // First, prioritize prey with extreme traits (high strength/stealth)
+    // Use the actual threshold from config
+    const preyThreshold = SimulationConfig.speciesConversion.traitInfluence.prey.traitThreshold;
+    const potentialPredators = this.prey
+      .filter(prey => {
+        const avgTraits = (prey.attributes.strength + prey.attributes.stealth) / 2;
+        return avgTraits > preyThreshold;
+      })
+      .sort((a, b) => (b.attributes.strength + b.attributes.stealth) - (a.attributes.strength + a.attributes.stealth));
+    
+    // Add the strongest prey first (at most 10)
+    preyToCheck.push(...potentialPredators.slice(0, 10));
+    
+    // Fill remaining slots with random prey
+    while (preyToCheck.length < maxPreyToCheck && this.prey.length > preyToCheck.length) {
+      const randomPrey = this.prey[Math.floor(Math.random() * this.prey.length)];
+      if (!preyToCheck.includes(randomPrey)) {
+        preyToCheck.push(randomPrey);
+      }
+    }
+    
+    // Process prey conversions
+    for (const prey of preyToCheck) {
+      // Find nearby prey for conversion check (very close)
+      const nearbyPrey = this.prey.filter(otherPrey => 
+        otherPrey !== prey && 
+        prey.position.distanceTo(otherPrey.position) < 15 // Close distance for contact
+      );
+      
+      // Get whether this prey has recent predator contact
+      const nearPredator = preyNearPredatorMap.get(prey) || false;
+      
+      // No need for special logging - let the natural conversion process work
+      
+      // Create a promise for this conversion check
+      const conversionPromise = prey.checkSpeciesConversion(nearbyPrey, populationStats, nearPredator)
+        .then(convertedPredator => {
+          // If a new predator was created, collect it to add to the simulation
+          if (convertedPredator) {
+            console.info(`CONVERSION SUCCESS: Prey ${prey.id} converted to predator ${convertedPredator.id}`);
+            newPredators.push(convertedPredator as Predator);
+          }
+        })
+        .catch(error => {
+          console.error('Error during prey conversion:', error);
+        });
+      
+      conversionPromises.push(conversionPromise);
+    }
+    
+    // Wait for all prey conversions to complete
+    await Promise.all(conversionPromises);
+    
+    // Check which predators are near prey (used for isolation check)
+    const predatorNearPreyMap = new Map<Predator, boolean>();
+    
+    // Only check a subset of predators for conversion
+    const maxPredatorsToCheck = Math.min(20, this.predators.length);
+    const predatorSample = [];
+    
+    // First, prioritize predators with extreme traits (low strength/stealth)
+    // Use the actual threshold from config
+    const predatorThreshold = SimulationConfig.speciesConversion.traitInfluence.predator.traitThreshold;
+    const potentialPrey = this.predators
+      .filter(predator => {
+        const avgTraits = (predator.attributes.strength + predator.attributes.stealth) / 2;
+        return avgTraits < predatorThreshold;
+      })
+      .sort((a, b) => (a.attributes.strength + a.attributes.stealth) - (b.attributes.strength + b.attributes.stealth));
+    
+    // Add the weakest predators first (at most 10) 
+    predatorSample.push(...potentialPrey.slice(0, 10));
+    
+    // Fill remaining slots with random predators
+    while (predatorSample.length < maxPredatorsToCheck && this.predators.length > predatorSample.length) {
+      const randomPredator = this.predators[Math.floor(Math.random() * this.predators.length)];
+      if (!predatorSample.includes(randomPredator)) {
+        predatorSample.push(randomPredator);
+      }
+    }
+    
+    // Prepare predator-prey contact map
+    predatorSample.forEach(predator => {
+      // Check if any prey are nearby
+      const nearPrey = this.prey.some(prey => 
+        predator.position.distanceTo(prey.position) < 60 // Larger detection radius
+      );
+      predatorNearPreyMap.set(predator, nearPrey);
+    });
+    
+    // Check for new predator → prey conversions and immediately handle them
+    // We'll collect all newly created prey to add them at once
+    const newPrey: Prey[] = [];
+    const predatorConversionPromises: Promise<void>[] = [];
+    
+    // Process predator conversions
+    for (const predator of predatorSample) {
+      // Find nearby predators for conversion check
+      const nearbyPredators = this.predators.filter(otherPredator => 
+        otherPredator !== predator && 
+        predator.position.distanceTo(otherPredator.position) < 15 // Close distance for contact
+      );
+      
+      // Get whether this predator has recent prey contact
+      const nearPrey = predatorNearPreyMap.get(predator) || false;
+      
+      // Create a promise for this conversion check
+      const conversionPromise = predator.checkSpeciesConversion(nearbyPredators, populationStats, nearPrey)
+        .then(convertedPrey => {
+          // If a new prey was created, collect it to add to the simulation
+          if (convertedPrey) {
+            console.log(`CONVERSION SUCCESS: Predator ${predator.id} converted to prey ${convertedPrey.id}`);
+            newPrey.push(convertedPrey as Prey);
+          }
+        })
+        .catch(error => {
+          console.error('Error during predator conversion:', error);
+        });
+      
+      predatorConversionPromises.push(conversionPromise);
+    }
+    
+    // Wait for all predator conversions to complete
+    await Promise.all(predatorConversionPromises);
+    
+    // Add all newly created creatures to the simulation
+    if (newPredators.length > 0) {
+      console.info(`Adding ${newPredators.length} newly converted predators to the simulation`);
+      newPredators.forEach(predator => {
+        this.addPredator(predator);
+        console.info(`New Predator added: ID=${predator.id}, Position=(${predator.position.x.toFixed(1)}, ${predator.position.y.toFixed(1)})`);
+      });
+      console.info(`=== EVOLUTIONARY EVENT COMPLETED ===`);
+      console.info(`Day ${this.days}: ${newPredators.length} prey evolved into predators!`);
+      //console.log(`Current population - Prey: ${this.prey.length}, Predators: ${this.predators.length}`);
+      
+      // Verify the predator was actually added
+      //console.log(`Predator count verification: ${this.predators.length}`);
+      // if (this.predators.length > 0) {
+      //   console.log(`First predator ID: ${this.predators[0].id}`);
+      // }
+    }
+    
+    if (newPrey.length > 0) {
+      console.info(`Adding ${newPrey.length} newly converted prey to the simulation`);
+      newPrey.forEach(prey => {
+        this.addPrey(prey);
+        console.info(`New Prey added: ID=${prey.id}, Position=(${prey.position.x.toFixed(1)}, ${prey.position.y.toFixed(1)})`);
+      });
+      console.info(`=== EVOLUTIONARY EVENT COMPLETED ===`);
+      console.info(`Day ${this.days}: ${newPrey.length} predators evolved into prey!`);
+      //console.log(`Current population - Prey: ${this.prey.length}, Predators: ${this.predators.length}`);
+      
+      // Verify the prey was actually added
+      //console.log(`Prey count verification: ${this.prey.length}`);
+    }
   }
   
   private handleCreatureLearning(creatures: Prey[] | Predator[]): void {
@@ -1096,7 +1294,7 @@ export class SimulationEngine {
       const excessCount = this.resources.length - maxResources;
       this.resources.splice(0, excessCount); // Remove oldest resources
       
-      console.log(`Resource cap enforced: removed ${excessCount} oldest resources`);
+      //console.log(`Resource cap enforced: removed ${excessCount} oldest resources`);
     }
   }
   

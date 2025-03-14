@@ -10,7 +10,7 @@ export const SimulationConfig = {
   initialPopulation: {
     resources: 250,
     prey: 150,
-    predators: 30
+    predators: 0
   },
   
   // Resource settings
@@ -47,7 +47,7 @@ export const SimulationConfig = {
   // Creature settings
   creatures: {
     // General creature settings
-    baseSpeed: 7, // Base movement speed in units per second
+    baseSpeed: 8, // Base movement speed in units per second
     baseCost: 1.0, // base energy consumption per second
     movementCostMultiplier: 2.0, // how much strength affects movement cost
     maxLifespan: {
@@ -57,7 +57,7 @@ export const SimulationConfig = {
     
     // Energy consumption multipliers by type
     energyConsumption: {
-      predator: 1.8, // Reduced from 2.25 to give predators more longevity
+      predator: 0.9, // Reduced from 2.25 to give predators more longevity
       prey: 0.7
     },
     
@@ -205,5 +205,59 @@ export const SimulationConfig = {
         variation: 0.2 // ±0.1 individual variation
       }
     }
+  },
+  
+  // Species conversion settings (evolutionary mutation mechanism)
+  speciesConversion: {
+    enabled: true,                 // Master toggle for this feature
+    
+    // New species-level contact tracking system
+    contactTracking: {
+      frameWindow: 600,            // Window of frames to track contact history (10 seconds)
+      sameSpeciesContactRequired: 300,  // Minimum contacts with same species in window (50%)
+      resetOnOppositeContact: true,     // Reset counter on ANY contact with opposite species
+      contactMemoryDuration: 900,       // Maximum time to track contact history (15 seconds)
+      isolationThreshold: 450,          // Time without opposite species contact to consider isolated
+    },
+    
+    // Conversion probability settings
+    baseProbability: 0.05,         // Base probability for conversion check
+    
+    // Optional population conditions for enabling conversion (can be disabled)
+    populationConditions: {
+      enabled: false,              // Enable population conditions for extinct species regeneration
+      enableRatio: 0.001,          // Trigger only when species is essentially extinct (0.1%)
+      minPopulationCheck: 10,      // Only check ratio when total population > 10
+      disableRatio: 0.05           // Disable when recovered to 5% of total population
+    },
+    
+    // Trait influence on conversion probability
+    traitInfluence: {
+      prey: {
+        // Higher values in these traits increase chance of prey→predator conversion
+        strengthWeight: 1.0,       // Stronger prey more likely to become predators
+        stealthWeight: 1.0,        // Stealthier prey more likely to become predators
+        traitThreshold: 0.6,       // Threshold for trait qualifications
+        extremeTraitBonus: 500,    // Bonus for exceptional traits
+        maxProbability: 0.25       // Maximum possible conversion probability (25%)
+      },
+      predator: {
+        // Lower values in these traits increase chance of predator→prey conversion
+        strengthWeight: -1.0,      // Weaker predators more likely to become prey
+        stealthWeight: -1.0,       // Less stealthy predators more likely to become prey
+        traitThreshold: 0.5,       // Threshold for trait qualifications
+        extremeTraitBonus: 500,    // Bonus for exceptional traits
+        maxProbability: 0.15       // Maximum possible conversion probability (15%)
+      }
+    },
+    
+    // Debugging options
+    debugConversionChecks: false,   // Prints debug info about conversion checks
+    
+    // Limits, cooldowns and visual effects
+    limitConversionsPerUpdate: false, // Whether to limit conversions per update (false = unlimited)
+    maxConversionsPerUpdate: 3,     // Maximum conversions per update cycle if limiting enabled
+    evolutionCooldown: 600,         // Cooldown after conversion before checking again (10 seconds)
+    visualEffectDuration: 3.0       // Duration of metamorphosis visual effect in seconds
   }
 };

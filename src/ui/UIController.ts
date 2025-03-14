@@ -30,6 +30,16 @@ export class UIController {
   private predatorSpawnedElement: HTMLElement;
   private resourceSpawnedElement: HTMLElement;
   
+  // Add helper method for number formatting
+  private formatNumber(num: number): string {
+    if (num >= 1000000) {
+      return (num / 1000000).toFixed(1) + 'M';
+    } else if (num >= 1000) {
+      return (num / 1000).toFixed(1) + 'k';
+    }
+    return num.toString();
+  }
+  
   constructor(private simulation: SimulationEngine) {
     const uiContainer = document.getElementById('ui-container') as HTMLElement;
     
@@ -107,25 +117,16 @@ export class UIController {
               </svg>
               <span style="color: #aaaaaa; font-size: 11px; margin-right: 4px;">Live:</span>
             </span>
-            <span id="prey-count" style="color: #5588ff; font-weight: bold;">0</span>
+            <span id="prey-count" style="color: #5588ff; font-size: 11px;">0</span>
           </div>
-          <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
             <span style="display: flex; align-items: center;">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2" style="margin-right: 4px;">
                 <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
               </svg>
               <span style="color: #aaaaaa; font-size: 11px; margin-right: 4px;">Total:</span>
             </span>
-            <span id="prey-spawned" style="color: #5588ff;">0</span>
-          </div>
-          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-            <span style="display: flex; align-items: center;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="#aaa" style="margin-right: 4px;">
-                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
-              </svg>
-              <span style="color: #aaaaaa; font-size: 11px; margin-right: 4px;">Ready:</span>
-            </span>
-            <span id="prey-ready" style="color: #5588ff; font-weight: bold;">0%</span>
+            <span id="prey-spawned" style="color: #5588ff; font-size: 11px;">0</span>
           </div>
           <button id="spawn-prey-btn" title="Spawn 10 Prey" style="width: 100%; font-size: 12px; display: flex; align-items: center; justify-content: center;">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 4px;">
@@ -150,25 +151,16 @@ export class UIController {
               </svg>
               <span style="color: #aaaaaa; font-size: 11px; margin-right: 4px;">Live:</span>
             </span>
-            <span id="predator-count" style="color: #ff5555; font-weight: bold;">0</span>
+            <span id="predator-count" style="color: #ff5555; font-size: 11px;">0</span>
           </div>
-          <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
             <span style="display: flex; align-items: center;">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2" style="margin-right: 4px;">
                 <path d="M12 2 L22 9 L19 20 L5 20 L2 9 Z"/>
               </svg>
               <span style="color: #aaaaaa; font-size: 11px; margin-right: 4px;">Total:</span>
             </span>
-            <span id="predator-spawned" style="color: #ff5555;">0</span>
-          </div>
-          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-            <span style="display: flex; align-items: center;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="#aaa" style="margin-right: 4px;">
-                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
-              </svg>
-              <span style="color: #aaaaaa; font-size: 11px; margin-right: 4px;">Ready:</span>
-            </span>
-            <span id="predator-ready" style="color: #ff5555; font-weight: bold;">0%</span>
+            <span id="predator-spawned" style="color: #ff5555; font-size: 11px;">0</span>
           </div>
           <button id="spawn-predator-btn" title="Spawn 5 Predators" style="width: 100%; font-size: 12px; display: flex; align-items: center; justify-content: center;">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 4px;">
@@ -193,7 +185,7 @@ export class UIController {
               </svg>
               <span style="color: #aaaaaa; font-size: 11px; margin-right: 4px;">Active:</span>
             </span>
-            <span id="resource-count" style="color: #55cc55; font-weight: bold;">0</span>
+            <span id="resource-count" style="color: #55cc55; font-size: 11px;">0</span>
           </div>
           <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
             <span style="display: flex; align-items: center;">
@@ -202,7 +194,7 @@ export class UIController {
               </svg>
               <span style="color: #aaaaaa; font-size: 11px; margin-right: 4px;">Total:</span>
             </span>
-            <span id="resource-spawned" style="color: #55cc55;">0</span>
+            <span id="resource-spawned" style="color: #55cc55; font-size: 11px;">0</span>
           </div>
           <button id="spawn-resource-btn" title="Spawn 20 Resources" style="width: 100%; font-size: 12px; display: flex; align-items: center; justify-content: center;">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 4px;">
@@ -340,10 +332,10 @@ export class UIController {
     const resourceBloom = this.simulation.isResourceBloom();
     const reproductionStats = this.simulation.getReproductionStats();
     
-    // Update population counts
-    this.preyCountElement.textContent = stats.preyCount.toString();
-    this.predatorCountElement.textContent = stats.predatorCount.toString();
-    this.resourceCountElement.textContent = stats.resourceCount.toString();
+    // Update population counts with formatted numbers
+    this.preyCountElement.textContent = this.formatNumber(stats.preyCount);
+    this.predatorCountElement.textContent = this.formatNumber(stats.predatorCount);
+    this.resourceCountElement.textContent = this.formatNumber(stats.resourceCount);
     
     // Update days
     this.daysElement.textContent = days.toString();
@@ -351,10 +343,10 @@ export class UIController {
     // Update extinctions
     this.extinctionsElement.textContent = extinctionEvents.length.toString();
     
-    // Update total spawned
-    this.preySpawnedElement.textContent = totalSpawned.prey.toString();
-    this.predatorSpawnedElement.textContent = totalSpawned.predators.toString();
-    this.resourceSpawnedElement.textContent = totalSpawned.resources.toString();
+    // Update total spawned with formatted numbers
+    this.preySpawnedElement.textContent = this.formatNumber(totalSpawned.prey);
+    this.predatorSpawnedElement.textContent = this.formatNumber(totalSpawned.predators);
+    this.resourceSpawnedElement.textContent = this.formatNumber(totalSpawned.resources);
     
     // Update resource bloom status
     const resourceBloomElement = document.getElementById('resource-bloom');

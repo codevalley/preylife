@@ -62,8 +62,24 @@ export class Prey extends Creature {
       const energyRatio = this.energy / this.maxEnergy;
       const brightness = 0.3 + (energyRatio * 0.7); // 30-100% brightness
       
+      let redValue = 0;
+      
+      // Add visual effect for conversion
+      // if (this.isUndergoingConversion) {
+      //   // Add pulsating red component during conversion (prey → predator)
+      //   const pulseRate = Math.sin(Date.now() * 0.01) * 0.5 + 0.5; // 0-1 pulsating value
+      //   redValue = 0.7 * pulseRate; // Reddish glow during conversion
+        
+      //   // Also make the creature slightly larger during conversion
+      //   const scaleFactor = 1.0 + (pulseRate * 0.3); // Scale 1.0-1.3x
+      //   this.mesh.scale.set(scaleFactor, scaleFactor, 1);
+      // } else {
+      //   // Reset scale when not converting
+      //   this.mesh.scale.set(1, 1, 1);
+      // }
+      
       (this.mesh.material as THREE.MeshBasicMaterial).color.setRGB(
-        0,
+        redValue,
         greenIntensity * brightness, 
         blueIntensity * brightness
       );

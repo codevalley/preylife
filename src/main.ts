@@ -42,15 +42,15 @@ class Application {
     this.animate();
   }
   
-  private animate(): void {
+  private async animate(): Promise<void> {
     this.frameId = requestAnimationFrame(this.animate.bind(this));
     
     const currentTime = performance.now();
     const deltaTime = (currentTime - this.previousTime) / 1000; // Convert to seconds
     this.previousTime = currentTime;
     
-    // Update simulation
-    this.simulation.update(deltaTime);
+    // Update simulation - now awaits async operations like species conversion
+    await this.simulation.update(deltaTime);
     
     // Update UI statistics
     this.uiController.updateStats();

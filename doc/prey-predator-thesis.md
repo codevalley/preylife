@@ -597,11 +597,16 @@ When ALL preconditions are met, the creature enters an extremely low-probability
 - For truly exceptional traits (>0.9 or <0.1), probability is multiplied by 100x
 - Only 1 conversion maximum can occur in a single update
 
-#### Additional Limitations
-- Only activates when one species falls below 5% of total population (critical extinction risk)
-- Deactivates when population recovers to 15% of total population
+#### Core Limitations
+- Creature must not have contacted opposite type for 30+ seconds
+- Creature must have maintained contact with same species for 10+ seconds
 - 60-second cooldown period for newly converted creatures
 - Creature undergoes a 3-second visual transformation effect
+
+#### Optional Configurable Limitations
+The following limitations can be enabled/disabled through configuration:
+- **Population Ratio Control**: Can optionally enable conversion only when a species falls below a critical threshold (5% by default)
+- **Conversion Rate Limiting**: Can optionally limit the number of conversions allowed per update (1 by default)
 
 #### Probability Calculation Example
 ```
