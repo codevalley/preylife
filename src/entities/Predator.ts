@@ -96,8 +96,9 @@ export class Predator extends Creature {
   
   // Method to consume prey
   consumePrey(prey: Prey): void {
-    // Predator gains 70% of prey's current energy
-    const energyGained = prey.energy * 0.7;
+    // Predator gains energy from prey based on config
+    const energyGainRate = SimulationConfig.predator.energyGainFromPrey;
+    const energyGained = prey.energy * energyGainRate;
     this.energy = Math.min(this.maxEnergy, this.energy + energyGained);
     
     // Update visual appearance to reflect new energy level
@@ -156,36 +157,53 @@ export class Predator extends Creature {
   
   // Method to attempt to catch prey
   canCatchPrey(prey: Prey): boolean {
-    // Get strength and stealth differences
+    // Define median value for attributes
+    const MEDIAN = 0.5;
+    
+    // Calculate how far each entity is from the median for both attributes
+    const predatorStrengthDeviation = Math.abs(this.attributes.strength - MEDIAN);
+    const predatorStealthDeviation = Math.abs(this.attributes.stealth - MEDIAN);
+    const preyStrengthDeviation = Math.abs(prey.attributes.strength - MEDIAN);
+    const preyStealthDeviation = Math.abs(prey.attributes.stealth - MEDIAN);
+    
+    // Use the better attribute for each entity
+    const predatorBestDeviation = Math.max(predatorStrengthDeviation, predatorStealthDeviation);
+    const preyBestDeviation = Math.max(preyStrengthDeviation, preyStealthDeviation);
+    
+    // Calculate advantage based on how much more specialized the predator is compared to prey
+    // Positive means predator is more specialized, negative means prey is more specialized
+    const specializationAdvantage = predatorBestDeviation - preyBestDeviation;
+    
+    // Base catch chance
+    const baseCatchChance = 0.35; // Increased from 0.25 to make predators more effective
+    
+    // Calculate attribute-based hunting factor
     const strengthDifference = this.attributes.strength - prey.attributes.strength;
     const stealthDifference = this.attributes.stealth - prey.attributes.stealth;
-    
-    // Determine primary catch factor (use the better of stealth or strength)
-    // This allows predators to specialize in either strength-based hunting or stealth-based hunting
     const primaryCatchFactor = stealthDifference > strengthDifference 
       ? stealthDifference * 0.4  // Stealth-based hunting
       : strengthDifference * 0.5; // Strength-based hunting (slightly more effective)
     
-    // Lower base catch chance to give prey more advantage
-    const baseCatchChance = 0.15; // Reduced from 0.2
-    
-    // Specialized trait bonus for predators - reward either high stealth OR high strength
+    // Specialized trait bonus for extreme values
     let specializedBonus = 0;
     
     // If predator has high stealth (>0.7) or high strength (>0.7), give bonus
     if (this.attributes.stealth > 0.7 || this.attributes.strength > 0.7) {
-      // The higher the specialization, the bigger the bonus
       const stealthBonus = Math.max(0, (this.attributes.stealth - 0.7) * 0.8);
       const strengthBonus = Math.max(0, (this.attributes.strength - 0.7) * 0.8);
       specializedBonus = Math.max(stealthBonus, strengthBonus);
     }
     
-    // Calculate final catch chance
-    const catchChance = baseCatchChance + primaryCatchFactor + specializedBonus;
+    // Add specialization advantage factor - reward being further from median than prey
+    // This will be positive when predator is more specialized than prey, negative otherwise
+    const specializationFactor = specializationAdvantage * 0.3;
     
-    // Limit catch chance between 5% and 45% (reduced from 10-50%)
-    // This gives prey a better chance to survive the initial catch attempt
-    const cappedChance = Math.min(0.45, Math.max(0.05, catchChance));
+    // Calculate final catch chance
+    const catchChance = baseCatchChance + primaryCatchFactor + specializedBonus + specializationFactor;
+    
+    // Limit catch chance between 15% and 75% (increased from 10-60%)
+    // This gives predators better odds when they're highly specialized
+    const cappedChance = Math.min(0.75, Math.max(0.15, catchChance));
     
     return Math.random() < cappedChance;
   }
@@ -248,11 +266,12 @@ export class Predator extends Creature {
     // Check hunger level to determine hunting behavior
     const hungerLevel = 1 - (this.energy / this.maxEnergy);
     
-    // If the predator is fairly full (less than 20% hunger), it's less aggressive
-    if (hungerLevel < 0.2) {
+    // If the predator is fairly full (less than 25% hunger), it's less aggressive
+    // Increased from 20% to 25% to make predators hunt more often
+    if (hungerLevel < 0.25) {
       // When relatively full, only notice prey that are very close and easy to catch
       // Reduced detection range and higher chance of just wandering
-      if (Math.random() < 0.7) { // 70% chance to just wander when full
+      if (Math.random() < 0.5) { // Reduced from 70% to 50% chance to wander when full
         // Just continue current movement - no hunting
       } else {
         // Occasionally still check for extremely close prey (opportunistic hunting)
@@ -271,13 +290,15 @@ export class Predator extends Creature {
     } else {
       // When hungry, actively hunt prey
       // Scale detection range with hunger - hungrier predators are more motivated
-      const detectionRange = 80 * (1 + hungerLevel * 0.5); // Up to 50% increase when starving
+      const detectionMultiplier = SimulationConfig.predator.detectionRangeMultiplier || 0.5;
+      const detectionRange = 80 * (1 + hungerLevel * detectionMultiplier); // Up to 50% increase when starving
       
       const nearbyPrey = this.detectPrey(preyList, detectionRange);
       if (nearbyPrey) {
-        // Move toward the prey - hungrier predators move faster, but slightly slower than maximum prey flee speed
-        // This gives fleeing prey a small chance to escape by outrunning the predator
-        const huntSpeed = this.speed * (1 + hungerLevel * 0.25); // Up to 25% faster when starving (vs 50% for fleeing prey)
+        // Move toward the prey - hungrier predators move faster to match fleeing prey speed
+        // Using config value for hunt speed multiplier
+        const huntingSpeedMultiplier = SimulationConfig.predator.huntingSpeedMultiplier || 0.5;
+        const huntSpeed = this.speed * (1 + hungerLevel * huntingSpeedMultiplier); // Up to 50% faster when starving, matching fleeing prey
         const direction = nearbyPrey.position.clone().sub(this.position).normalize();
         this.velocity.copy(direction).multiplyScalar(huntSpeed);
         

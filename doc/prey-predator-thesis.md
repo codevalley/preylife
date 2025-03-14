@@ -174,6 +174,23 @@ Detection_Chance = Predator_Stealth - Prey_Stealth + 0.25 - High_Stealth_Penalty
 
 #### Capture Calculation
 ```
+// Define median value for attributes
+const MEDIAN = 0.5
+
+// Calculate how far each entity is from the median
+const predatorStrengthDeviation = abs(Predator_Strength - MEDIAN)
+const predatorStealthDeviation = abs(Predator_Stealth - MEDIAN)
+const preyStrengthDeviation = abs(Prey_Strength - MEDIAN)
+const preyStealthDeviation = abs(Prey_Stealth - MEDIAN)
+
+// Use the better attribute for each entity
+const predatorBestDeviation = max(predatorStrengthDeviation, predatorStealthDeviation)
+const preyBestDeviation = max(preyStrengthDeviation, preyStealthDeviation)
+
+// Calculate advantage based on relative specialization
+const specializationAdvantage = predatorBestDeviation - preyBestDeviation
+const specializationFactor = specializationAdvantage * 0.3
+
 // Determine best hunting attribute
 Primary_Catch_Factor = max(
   Stealth_Difference * 0.4,  // Stealth-based hunting
@@ -188,19 +205,37 @@ if (Predator_Stealth > 0.7 || Predator_Strength > 0.7) {
   Specialized_Bonus = max(Stealth_Bonus, Strength_Bonus)
 }
 
-// Final calculation
-Catch_Chance = 0.15 + Primary_Catch_Factor + Specialized_Bonus
-Capped_Chance = min(0.45, max(0.05, Catch_Chance))
+// Final calculation with specialization advantage
+Catch_Chance = 0.25 + Primary_Catch_Factor + Specialized_Bonus + specializationFactor
+Capped_Chance = min(0.6, max(0.1, Catch_Chance))
 ```
 - The capture chance is probabilistic: Math.random() < Capped_Chance
-- Minimum 5% and maximum 45% chance of capture (reduced from 10-50%)
-- Specialized predators (high strength or high stealth) get additional capture bonus
-- Predators can evolve either stealth or strength-based hunting strategies
-- Balanced to give prey a better chance to survive
+- Base chance increased from 0.15 to 0.25 to make predators more effective
+- Minimum 10% and maximum 60% chance of capture (increased from 5-45%)
+- Specialized predators get additional capture bonus from extreme traits
+- New specializationFactor rewards predators who are more specialized than their prey
+- Creates evolutionary pressure toward specialization and away from median values
 
 #### Stealth/Strength Escape Mechanism
 Even after a successful capture, prey have a second chance to escape:
 ```
+// Define median value for attributes
+const MEDIAN = 0.5
+
+// Calculate how far each entity is from the median
+const preyStrengthDeviation = abs(Prey_Strength - MEDIAN)
+const preyStealthDeviation = abs(Prey_Stealth - MEDIAN)
+const predatorStrengthDeviation = abs(Predator_Strength - MEDIAN)
+const predatorStealthDeviation = abs(Predator_Stealth - MEDIAN)
+
+// Use the better attribute for each entity
+const preyBestDeviation = max(preyStrengthDeviation, preyStealthDeviation)
+const predatorBestDeviation = max(predatorStrengthDeviation, predatorStealthDeviation)
+
+// Calculate advantage based on relative specialization
+const specializationAdvantage = preyBestDeviation - predatorBestDeviation
+const specializationFactor = specializationAdvantage * 0.3
+
 // Determine best escape attribute
 Primary_Escape_Factor = max(
   Stealth_Difference * 0.8,  // Stealth-based escape
@@ -215,15 +250,17 @@ if (Prey_Stealth > 0.7 || Prey_Strength > 0.7) {
   Specialized_Bonus = max(Stealth_Bonus, Strength_Bonus)
 }
 
-// Final calculation
-Escape_Chance = 0.3 + Primary_Escape_Factor + Specialized_Bonus
+// Final calculation with specialization advantage
+Escape_Chance = 0.25 + Primary_Escape_Factor + Specialized_Bonus + specializationFactor
 Capped_Escape_Chance = min(0.75, max(0.15, Escape_Chance))
 ```
 - The escape chance is probabilistic: Math.random() < Capped_Escape_Chance
-- Minimum 15% and maximum 75% chance of escape (increased from 10-70%)
+- Base chance reduced from 0.3 to 0.25 to balance with predator improvements
+- Minimum 15% and maximum 75% chance of escape (kept the same)
 - Specialized prey (high strength or high stealth) get a significant escape bonus
-- This creates protected niches for specialized prey
+- New specializationFactor rewards prey who are more specialized than their predator
 - Escape attempts cost energy (5 energy units)
+- Creates evolutionary arms race toward specialization for both predator and prey
 
 #### Fleeing Mechanics
 When fleeing from predators, prey use different strategies based on their attributes:
@@ -443,6 +480,122 @@ Benefits of the anti-clumping system:
   - Reproduction is checked
 
 ## Recent Upgrades and Enhancements
+
+### Specialized Intelligence Mechanics
+An advanced intelligence system has been implemented to reward entities that specialize away from the median values, creating a strong evolutionary push toward diversity and specialization:
+
+#### Deviation-from-Median Strategy
+Creatures are now evaluated based on how far they specialize from median attribute values:
+```
+// Define median value for attributes
+const MEDIAN = 0.5
+
+// Calculate specialization level for each entity
+Predator_Strength_Deviation = abs(Predator_Strength - MEDIAN)
+Predator_Stealth_Deviation = abs(Predator_Stealth - MEDIAN)
+Prey_Strength_Deviation = abs(Prey_Strength - MEDIAN)
+Prey_Stealth_Deviation = abs(Prey_Stealth - MEDIAN)
+
+// Use the best attribute for each entity
+Predator_Best_Deviation = max(Predator_Strength_Deviation, Predator_Stealth_Deviation)
+Prey_Best_Deviation = max(Prey_Strength_Deviation, Prey_Stealth_Deviation)
+
+// Calculate advantage based on relative specialization
+Specialization_Advantage = Predator_Best_Deviation - Prey_Best_Deviation
+```
+- Entities gain advantage when they are more specialized than their opponent
+- Promotes evolution away from median values toward extreme traits
+- Creates ecosystem pressure toward diverse strategies
+
+#### Predator Specialized Intelligence
+Predators with high specialization receive enhanced hunting capabilities:
+- **Stealth Specialists (>0.7)**:
+  - Enhanced prey detection range: `detectionRange * (1 + stealth * 0.5)`
+  - Improved hunting success against normal prey
+  - Special bonus when catching prey: `(stealth - 0.7) * 0.8`
+  - Penalty applied when hunting highly stealthy prey
+- **Strength Specialists (>0.7)**:
+  - Enhanced prey capture ability: `(strength - 0.7) * 0.8`
+  - Strength-based hunting slightly more effective than stealth-based
+  - Hunger-based hunting speed increases
+
+#### Prey Specialized Intelligence
+Prey with high specialization receive enhanced survival capabilities:
+- **Stealth Specialists (>0.7)**:
+  - Enhanced escape chance with scaling bonus: `(stealth - 0.7) * 1.5`
+  - Erratic movement patterns when fleeing (random direction changes)
+  - Improved predator detection range: `baseRange * (1 + stealth * detectionMultiplier)`
+  - Better resource finding ability: `detectionRange * (1 + stealth * 0.5)`
+- **Strength Specialists (>0.7)**:
+  - Improved escape resistance: `(strength - 0.7) * 1.5`
+  - Faster sustained running with less fatigue: `(strength - 0.7) * 0.8`
+  - Higher energy cost when fleeing
+
+#### Updated Capture and Escape Formulas
+Capture formula now includes specialization advantage:
+```
+// Base calculations similar to previous versions
+Base_Catch_Chance = 0.25
+Primary_Catch_Factor = max(Stealth_Difference * 0.4, Strength_Difference * 0.5)
+Specialized_Bonus = max(Stealth_Bonus, Strength_Bonus)
+
+// New specialization advantage component
+Specialization_Factor = (Predator_Best_Deviation - Prey_Best_Deviation) * 0.3
+
+// Final calculation with specialization advantage
+Catch_Chance = Base_Catch_Chance + Primary_Catch_Factor + Specialized_Bonus + Specialization_Factor
+Capped_Chance = min(0.6, max(0.1, Catch_Chance))
+```
+
+Escape formula with similar specialization advantage:
+```
+// Base calculations similar to previous versions
+Base_Escape_Chance = 0.25
+Primary_Escape_Factor = max(Stealth_Difference * 0.8, Strength_Difference * 0.5)
+Specialized_Bonus = max(Stealth_Bonus, Strength_Bonus)
+
+// New specialization advantage component
+Specialization_Factor = (Prey_Best_Deviation - Predator_Best_Deviation) * 0.3
+
+// Final calculation with specialization advantage
+Escape_Chance = Base_Escape_Chance + Primary_Escape_Factor + Specialized_Bonus + Specialization_Factor
+Capped_Escape_Chance = min(0.75, max(0.15, Escape_Chance))
+```
+
+#### Benefits of Specialized Intelligence
+- Creates strong evolutionary pressure away from mediocrity
+- Rewards extreme trait values with significant advantages
+- Ensures multiple viable evolutionary strategies exist
+- Relative specialization determines success in predator-prey interactions
+- Maintains ecosystem diversity by preventing evolutionary convergence
+- More realistic modeling of adaptation and specialization in nature
+
+#### Balance Adjustments for Predator-Prey Dynamics
+To maintain ecosystem balance while preventing predator extinction, several key parameters have been adjusted:
+
+1. **Predator Hunting Speed**:
+   - Increased maximum speed boost from 25% to 50% when starving
+   - Now matches prey flee speed for fair pursuit dynamics
+   - Gives predators a realistic chance to catch prey when hungry
+
+2. **Energy Balance**:
+   - Reduced predator energy consumption from 2.25x to 1.8x base rate
+   - Increased energy gain from prey consumption from 70% to 85%
+   - Creates more sustainable predator populations without making them overpowered
+
+3. **Hunting Behavior**:
+   - Increased hunger threshold for active hunting from 20% to 25%
+   - Reduced random wandering probability from 70% to 50% when satiated
+   - Encourages more opportunistic hunting even when not starving
+
+4. **Capture and Escape Mechanics**:
+   - Increased base capture chance from 25% to 35%
+   - Increased maximum capture probability from 60% to 75%
+   - Reduced prey base escape chance from 25% to 20%
+   - Reduced prey flee speed multiplier from 1.1 to 1.0
+   - Creates better balance where specialized predators can reliably catch prey
+
+These adjustments ensure predator populations remain viable while maintaining the evolutionary pressure toward specialization in both predator and prey populations.
 
 ### Differentiated Starvation Systems
 Separate starvation mechanics have been implemented for predators and prey:

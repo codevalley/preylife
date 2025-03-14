@@ -57,7 +57,7 @@ export const SimulationConfig = {
     
     // Energy consumption multipliers by type
     energyConsumption: {
-      predator: 2.25,
+      predator: 1.8, // Reduced from 2.25 to give predators more longevity
       prey: 0.7
     },
     
@@ -86,7 +86,9 @@ export const SimulationConfig = {
       minChance: 0.1,
       maxChance: 0.5
     },
-    energyGainFromPrey: 0.75, // % of prey's energy gained
+    energyGainFromPrey: 0.85, // % of prey's energy gained
+    huntingSpeedMultiplier: 0.5, // Speed boost multiplier when hunting (0.5 = up to 50% faster)
+    detectionRangeMultiplier: 0.5, // Detection range increase multiplier when hungry
   },
   
   // Prey settings
@@ -99,8 +101,10 @@ export const SimulationConfig = {
       longevity: 0.5
     },
     resourceEnergyBonus: 1.2, // multiplier for energy from resources
-    predatorAvoidanceMultiplier: 1.1, // Speed boost when fleeing from predators
+    predatorAvoidanceMultiplier: 1.0, // Speed boost when fleeing from predators (reduced from 1.1)
     predatorDetectionMultiplier: 1.1, // How much stealth improves predator detection
+    escapeBaseChance: 0.2, // Base probability of escaping when caught (reduced from 0.25)
+    escapeEnergyConsumption: 5, // Energy cost of escape attempt
   },
   
   // Learning settings
@@ -122,12 +126,12 @@ export const SimulationConfig = {
     // Probabilistic reproduction parameters
     energyThreshold: {
       prey: 0.8,    // 80% energy threshold for high reproduction probability
-      predator: 0.75 // 70% energy threshold for high reproduction probability
+      predator: 0.70 // 70% energy threshold for high reproduction probability
     },
     probability: {
       highEnergy: {  // When energy is above threshold
         prey: 0.2,   // 20% chance per update when above threshold
-        predator: 0.3 // 30% chance per update when above threshold
+        predator: 0.4 // 30% chance per update when above threshold
       },
       lowEnergy: {   // When energy is below threshold but above 20%
         prey: 0.001,   // 0.1% chance per update when between 20% and threshold

@@ -82,8 +82,22 @@ export class Prey extends Creature {
   
   // New method to determine if prey can escape using stealth after being caught
   canEscapeWithStealth(predator: Predator): boolean {
-    // Calculate escape chance based on prey's attributes vs predator's attributes
-    // Higher prey stealth or strength = better chance to escape
+    // Define median value for attributes
+    const MEDIAN = 0.5;
+    
+    // Calculate how far each entity is from the median for both attributes
+    const preyStrengthDeviation = Math.abs(this.attributes.strength - MEDIAN);
+    const preyStealthDeviation = Math.abs(this.attributes.stealth - MEDIAN);
+    const predatorStrengthDeviation = Math.abs(predator.attributes.strength - MEDIAN);
+    const predatorStealthDeviation = Math.abs(predator.attributes.stealth - MEDIAN);
+    
+    // Use the better attribute for each entity
+    const preyBestDeviation = Math.max(preyStrengthDeviation, preyStealthDeviation);
+    const predatorBestDeviation = Math.max(predatorStrengthDeviation, predatorStealthDeviation);
+    
+    // Calculate advantage based on how much more specialized the prey is compared to predator
+    // Positive means prey is more specialized, negative means predator is more specialized
+    const specializationAdvantage = preyBestDeviation - predatorBestDeviation;
     
     // Base stealth difference (stealth-based escape)
     const stealthDifference = this.attributes.stealth - predator.attributes.stealth;
@@ -108,14 +122,22 @@ export class Prey extends Creature {
       ? stealthDifference * 0.8  // Stealth-based escape
       : strengthDifference * 0.5; // Strength-based resistance (slightly less effective)
     
-    // Calculate total escape chance with base chance, primary factor and specialized bonus
-    const escapeChance = 0.3 + primaryEscapeFactor + specializedBonus; // 30% base chance + attribute bonus
+    // Add specialization advantage factor - reward being further from median than predator
+    // This will be positive when prey is more specialized than predator, negative otherwise
+    const specializationFactor = specializationAdvantage * 0.3;
     
-    // Cap escape chance between 15-75% (increased from 10-70%)
+    // Use escape base chance from config
+    const baseEscapeChance = SimulationConfig.prey.escapeBaseChance || 0.2;
+    
+    // Calculate total escape chance with base chance, primary factor and specialized bonus
+    const escapeChance = baseEscapeChance + primaryEscapeFactor + specializedBonus + specializationFactor;
+    
+    // Cap escape chance between 15-75% (kept the same)
     const cappedEscapeChance = Math.min(0.75, Math.max(0.15, escapeChance));
     
-    // Stealth escape attempt consumes energy
-    this.energy = Math.max(0, this.energy - 5);
+    // Stealth escape attempt consumes energy from config
+    const escapeEnergyCost = SimulationConfig.prey.escapeEnergyConsumption || 5;
+    this.energy = Math.max(0, this.energy - escapeEnergyCost);
     
     return Math.random() < cappedEscapeChance;
   }
@@ -235,7 +257,7 @@ export class Prey extends Creature {
       const fleeDirection = this.position.clone().sub(nearbyPredator.position).normalize();
       
       // Get avoidance multiplier from config (default to 1.5 if not set)
-      const avoidanceMultiplier = SimulationConfig.prey.predatorAvoidanceMultiplier || 1.5;
+      const avoidanceMultiplier = SimulationConfig.prey.predatorAvoidanceMultiplier || 1.2; // Reduced from 1.5 to 1.2
       
       // Calculate flee bonus based on prey attributes
       // High stealth prey are better at evading
