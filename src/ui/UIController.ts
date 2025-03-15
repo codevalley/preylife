@@ -248,7 +248,7 @@ export class UIController {
     });
 
     document.getElementById('resource-widget')?.addEventListener('click', () => {
-      this.simulation.spawnResources(10);
+      this.simulation.spawnResources(10, true);
       this.updateStats();
     });
 
@@ -398,6 +398,9 @@ export class UIController {
     this.preyCountElement.textContent = this.formatNumber(stats.preyCount);
     this.predatorCountElement.textContent = this.formatNumber(stats.predatorCount);
     this.resourceCountElement.textContent = this.formatNumber(stats.resourceCount);
+    
+    // Update tooltips with detailed statistics
+    this.updateStatisticsTooltips();
     
     // Update days
     this.daysElement.textContent = days.toString();
@@ -848,5 +851,138 @@ export class UIController {
         this.playPauseButton.title = 'Play (Space)';
       }
     }
+  }
+  
+  // Update tooltips with detailed statistics
+  private updateStatisticsTooltips(): void {
+    const stats = this.simulation.getStatistics();
+    
+    // Get widget elements
+    const preyWidget = document.getElementById('prey-widget');
+    const predatorWidget = document.getElementById('predator-widget');
+    const resourceWidget = document.getElementById('resource-widget');
+    
+    // Create custom tooltip elements if they don't exist
+    this.createOrUpdateTooltip('prey-tooltip', `
+      <div style="padding: 10px; background-color: rgba(0, 0, 0, 0.8); color: white; border-radius: 4px; font-family: Arial, sans-serif; font-size: 12px; pointer-events: none; max-width: 240px; border: 1px solid #5588ff;">
+        <div style="font-weight: bold; color: #5588ff; margin-bottom: 5px;">Prey Population Statistics</div>
+        <div style="display: grid; gap: 4px; margin-bottom: 8px;">
+          <div>• <strong>Median Lifespan:</strong> ${stats.prey.medianLifespan} days</div>
+          <div>• <strong>Death by Hunting:</strong> ${stats.prey.deathByHunting}</div>
+          <div>• <strong>Death by Starvation:</strong> ${stats.prey.deathByStarvation}</div>
+          <div>• <strong>Birth by Reproduction:</strong> ${stats.prey.birthByReproduction}</div>
+          <div>• <strong>Birth by Conversion:</strong> ${stats.prey.birthByConversion}</div>
+          <div>• <strong>Birth by Spawning:</strong> ${stats.prey.birthBySpawning}</div>
+        </div>
+        <div style="font-style: italic; font-size: 11px; color: #aaa; text-align: center; border-top: 1px solid rgba(85, 136, 255, 0.3); padding-top: 5px;">
+          Tap to spawn a Prey
+        </div>
+      </div>
+    `);
+    
+    this.createOrUpdateTooltip('predator-tooltip', `
+      <div style="padding: 10px; background-color: rgba(0, 0, 0, 0.8); color: white; border-radius: 4px; font-family: Arial, sans-serif; font-size: 12px; pointer-events: none; max-width: 240px; border: 1px solid #ff5555;">
+        <div style="font-weight: bold; color: #ff5555; margin-bottom: 5px;">Predator Population Statistics</div>
+        <div style="display: grid; gap: 4px; margin-bottom: 8px;">
+          <div>• <strong>Median Lifespan:</strong> ${stats.predators.medianLifespan} days</div>
+          <div>• <strong>Birth by Reproduction:</strong> ${stats.predators.birthByReproduction}</div>
+          <div>• <strong>Birth by Conversion:</strong> ${stats.predators.birthByConversion}</div>
+          <div>• <strong>Birth by Spawning:</strong> ${stats.predators.birthBySpawning}</div>
+          <div>• <strong>Median Prey Consumed:</strong> ${stats.predators.medianPreyConsumed} per predator</div>
+        </div>
+        <div style="font-style: italic; font-size: 11px; color: #aaa; text-align: center; border-top: 1px solid rgba(255, 85, 85, 0.3); padding-top: 5px;">
+          Tap to spawn a Predator
+        </div>
+      </div>
+    `);
+    
+    this.createOrUpdateTooltip('resource-tooltip', `
+      <div style="padding: 10px; background-color: rgba(0, 0, 0, 0.8); color: white; border-radius: 4px; font-family: Arial, sans-serif; font-size: 12px; pointer-events: none; max-width: 240px; border: 1px solid #55cc55;">
+        <div style="font-weight: bold; color: #55cc55; margin-bottom: 5px;">Resource Statistics</div>
+        <div style="display: grid; gap: 4px; margin-bottom: 8px;">
+          <div>• <strong>Natural Generation:</strong> ${stats.resources.natural} (${stats.resources.naturalPercentage})</div>
+          <div>• <strong>From Creature Death:</strong> ${stats.resources.fromCreatureDeath} (${stats.resources.fromCreatureDeathPercentage})</div>
+          <div>• <strong>From Spawning:</strong> ${stats.resources.spawned} (${stats.resources.spawnedPercentage})</div>
+        </div>
+        <div style="font-style: italic; font-size: 11px; color: #aaa; text-align: center; border-top: 1px solid rgba(85, 204, 85, 0.3); padding-top: 5px;">
+          Tap to spawn 10 Resources
+        </div>
+      </div>
+    `);
+    
+    // Add hover event listeners if needed
+    if (preyWidget && !preyWidget.hasAttribute('data-tooltip-initialized')) {
+      this.setupTooltipEvents(preyWidget, 'prey-tooltip');
+      preyWidget.setAttribute('data-tooltip-initialized', 'true');
+    }
+    
+    if (predatorWidget && !predatorWidget.hasAttribute('data-tooltip-initialized')) {
+      this.setupTooltipEvents(predatorWidget, 'predator-tooltip');
+      predatorWidget.setAttribute('data-tooltip-initialized', 'true');
+    }
+    
+    if (resourceWidget && !resourceWidget.hasAttribute('data-tooltip-initialized')) {
+      this.setupTooltipEvents(resourceWidget, 'resource-tooltip');
+      resourceWidget.setAttribute('data-tooltip-initialized', 'true');
+    }
+  }
+  
+  // Create or update custom tooltip element
+  private createOrUpdateTooltip(id: string, content: string): void {
+    let tooltip = document.getElementById(id);
+    
+    if (!tooltip) {
+      tooltip = document.createElement('div');
+      tooltip.id = id;
+      tooltip.style.cssText = `
+        position: absolute;
+        display: none;
+        z-index: 9999;
+        transition: opacity 0.2s;
+        opacity: 0;
+      `;
+      document.body.appendChild(tooltip);
+    }
+    
+    tooltip.innerHTML = content;
+  }
+  
+  // Setup hover events for tooltips
+  private setupTooltipEvents(element: HTMLElement, tooltipId: string): void {
+    const tooltip = document.getElementById(tooltipId);
+    
+    if (!tooltip) return;
+    
+    // Show tooltip on hover
+    element.addEventListener('mouseenter', () => {
+      tooltip.style.display = 'block';
+      
+      // Position the tooltip
+      const rect = element.getBoundingClientRect();
+      tooltip.style.left = `${rect.left}px`;
+      tooltip.style.top = `${rect.bottom + 5}px`;
+      
+      // Make it visible
+      setTimeout(() => {
+        tooltip.style.opacity = '1';
+      }, 10);
+    });
+    
+    // Hide tooltip when mouse leaves
+    element.addEventListener('mouseleave', () => {
+      tooltip.style.opacity = '0';
+      setTimeout(() => {
+        tooltip.style.display = 'none';
+      }, 200); // Wait for fade-out animation
+    });
+    
+    // Update position on mouse move (to follow the element if it moves)
+    element.addEventListener('mousemove', () => {
+      if (tooltip.style.display === 'block') {
+        const rect = element.getBoundingClientRect();
+        tooltip.style.left = `${rect.left}px`;
+        tooltip.style.top = `${rect.bottom + 5}px`;
+      }
+    });
   }
 }

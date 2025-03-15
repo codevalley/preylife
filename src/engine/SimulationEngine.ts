@@ -73,6 +73,41 @@ export class SimulationEngine {
     resources: 0
   };
   
+  // Statistics for tooltips
+  private statistics = {
+    prey: {
+      deaths: {
+        hunting: 0,
+        starvation: 0,
+        total: 0
+      },
+      births: {
+        reproduction: 0,
+        conversion: 0,
+        spawned: 0
+      },
+      lifespans: [] as number[],
+    },
+    predators: {
+      deaths: {
+        starvation: 0,
+        total: 0
+      },
+      births: {
+        reproduction: 0,
+        conversion: 0,
+        spawned: 0
+      },
+      preyConsumed: 0,
+      lifespans: [] as number[],
+    },
+    resources: {
+      fromCreatureDeath: 0,
+      natural: 0,
+      spawned: 0
+    }
+  };
+  
   constructor(
     private initialResourceCount: number = 250,
     private initialPreyCount: number = 50,
@@ -185,7 +220,7 @@ export class SimulationEngine {
           const energy = baseEnergy * randomVariation;
           
           const newPrey = new Prey(x, y, energy, preyAttributes);
-          this.addPrey(newPrey);
+          this.addPrey(newPrey, true);
         }
       }
       
@@ -199,7 +234,7 @@ export class SimulationEngine {
         const x = Math.random() * this.environmentWidth - this.environmentWidth/2;
         const y = Math.random() * this.environmentHeight - this.environmentHeight/2;
         const newPrey = new Prey(x, y);
-        this.addPrey(newPrey);
+        this.addPrey(newPrey, true);
       }
       
       console.info(`Spawned ${count} new prey randomly. Total prey: ${this.prey.length}`);
@@ -298,7 +333,7 @@ export class SimulationEngine {
           const energy = baseEnergy * randomVariation;
           
           const newPredator = new Predator(x, y, energy, predatorAttributes);
-          this.addPredator(newPredator);
+          this.addPredator(newPredator, true);
         }
       }
       
@@ -312,7 +347,7 @@ export class SimulationEngine {
         const x = Math.random() * this.environmentWidth - this.environmentWidth/2;
         const y = Math.random() * this.environmentHeight - this.environmentHeight/2;
         const newPredator = new Predator(x, y);
-        this.addPredator(newPredator);
+        this.addPredator(newPredator, true);
       }
       
       //console.log(`Spawned ${count} new predators randomly. Total predators: ${this.predators.length}`);
@@ -320,7 +355,7 @@ export class SimulationEngine {
   }
   
   // Method to spawn resources
-  spawnResources(count: number = 20): void {
+  spawnResources(count: number = 20, fromManualSpawn: boolean = false): void {
     // Check resource cap before spawning
     const maxResources = SimulationConfig.resources.limits.maxCount;
     const enforcementThreshold = maxResources * SimulationConfig.resources.limits.enforcementThreshold;
@@ -341,6 +376,13 @@ export class SimulationEngine {
     
     // Update total spawned count
     this.totalSpawned.resources += actualCount;
+    
+    // Track statistics - if from manual spawn, track as spawned
+    if (fromManualSpawn) {
+      this.statistics.resources.spawned += actualCount;
+    } else {
+      this.statistics.resources.natural += actualCount;
+    }
     
     //console.log(`Spawned ${actualCount} new resources. Total resources: ${this.resources.length}`);
     
@@ -366,6 +408,41 @@ export class SimulationEngine {
       prey: 0,
       predators: 0,
       resources: 0
+    };
+    
+    // Reset statistics
+    this.statistics = {
+      prey: {
+        deaths: {
+          hunting: 0,
+          starvation: 0,
+          total: 0
+        },
+        births: {
+          reproduction: 0,
+          conversion: 0,
+          spawned: 0
+        },
+        lifespans: [] as number[],
+      },
+      predators: {
+        deaths: {
+          starvation: 0,
+          total: 0
+        },
+        births: {
+          reproduction: 0,
+          conversion: 0,
+          spawned: 0
+        },
+        preyConsumed: 0,
+        lifespans: [] as number[],
+      },
+      resources: {
+        fromCreatureDeath: 0,
+        natural: 0,
+        spawned: 0
+      }
     };
     
     // Create initial resources in clusters
@@ -407,6 +484,8 @@ export class SimulationEngine {
     
     // Update resources spawned count
     this.totalSpawned.resources += this.resources.length;
+    // Track these as spawned (initial) resources
+    this.statistics.resources.spawned += this.resources.length;
     
     // Spawn initial prey and predators with clustering
     this.spawnPrey(this.initialPreyCount, true);
@@ -696,6 +775,90 @@ export class SimulationEngine {
     return this.resourceBloom;
   }
   
+  // Getter for statistics
+  getStatistics() {
+    // Calculate percentages and median values
+    const stats = {
+      prey: {
+        medianLifespan: this.calculateMedian(this.statistics.prey.lifespans),
+        deathByHunting: this.statistics.prey.deaths.total > 0 
+          ? (this.statistics.prey.deaths.hunting / this.statistics.prey.deaths.total * 100).toFixed(1) + '%'
+          : '0%',
+        deathByStarvation: this.statistics.prey.deaths.total > 0
+          ? (this.statistics.prey.deaths.starvation / this.statistics.prey.deaths.total * 100).toFixed(1) + '%'
+          : '0%',
+        birthByReproduction: this.totalBirths('prey') > 0
+          ? (this.statistics.prey.births.reproduction / this.totalBirths('prey') * 100).toFixed(1) + '%'
+          : '0%',
+        birthByConversion: this.totalBirths('prey') > 0
+          ? (this.statistics.prey.births.conversion / this.totalBirths('prey') * 100).toFixed(1) + '%'
+          : '0%',
+        birthBySpawning: this.totalBirths('prey') > 0
+          ? (this.statistics.prey.births.spawned / this.totalBirths('prey') * 100).toFixed(1) + '%'
+          : '0%'
+      },
+      predators: {
+        medianLifespan: this.calculateMedian(this.statistics.predators.lifespans),
+        birthByReproduction: this.totalBirths('predator') > 0
+          ? (this.statistics.predators.births.reproduction / this.totalBirths('predator') * 100).toFixed(1) + '%'
+          : '0%',
+        birthByConversion: this.totalBirths('predator') > 0
+          ? (this.statistics.predators.births.conversion / this.totalBirths('predator') * 100).toFixed(1) + '%'
+          : '0%',
+        birthBySpawning: this.totalBirths('predator') > 0
+          ? (this.statistics.predators.births.spawned / this.totalBirths('predator') * 100).toFixed(1) + '%'
+          : '0%', 
+        medianPreyConsumed: this.statistics.predators.deaths.total > 0
+          ? (this.statistics.predators.preyConsumed / this.statistics.predators.deaths.total).toFixed(1)
+          : '0'
+      },
+      resources: {
+        fromCreatureDeath: this.statistics.resources.fromCreatureDeath,
+        natural: this.statistics.resources.natural,
+        spawned: this.statistics.resources.spawned,
+        fromCreatureDeathPercentage: this.totalSpawned.resources > 0
+          ? (this.statistics.resources.fromCreatureDeath / this.totalSpawned.resources * 100).toFixed(1) + '%'
+          : '0%',
+        naturalPercentage: this.totalSpawned.resources > 0
+          ? (this.statistics.resources.natural / this.totalSpawned.resources * 100).toFixed(1) + '%'
+          : '0%',
+        spawnedPercentage: this.totalSpawned.resources > 0
+          ? (this.statistics.resources.spawned / this.totalSpawned.resources * 100).toFixed(1) + '%'
+          : '0%'
+      }
+    };
+    
+    return stats;
+  }
+  
+  // Helper method to calculate median
+  private calculateMedian(values: number[]): string {
+    if (values.length === 0) return '0';
+    
+    // Sort values
+    const sorted = [...values].sort((a, b) => a - b);
+    const middle = Math.floor(sorted.length / 2);
+    
+    if (sorted.length % 2 === 0) {
+      return ((sorted[middle - 1] + sorted[middle]) / 2).toFixed(1);
+    } else {
+      return sorted[middle].toFixed(1);
+    }
+  }
+  
+  // Helper method to calculate total births including all types
+  private totalBirths(type: 'prey' | 'predator'): number {
+    if (type === 'prey') {
+      return this.statistics.prey.births.reproduction + 
+             this.statistics.prey.births.conversion + 
+             this.statistics.prey.births.spawned;
+    } else {
+      return this.statistics.predators.births.reproduction + 
+             this.statistics.predators.births.conversion + 
+             this.statistics.predators.births.spawned;
+    }
+  }
+  
   private checkForExtinction(): void {
     // Check if prey went extinct
     if (this.lastPreyCount > 0 && this.prey.length === 0) {
@@ -815,6 +978,17 @@ export class SimulationEngine {
                 predator.consumePrey(prey);
                 prey.die();
                 
+                // Track statistics
+                this.statistics.prey.deaths.total++;
+                this.statistics.prey.deaths.hunting++;
+                this.statistics.predators.preyConsumed++;
+                
+                // Track lifespan for the consumed prey
+                const lifespan = prey.age;
+                if (lifespan > 0) {
+                  this.statistics.prey.lifespans.push(lifespan);
+                }
+                
                 // Show prey consumed toast
                 ToastManager.getInstance().showToast(
                   ToastType.EPHEMERAL,
@@ -856,6 +1030,9 @@ export class SimulationEngine {
       if (prey.canReproduce()) {
         const offspring = prey.reproduce();
         newPrey.push(offspring);
+        
+        // Track reproduction statistics
+        this.statistics.prey.births.reproduction++;
       }
     }
     
@@ -917,6 +1094,9 @@ export class SimulationEngine {
         
         const offspring = predator.reproduce();
         newPredators.push(offspring);
+        
+        // Track reproduction statistics
+        this.statistics.predators.births.reproduction++;
       }
     }
     
@@ -937,15 +1117,39 @@ export class SimulationEngine {
   }
   
   // Helper method to add a prey to the simulation and update counts
-  private addPrey(prey: Prey): void {
+  private addPrey(prey: Prey, fromSpawn: boolean = false): void {
     this.prey.push(prey);
     this.totalSpawned.prey += 1;
+    
+    // Track if this is from initial spawn or manual spawn
+    if (fromSpawn) {
+      if (!this.statistics.prey.births) {
+        this.statistics.prey.births = {
+          reproduction: 0,
+          conversion: 0,
+          spawned: 0
+        };
+      }
+      this.statistics.prey.births.spawned++;
+    }
   }
   
   // Helper method to add a predator to the simulation and update counts
-  private addPredator(predator: Predator): void {
+  private addPredator(predator: Predator, fromSpawn: boolean = false): void {
     this.predators.push(predator);
     this.totalSpawned.predators += 1;
+    
+    // Track if this is from initial spawn or manual spawn
+    if (fromSpawn) {
+      if (!this.statistics.predators.births) {
+        this.statistics.predators.births = {
+          reproduction: 0,
+          conversion: 0,
+          spawned: 0
+        };
+      }
+      this.statistics.predators.births.spawned++;
+    }
   }
   
   private removeDeadEntities(): void {
@@ -954,6 +1158,24 @@ export class SimulationEngine {
     for (let i = this.prey.length - 1; i >= 0; i--) {
       if (this.prey[i].isDead) {
         deadPreyCount++;
+        
+        // Track statistics
+        this.statistics.prey.deaths.total++;
+        
+        // Track death cause (if not by hunting, it's starvation)
+        if (this.prey[i].energy <= 0) {
+          this.statistics.prey.deaths.starvation++;
+        } else {
+          // It was likely killed by a predator but wasn't consumed
+          this.statistics.prey.deaths.hunting++;
+        }
+        
+        // Track lifespan
+        const lifespan = this.prey[i].age;
+        if (lifespan > 0) {
+          this.statistics.prey.lifespans.push(lifespan);
+        }
+        
         // Convert 70% of prey's max energy to resources when they die
         const energyToConvert = this.prey[i].maxEnergy * 0.7;
         const resourceCount = Math.ceil(energyToConvert / Resource.DEFAULT_ENERGY);
@@ -984,6 +1206,19 @@ export class SimulationEngine {
     for (let i = this.predators.length - 1; i >= 0; i--) {
       if (this.predators[i].isDead) {
         deadPredatorCount++;
+        
+        // Track statistics
+        this.statistics.predators.deaths.total++;
+        
+        // Track death cause (for predators it's always starvation)
+        this.statistics.predators.deaths.starvation++;
+        
+        // Track lifespan
+        const lifespan = this.predators[i].age;
+        if (lifespan > 0) {
+          this.statistics.predators.lifespans.push(lifespan);
+        }
+        
         // Convert 70% of predator's max energy to resources when they die
         const energyToConvert = this.predators[i].maxEnergy * 0.7;
         const resourceCount = Math.ceil(energyToConvert / Resource.DEFAULT_ENERGY);
@@ -1032,6 +1267,9 @@ export class SimulationEngine {
       resource.creationTime = this.days; // Set creation timestamp
       this.resources.push(resource);
       this.totalSpawned.resources++;
+      
+      // Track resources from creature death
+      this.statistics.resources.fromCreatureDeath++;
     }
   }
   
@@ -1223,6 +1461,9 @@ export class SimulationEngine {
         resourceCount: this.resources.length
       });
       
+      // Track conversion statistics
+      this.statistics.predators.births.conversion += newPredators.length;
+      
       // Show evolution info toast if this is the first evolution
       if (this.evolutionEvents.length === 1) {
         ToastManager.getInstance().showToast(
@@ -1250,6 +1491,9 @@ export class SimulationEngine {
         predatorCount: this.predators.length,
         resourceCount: this.resources.length
       });
+      
+      // Track conversion statistics
+      this.statistics.prey.births.conversion += newPrey.length;
       
       // Show evolution info toast if this is the first evolution
       if (this.evolutionEvents.length === 1) {
