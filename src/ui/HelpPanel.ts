@@ -23,9 +23,25 @@ export class HelpPanel {
       box-shadow: 0 0 30px rgba(0, 0, 0, 0.7);
     `;
 
+    // Add keyboard event listener
+    this.panel.tabIndex = 0; // Make the panel focusable
+    this.panel.addEventListener('keydown', (event) => {
+      // Close on Escape key
+      if (event.key === 'Escape') {
+        this.hide();
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    });
+
     // Add close button
     const closeButton = document.createElement('button');
-    closeButton.innerHTML = '×';
+    closeButton.innerHTML = `
+      <div style="display: flex; align-items: center; justify-content: center;">
+        <span style="font-size: 28px;">×</span>
+        <span style="font-size: 10px; margin-left: 4px; opacity: 0.7; background: rgba(255,255,255,0.1); padding: 2px 4px; border-radius: 3px;">ESC</span>
+      </div>
+    `;
     closeButton.style.cssText = `
       position: absolute;
       top: 15px;
@@ -33,11 +49,12 @@ export class HelpPanel {
       background: none;
       border: none;
       color: #fff;
-      font-size: 28px;
       cursor: pointer;
       padding: 5px 10px;
       border-radius: 4px;
       z-index: 1;
+      display: flex;
+      align-items: center;
     `;
     closeButton.addEventListener('mouseenter', () => {
       closeButton.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
@@ -45,6 +62,7 @@ export class HelpPanel {
     closeButton.addEventListener('mouseleave', () => {
       closeButton.style.backgroundColor = 'transparent';
     });
+    closeButton.title = 'Close Help Panel (Esc)';
     closeButton.addEventListener('click', () => this.hide());
     this.panel.appendChild(closeButton);
 
@@ -362,14 +380,14 @@ export class HelpPanel {
             <div style="display: flex; align-items: center; gap: 10px;">
               <span style="color: #66ff66;">💪</span>
               <div>
-                <strong>Strength</strong>
+                <strong>Strength</strong> (Green tint)
                 <div style="font-size: 12px; color: #aaa;">Movement speed & escape ability</div>
               </div>
             </div>
             <div style="display: flex; align-items: center; gap: 10px;">
               <span style="color: #5588ff;">🕵️</span>
               <div>
-                <strong>Stealth</strong>
+                <strong>Stealth</strong> (Blue tint)
                 <div style="font-size: 12px; color: #aaa;">Predator detection & evasion</div>
               </div>
             </div>
@@ -377,17 +395,26 @@ export class HelpPanel {
               <span style="color: #ffcc44;">🧠</span>
               <div>
                 <strong>Learnability</strong>
-                <div style="font-size: 12px; color: #aaa;">Adaptation speed</div>
+                <div style="font-size: 12px; color: #aaa;">Adaptation speed & social learning</div>
               </div>
             </div>
             <div style="display: flex; align-items: center; gap: 10px;">
               <span style="color: #cc66cc;">⏳</span>
               <div>
                 <strong>Longevity</strong>
-                <div style="font-size: 12px; color: #aaa;">Lifespan & efficiency</div>
+                <div style="font-size: 12px; color: #aaa;">Lifespan & metabolic efficiency</div>
               </div>
             </div>
           </div>
+        </div>
+        <div style="background: rgba(30, 30, 30, 0.5); padding: 10px; border-radius: 6px;">
+          <h3 style="margin: 0 0 5px 0; color: #fff; font-size: 15px;">Special Abilities</h3>
+          <ul style="margin: 0; padding-left: 20px; font-size: 12px;">
+            <li><strong>Resource Detection:</strong> Find food based on stealth</li>
+            <li><strong>Predator Evasion:</strong> Flee with speed boost (strength-based)</li>
+            <li><strong>Specialized Escape:</strong> Stealth prey use erratic movements</li>
+            <li><strong>Energy Bonus:</strong> Gets 20% bonus from resources</li>
+          </ul>
         </div>
       `
     );
@@ -407,32 +434,41 @@ export class HelpPanel {
             <div style="display: flex; align-items: center; gap: 10px;">
               <span style="color: #ff5555;">💪</span>
               <div>
-                <strong>Strength</strong>
+                <strong>Strength</strong> (Red tint)
                 <div style="font-size: 12px; color: #aaa;">Hunting speed & capture success</div>
               </div>
             </div>
             <div style="display: flex; align-items: center; gap: 10px;">
               <span style="color: #ffcc44;">🕵️</span>
               <div>
-                <strong>Stealth</strong>
-                <div style="font-size: 12px; color: #aaa;">Approach undetected</div>
+                <strong>Stealth</strong> (Yellow tint)
+                <div style="font-size: 12px; color: #aaa;">Detect prey & approach undetected</div>
               </div>
             </div>
             <div style="display: flex; align-items: center; gap: 10px;">
               <span style="color: #ffcc44;">🧠</span>
               <div>
                 <strong>Learnability</strong>
-                <div style="font-size: 12px; color: #aaa;">Adaptation speed</div>
+                <div style="font-size: 12px; color: #aaa;">Adaptation speed & hunting tactics</div>
               </div>
             </div>
             <div style="display: flex; align-items: center; gap: 10px;">
               <span style="color: #cc66cc;">⏳</span>
               <div>
                 <strong>Longevity</strong>
-                <div style="font-size: 12px; color: #aaa;">Lifespan & efficiency</div>
+                <div style="font-size: 12px; color: #aaa;">Lifespan & metabolic efficiency</div>
               </div>
             </div>
           </div>
+        </div>
+        <div style="background: rgba(30, 30, 30, 0.5); padding: 10px; border-radius: 6px;">
+          <h3 style="margin: 0 0 5px 0; color: #fff; font-size: 15px;">Special Abilities</h3>
+          <ul style="margin: 0; padding-left: 20px; font-size: 12px;">
+            <li><strong>Prey Detection:</strong> Find prey based on stealth</li>
+            <li><strong>Hunting Boost:</strong> Increased speed when pursuing prey</li>
+            <li><strong>Capture Chance:</strong> Based on strength vs prey's stealth</li>
+            <li><strong>Specialized Hunting:</strong> Bonuses for extreme traits</li>
+          </ul>
         </div>
       `
     );
@@ -446,32 +482,35 @@ export class HelpPanel {
         <div style="background: rgba(30, 30, 30, 0.5); padding: 15px; border-radius: 6px; margin-bottom: 15px;">
           <h3 style="margin: 0 0 10px 0; color: #fff;">Energy Cycle</h3>
           <div style="text-align: center; padding: 10px; background: rgba(0, 0, 0, 0.2); border-radius: 4px;">
-            Resources → Prey → Predators → Resources
+            Resources → Prey → Predators → (Death) → Resources
           </div>
         </div>
         <div style="display: grid; gap: 15px;">
           <div>
             <h3 style="margin: 0 0 10px 0; color: #fff; font-size: 16px;">🟢 Resources</h3>
             <ul style="margin: 0; padding-left: 20px;">
-              <li>Regenerate slowly</li>
-              <li>Seasonal blooms</li>
-              <li>Decay without prey</li>
+              <li>Regenerate slowly over time</li>
+              <li>Create richer clusters during blooms</li>
+              <li>Decay if not consumed</li>
+              <li>Bloom events create migration patterns</li>
             </ul>
           </div>
           <div>
             <h3 style="margin: 0 0 10px 0; color: #fff; font-size: 16px;">🔵 Prey</h3>
             <ul style="margin: 0; padding-left: 20px;">
-              <li>80% energy to reproduce</li>
-              <li>Split energy with offspring</li>
-              <li>Evolving energy capacity</li>
+              <li>Need 80% energy to reproduce</li>
+              <li>Higher movement cost for strong prey</li>
+              <li>Energy cost for escaping predators</li>
+              <li>Metabolic efficiency improves with longevity</li>
             </ul>
           </div>
           <div>
             <h3 style="margin: 0 0 10px 0; color: #fff; font-size: 16px;">🔴 Predators</h3>
             <ul style="margin: 0; padding-left: 20px;">
-              <li>70% energy to reproduce</li>
-              <li>Higher energy costs</li>
-              <li>85% energy from prey</li>
+              <li>Need 70% energy to reproduce</li>
+              <li>Gain 85% of prey's energy when hunting</li>
+              <li>Lose 60% energy during reproduction</li>
+              <li>Higher hunting costs for strong predators</li>
             </ul>
           </div>
         </div>
@@ -515,17 +554,19 @@ export class HelpPanel {
               <div>
                 <h4 style="margin: 0 0 5px 0; color: #5588ff;">Prey → Predator</h4>
                 <ul style="margin: 0; padding-left: 20px; font-size: 13px;">
-                  <li>High strength/stealth</li>
+                  <li>Strength/stealth > 0.6</li>
                   <li>Isolated from predators</li>
                   <li>Extended prey contact</li>
+                  <li>Bonus for traits > 0.9</li>
                 </ul>
               </div>
               <div>
                 <h4 style="margin: 0 0 5px 0; color: #ff5555;">Predator → Prey</h4>
                 <ul style="margin: 0; padding-left: 20px; font-size: 13px;">
-                  <li>Low strength/stealth</li>
+                  <li>Strength/stealth < 0.5</li>
                   <li>Isolated from prey</li>
                   <li>Extended predator contact</li>
+                  <li>Bonus for traits < 0.1</li>
                 </ul>
               </div>
             </div>
@@ -573,6 +614,14 @@ export class HelpPanel {
       if (overlay instanceof HTMLElement) {
         overlay.style.display = 'block';
       }
+      
+      // Add global keyboard event listener
+      setTimeout(() => {
+        this.panel.focus();
+      }, 100);
+      
+      // Add global keyboard listener for Escape key
+      document.addEventListener('keydown', this.handleGlobalKeyDown);
     }
   }
 
@@ -583,6 +632,17 @@ export class HelpPanel {
       if (overlay instanceof HTMLElement) {
         overlay.style.display = 'none';
       }
+      
+      // Remove global keyboard listener
+      document.removeEventListener('keydown', this.handleGlobalKeyDown);
+    }
+  }
+  
+  private handleGlobalKeyDown = (event: KeyboardEvent): void => {
+    if (event.key === 'Escape') {
+      this.hide();
+      event.preventDefault();
+      event.stopPropagation();
     }
   }
 } 

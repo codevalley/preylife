@@ -3,6 +3,7 @@ import { DashboardPanel } from './DashboardPanel';
 import { SettingsPanel } from './SettingsPanel';
 import { SimulationConfig } from '../config';
 import { HelpPanel } from './HelpPanel';
+import { ToastManager, ToastType, ToastEvent } from './ToastManager';
 
 export class UIController {
   // Dashboard panels
@@ -38,6 +39,23 @@ export class UIController {
     preyCount: number,
     predatorCount: number,
     resourceCount: number
+  }> = [];
+  
+  // Flags for tracking which info toasts have been shown
+  private highPreyDensityShown: boolean = false;
+  private highPredatorDensityShown: boolean = false;
+  private lowResourceWarningShown: boolean = false;
+  private preySpecializedShown: boolean = false;
+  private predatorSpecializedShown: boolean = false;
+  private ecosystemBalancedShown: boolean = false;
+  private ecosystemCollapseWarningShown: boolean = false;
+  
+  // Population history for stability analysis
+  private populationHistory: Array<{
+    day: number,
+    prey: number,
+    predators: number,
+    resources: number
   }> = [];
   
   // Add helper method for number formatting
@@ -347,6 +365,21 @@ export class UIController {
       this.playPauseButton.title = 'Play (Space)';
     }
     
+    // Reset flags for info toasts
+    this.highPreyDensityShown = false;
+    this.highPredatorDensityShown = false;
+    this.lowResourceWarningShown = false;
+    this.preySpecializedShown = false;
+    this.predatorSpecializedShown = false;
+    this.ecosystemBalancedShown = false;
+    this.ecosystemCollapseWarningShown = false;
+    
+    // Clear population history
+    this.populationHistory = [];
+    
+    // Reset ToastManager info events tracking
+    ToastManager.getInstance().resetInfoEvents();
+    
     this.updateStats();
   }
   
@@ -434,6 +467,22 @@ export class UIController {
         resourceBloomElement.title = 'Resource Bloom Active!';
       }
     }
+    
+    // Add current stats to population history
+    this.populationHistory.push({
+      day: days,
+      prey: stats.preyCount,
+      predators: stats.predatorCount,
+      resources: stats.resourceCount
+    });
+    
+    // Limit history size
+    if (this.populationHistory.length > 120) {
+      this.populationHistory.shift();
+    }
+    
+    // Check for info toast conditions
+    this.checkInfoToastConditions(stats);
     
     // Update ecology events table
     const ecologyEventsTableElement = document.getElementById('ecology-events-table');
@@ -578,5 +627,139 @@ export class UIController {
         resourceBox.classList.remove('bloom-pulse');
       }
     }
+  }
+  
+  // Helper method to check for conditions that should trigger info toasts
+  private checkInfoToastConditions(stats: any): void {
+    const initialPreyCount = SimulationConfig.initialPopulation.prey;
+    const initialPredatorCount = SimulationConfig.initialPopulation.predators;
+    const initialResourceCount = SimulationConfig.initialPopulation.resources;
+    
+    // Check for high prey density
+    if (stats.preyCount > initialPreyCount * 3 && !this.highPreyDensityShown) {
+      ToastManager.getInstance().showToast(
+        ToastType.INFO, 
+        ToastEvent.HIGH_PREY_DENSITY
+      );
+      this.highPreyDensityShown = true;
+    }
+    
+    // Check for high predator density
+    if (stats.predatorCount > initialPredatorCount * 3 && !this.highPredatorDensityShown) {
+      ToastManager.getInstance().showToast(
+        ToastType.INFO, 
+        ToastEvent.HIGH_PREDATOR_DENSITY
+      );
+      this.highPredatorDensityShown = true;
+    }
+    
+    // Check for low resources
+    if (stats.resourceCount < initialResourceCount * 0.15 && !this.lowResourceWarningShown) {
+      ToastManager.getInstance().showToast(
+        ToastType.INFO, 
+        ToastEvent.LOW_RESOURCE_WARNING
+      );
+      this.lowResourceWarningShown = true;
+    }
+    
+    // Check for specialized attributes (prey)
+    const preySpecialized = 
+      stats.preyAttributes.strength > 0.75 || 
+      stats.preyAttributes.stealth > 0.75 || 
+      stats.preyAttributes.longevity > 0.75;
+      
+    if (preySpecialized && !this.preySpecializedShown && stats.preyCount > 0) {
+      ToastManager.getInstance().showToast(
+        ToastType.INFO, 
+        ToastEvent.PREY_ATTRIBUTES_SPECIALIZED
+      );
+      this.preySpecializedShown = true;
+    }
+    
+    // Check for specialized attributes (predator)
+    const predatorSpecialized = 
+      stats.predatorAttributes.strength > 0.75 || 
+      stats.predatorAttributes.stealth > 0.75 || 
+      stats.predatorAttributes.longevity > 0.75;
+      
+    if (predatorSpecialized && !this.predatorSpecializedShown && stats.predatorCount > 0) {
+      ToastManager.getInstance().showToast(
+        ToastType.INFO, 
+        ToastEvent.PREDATOR_ATTRIBUTES_SPECIALIZED
+      );
+      this.predatorSpecializedShown = true;
+    }
+    
+    // Check for ecosystem balance (stable for 100+ days)
+    if (this.populationHistory.length > 100 && !this.ecosystemBalancedShown) {
+      const isStable = this.checkEcosystemStability();
+      if (isStable) {
+        ToastManager.getInstance().showToast(
+          ToastType.INFO, 
+          ToastEvent.ECOSYSTEM_BALANCED
+        );
+        this.ecosystemBalancedShown = true;
+      }
+    }
+    
+    // Check for ecosystem collapse warning
+    if (this.populationHistory.length > 20 && !this.ecosystemCollapseWarningShown) {
+      const isUnstable = this.checkEcosystemInstability();
+      if (isUnstable) {
+        ToastManager.getInstance().showToast(
+          ToastType.INFO, 
+          ToastEvent.ECOSYSTEM_COLLAPSE_WARNING
+        );
+        this.ecosystemCollapseWarningShown = true;
+      }
+    }
+  }
+  
+  // Helper method to check if the ecosystem is stable
+  private checkEcosystemStability(): boolean {
+    // Need at least 100 days of data
+    if (this.populationHistory.length < 100) return false;
+    
+    // Get the last 100 days of data
+    const recentHistory = this.populationHistory.slice(-100);
+    
+    // Calculate averages
+    const avgPrey = recentHistory.reduce((sum, h) => sum + h.prey, 0) / recentHistory.length;
+    const avgPredators = recentHistory.reduce((sum, h) => sum + h.predators, 0) / recentHistory.length;
+    
+    // Check if population is non-zero
+    if (avgPrey < 1 || avgPredators < 1) return false;
+    
+    // Check if values stay within ±25% of their average
+    const preyStable = recentHistory.every(h => 
+      h.prey > avgPrey * 0.75 && h.prey < avgPrey * 1.25
+    );
+    
+    const predatorsStable = recentHistory.every(h => 
+      h.predators > avgPredators * 0.75 && h.predators < avgPredators * 1.25
+    );
+    
+    return preyStable && predatorsStable;
+  }
+  
+  // Helper method to check if the ecosystem is showing signs of collapse
+  private checkEcosystemInstability(): boolean {
+    // Need at least 20 days of data
+    if (this.populationHistory.length < 20) return false;
+    
+    // Get the last 20 days of data
+    const recentHistory = this.populationHistory.slice(-20);
+    
+    // Check for rapid decline in both populations
+    const preyStart = recentHistory[0].prey;
+    const preyEnd = recentHistory[recentHistory.length - 1].prey;
+    const predatorStart = recentHistory[0].predators;
+    const predatorEnd = recentHistory[recentHistory.length - 1].predators;
+    
+    // Look for significant population decline (60% or more)
+    const preyDecline = preyStart > 10 && preyEnd < preyStart * 0.4;
+    const predatorDecline = predatorStart > 5 && predatorEnd < predatorStart * 0.4;
+    
+    return preyDecline && predatorDecline;
   }
 }

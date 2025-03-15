@@ -2,6 +2,7 @@ import { SimulationEngine } from './engine/SimulationEngine';
 import { Renderer } from './rendering/Renderer';
 import { UIController } from './ui/UIController';
 import { SimulationConfig } from './config';
+import { ToastManager } from './ui/ToastManager';
 
 class Application {
   private simulation: SimulationEngine;
@@ -12,6 +13,9 @@ class Application {
   private frameId: number = 0;
   
   constructor() {
+    // Initialize toast manager
+    ToastManager.getInstance().addAnimationStyles();
+    
     // Create simulation engine with config
     this.simulation = new SimulationEngine(
       SimulationConfig.initialPopulation.resources,

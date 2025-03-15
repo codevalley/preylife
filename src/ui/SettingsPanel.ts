@@ -36,10 +36,30 @@ export class SettingsPanel {
       color: #fff;
       box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
     `;
+    
+    // Add keyboard event listener
+    this.panel.tabIndex = 0; // Make the panel focusable
+    this.panel.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        this.hide();
+        event.preventDefault();
+        event.stopPropagation();
+      } else if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
+        // Ctrl+Enter or Cmd+Enter to save settings
+        this.saveSettings();
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    });
 
     // Add close button
     const closeButton = document.createElement('button');
-    closeButton.innerHTML = '×';
+    closeButton.innerHTML = `
+      <div style="display: flex; align-items: center; justify-content: center;">
+        <span style="font-size: 24px;">×</span>
+        <span style="font-size: 10px; margin-left: 4px; opacity: 0.7; background: rgba(255,255,255,0.1); padding: 2px 4px; border-radius: 3px;">ESC</span>
+      </div>
+    `;
     closeButton.style.cssText = `
       position: absolute;
       top: 10px;
@@ -47,10 +67,11 @@ export class SettingsPanel {
       background: none;
       border: none;
       color: #fff;
-      font-size: 24px;
       cursor: pointer;
       padding: 5px 10px;
       border-radius: 4px;
+      display: flex;
+      align-items: center;
     `;
     closeButton.addEventListener('mouseenter', () => {
       closeButton.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
@@ -58,6 +79,7 @@ export class SettingsPanel {
     closeButton.addEventListener('mouseleave', () => {
       closeButton.style.backgroundColor = 'transparent';
     });
+    closeButton.title = 'Close Settings Panel (Esc)';
     closeButton.addEventListener('click', () => this.hide());
     this.panel.appendChild(closeButton);
 
@@ -98,7 +120,10 @@ export class SettingsPanel {
       border-radius: 4px;
       cursor: pointer;
       font-size: 16px;
+      display: flex;
+      align-items: center;
     `;
+    restoreButton.title = 'Reset all settings to their default values';
     restoreButton.addEventListener('mouseenter', () => {
       restoreButton.style.backgroundColor = '#888';
     });
@@ -119,7 +144,10 @@ export class SettingsPanel {
       border-radius: 4px;
       cursor: pointer;
       font-size: 16px;
+      display: flex;
+      align-items: center;
     `;
+    toggleAdvancedButton.title = 'Toggle visibility of advanced settings';
     toggleAdvancedButton.addEventListener('mouseenter', () => {
       toggleAdvancedButton.style.backgroundColor = '#666';
     });
@@ -135,7 +163,22 @@ export class SettingsPanel {
 
     // Add save button
     const saveButton = document.createElement('button');
-    saveButton.textContent = 'Save Changes';
+    
+    // Create content with keyboard shortcut indicator
+    const saveButtonContent = document.createElement('div');
+    saveButtonContent.style.cssText = `
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    `;
+    saveButtonContent.innerHTML = `
+      <span>Save Changes</span>
+      <span style="margin-left: 8px; font-size: 11px; opacity: 0.8; background: rgba(255,255,255,0.1); padding: 2px 5px; border-radius: 3px;">
+        ${navigator.platform.includes('Mac') ? '⌘+Enter' : 'Ctrl+Enter'}
+      </span>
+    `;
+    
+    saveButton.appendChild(saveButtonContent);
     saveButton.style.cssText = `
       background: #4CAF50;
       color: white;
@@ -145,6 +188,7 @@ export class SettingsPanel {
       cursor: pointer;
       font-size: 16px;
     `;
+    saveButton.title = 'Save Changes (Ctrl+Enter or Cmd+Enter)';
     saveButton.addEventListener('mouseenter', () => {
       saveButton.style.backgroundColor = '#45a049';
     });
@@ -1666,6 +1710,20 @@ export class SettingsPanel {
       if (overlay instanceof HTMLElement) {
         overlay.style.display = 'block';
       }
+      
+      // Focus the panel and add global keyboard listeners
+      setTimeout(() => {
+        this.panel.focus();
+      }, 100);
+      
+      // Add global keyboard listener
+      document.addEventListener('keydown', this.handleGlobalKeyDown);
+      
+      // Update save button tooltip
+      const saveButton = this.panel.querySelector('button:last-child');
+      if (saveButton) {
+        saveButton.title = 'Save Changes (Ctrl+Enter or Cmd+Enter)';
+      }
     }
     this._isVisible = true;
   }
@@ -1677,8 +1735,24 @@ export class SettingsPanel {
       if (overlay instanceof HTMLElement) {
         overlay.style.display = 'none';
       }
+      
+      // Remove global keyboard listener
+      document.removeEventListener('keydown', this.handleGlobalKeyDown);
     }
     this._isVisible = false;
+  }
+  
+  private handleGlobalKeyDown = (event: KeyboardEvent): void => {
+    if (event.key === 'Escape') {
+      this.hide();
+      event.preventDefault();
+      event.stopPropagation();
+    } else if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
+      // Ctrl+Enter or Cmd+Enter to save settings
+      this.saveSettings();
+      event.preventDefault();
+      event.stopPropagation();
+    }
   }
 
   onSave(callback: (config: typeof SimulationConfig) => void): void {

@@ -70,7 +70,7 @@ export class EntityTooltip {
         
         content = `
           <div style="font-weight: bold; color: ${typeColor};">${typeName}</div>
-          <div>Energy: ${Math.round(creature.energy)} / ${creature.maxEnergy}</div>
+          <div>Energy: ${Math.round(creature.energy)} / ${Math.round(creature.maxEnergy)}</div>
           <div>Age: ${creature.age.toFixed(1)}s</div>
           <div style="margin-top: 5px; font-size: 11px;">Click to track</div>
         `;
@@ -162,7 +162,7 @@ export class EntityTooltip {
       <div style="margin-bottom: 15px;">
         <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
           <span>Energy:</span>
-          <span>${Math.round(creature.energy)} / ${creature.maxEnergy} (${energyPercentage}%)</span>
+          <span>${Math.round(creature.energy)} / ${Math.round(creature.maxEnergy)} (${energyPercentage}%)</span>
         </div>
         ${energyBar}
       </div>

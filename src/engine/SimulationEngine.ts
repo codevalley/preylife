@@ -4,6 +4,7 @@ import { Prey } from '../entities/Prey';
 import { Predator } from '../entities/Predator';
 import { SimulationConfig } from '../config';
 import { GeneticAttributes } from '../entities/Creature';
+import { ToastManager, ToastType, ToastEvent } from '../ui/ToastManager';
 
 interface AttributeStats {
   strength: number;
@@ -573,6 +574,12 @@ export class SimulationEngine {
       
       //console.log(`=== Day ${this.days}: MAJOR SEASONAL RESOURCE BLOOM ===`);
       
+      // Show resource bloom info toast
+      ToastManager.getInstance().showToast(
+        ToastType.INFO,
+        ToastEvent.RESOURCE_BLOOM
+      );
+      
       // Check resource cap before spawning
       const maxResources = SimulationConfig.resources.limits.maxCount;
       const enforcementThreshold = maxResources * SimulationConfig.resources.limits.enforcementThreshold;
@@ -640,6 +647,12 @@ export class SimulationEngine {
         // Count actual resources spawned
         const actualSpawned = Math.min(resourcesSpawned, enforcementThreshold - (this.resources.length - resourcesSpawned));
         this.totalSpawned.resources += actualSpawned;
+        
+        // Show resource spawned toast for major spawns
+        ToastManager.getInstance().showToast(
+          ToastType.EPHEMERAL,
+          ToastEvent.RESOURCE_SPAWNED
+        );
       }
       
       // Announce the bloom in the console with more detail
@@ -699,6 +712,14 @@ export class SimulationEngine {
       console.info("Final Predator Count:", this.predators.length);
       console.info("Final Resource Count:", this.resources.length);
       console.info("Final Predator Attributes:", this.calculateAverageAttributes(this.predators));
+      
+      // Show extinction info toast if this is the first extinction
+      if (this.extinctionEvents.length === 1) {
+        ToastManager.getInstance().showToast(
+          ToastType.INFO,
+          ToastEvent.FIRST_EXTINCTION
+        );
+      }
     }
     
     // Check if predators went extinct
@@ -716,6 +737,14 @@ export class SimulationEngine {
       console.info("Final Prey Count:", this.prey.length);
       console.info("Final Resource Count:", this.resources.length);
       console.info("Final Prey Attributes:", this.calculateAverageAttributes(this.prey));
+      
+      // Show extinction info toast if this is the first extinction
+      if (this.extinctionEvents.length === 1) {
+        ToastManager.getInstance().showToast(
+          ToastType.INFO,
+          ToastEvent.FIRST_EXTINCTION
+        );
+      }
     }
     
     // Update last counts
@@ -739,6 +768,14 @@ export class SimulationEngine {
             if (distance < 10) { // Consumption range
               prey.consumeResource(resource);
               this.resources.splice(i, 1);
+              
+              // Show resource consumed toast
+              ToastManager.getInstance().showToast(
+                ToastType.EPHEMERAL,
+                ToastEvent.RESOURCE_CONSUMED,
+                resource.position // Optional position in 3D space
+              );
+              
               break; // Each prey can only consume one resource per update
             }
           }
@@ -778,6 +815,14 @@ export class SimulationEngine {
               if (!prey.canEscapeWithStealth(predator)) {
                 predator.consumePrey(prey);
                 prey.die();
+                
+                // Show prey consumed toast
+                ToastManager.getInstance().showToast(
+                  ToastType.EPHEMERAL,
+                  ToastEvent.PREY_CONSUMED,
+                  predator.position // Optional position in 3D space
+                );
+                
                 break; // Each predator can only catch one prey per update
               } else {
                 // Prey escapes using stealth!
@@ -786,6 +831,13 @@ export class SimulationEngine {
                 // Give the prey a speed boost to escape (temporary)
                 const escapeDirection = prey.position.clone().sub(predator.position).normalize();
                 prey.velocity.copy(escapeDirection).multiplyScalar(prey.speed * 2);
+                
+                // Show prey escaped toast
+                ToastManager.getInstance().showToast(
+                  ToastType.EPHEMERAL,
+                  ToastEvent.PREY_ESCAPED,
+                  prey.position // Optional position in 3D space
+                );
                 
                 break; // Predator fails catch attempt
               }
@@ -817,6 +869,12 @@ export class SimulationEngine {
     
     if (newPrey.length > 0) {
       //console.log(`${newPrey.length} new prey born through reproduction. Total spawned: ${this.totalSpawned.prey}`);
+      
+      // Show prey born toast
+      ToastManager.getInstance().showToast(
+        ToastType.EPHEMERAL,
+        ToastEvent.PREY_BORN
+      );
     }
     
     // DEBUG: Monitor predator energy levels when no prey exist
@@ -872,6 +930,12 @@ export class SimulationEngine {
     
     if (newPredators.length > 0) {
       //console.log(`${newPredators.length} new predators born through reproduction. Total spawned: ${this.totalSpawned.predators}`);
+      
+      // Show predator born toast
+      ToastManager.getInstance().showToast(
+        ToastType.EPHEMERAL,
+        ToastEvent.PREDATOR_BORN
+      );
     }
   }
   
@@ -889,8 +953,10 @@ export class SimulationEngine {
   
   private removeDeadEntities(): void {
     // Handle dead prey - spawn resources based on their remaining energy
+    let deadPreyCount = 0;
     for (let i = this.prey.length - 1; i >= 0; i--) {
       if (this.prey[i].isDead) {
+        deadPreyCount++;
         // Convert 70% of prey's max energy to resources when they die
         const energyToConvert = this.prey[i].maxEnergy * 0.7;
         const resourceCount = Math.ceil(energyToConvert / Resource.DEFAULT_ENERGY);
@@ -908,9 +974,19 @@ export class SimulationEngine {
       }
     }
     
+    // Show toast for prey deaths (not from predation)
+    if (deadPreyCount > 0) {
+      ToastManager.getInstance().showToast(
+        ToastType.EPHEMERAL,
+        ToastEvent.PREY_DIED
+      );
+    }
+    
     // Handle dead predators - spawn more resources as they're larger creatures
+    let deadPredatorCount = 0;
     for (let i = this.predators.length - 1; i >= 0; i--) {
       if (this.predators[i].isDead) {
+        deadPredatorCount++;
         // Convert 70% of predator's max energy to resources when they die
         const energyToConvert = this.predators[i].maxEnergy * 0.7;
         const resourceCount = Math.ceil(energyToConvert / Resource.DEFAULT_ENERGY);
@@ -926,6 +1002,14 @@ export class SimulationEngine {
         // Remove the dead predator
         this.predators.splice(i, 1);
       }
+    }
+    
+    // Show toast for predator deaths
+    if (deadPredatorCount > 0) {
+      ToastManager.getInstance().showToast(
+        ToastType.EPHEMERAL,
+        ToastEvent.PREDATOR_DIED
+      );
     }
   }
   
@@ -1141,6 +1225,14 @@ export class SimulationEngine {
         predatorCount: this.predators.length,
         resourceCount: this.resources.length
       });
+      
+      // Show evolution info toast if this is the first evolution
+      if (this.evolutionEvents.length === 1) {
+        ToastManager.getInstance().showToast(
+          ToastType.INFO,
+          ToastEvent.FIRST_EVOLUTION
+        );
+      }
     }
     
     if (newPrey.length > 0) {
@@ -1161,6 +1253,14 @@ export class SimulationEngine {
         predatorCount: this.predators.length,
         resourceCount: this.resources.length
       });
+      
+      // Show evolution info toast if this is the first evolution
+      if (this.evolutionEvents.length === 1) {
+        ToastManager.getInstance().showToast(
+          ToastType.INFO,
+          ToastEvent.FIRST_EVOLUTION
+        );
+      }
     }
   }
   
@@ -1227,6 +1327,23 @@ export class SimulationEngine {
             
             // Learning costs energy - higher cost for larger changes
             learner.energy = Math.max(0, learner.energy - (Math.abs(cappedLearning) * 10));
+            
+            // Show appropriate learning toast (only occasionally to avoid spam)
+            if (Math.random() < 0.1) { // Only show for 10% of learning events
+              if (creatures[0] instanceof Prey) {
+                ToastManager.getInstance().showToast(
+                  ToastType.EPHEMERAL,
+                  ToastEvent.PREY_LEARNED,
+                  learner.position
+                );
+              } else {
+                ToastManager.getInstance().showToast(
+                  ToastType.EPHEMERAL,
+                  ToastEvent.PREDATOR_LEARNED,
+                  learner.position
+                );
+              }
+            }
           }
         }
       }
