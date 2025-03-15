@@ -230,6 +230,7 @@ export class SettingsPanel {
     `;
 
     // Add sections
+    content.appendChild(this.createUISettingsSection()); // Add UI settings section first
     content.appendChild(this.createInitialPopulationSection());
     content.appendChild(this.createResourceSection());
     content.appendChild(this.createCreatureSection());
@@ -541,6 +542,30 @@ export class SettingsPanel {
     container.appendChild(input);
     container.appendChild(labelElement);
     return container;
+  }
+
+  private createUISettingsSection(): HTMLElement {
+    const section = this.createSection('Interface Settings', `
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="#64B5F6">
+        <path d="M12 22.5C6.201 22.5 1.5 17.799 1.5 12S6.201 1.5 12 1.5 22.5 6.201 22.5 12 17.799 22.5 12 22.5zM12 5.25c-2.07 0-3.75 1.68-3.75 3.75 0 2.07 1.68 3.75 3.75 3.75s3.75-1.68 3.75-3.75c0-2.07-1.68-3.75-3.75-3.75zm0 15c2.565 0 4.914-.9 6.75-2.407-1.018-2.7-3.638-4.593-6.75-4.593s-5.732 1.893-6.75 4.593A9.711 9.711 0 0012 20.25z"/>
+      </svg>
+    `);
+
+    section.appendChild(this.createCheckboxInput(
+      'Show Ephemeral Notifications',
+      SimulationConfig.ui.toasts.showEphemeral,
+      'ui.toasts.showEphemeral',
+      'Enable short notifications for common events (+1 prey, prey escaped, etc.)'
+    ));
+
+    section.appendChild(this.createCheckboxInput(
+      'Show Info Callouts',
+      SimulationConfig.ui.toasts.showInfo,
+      'ui.toasts.showInfo',
+      'Enable educational callouts about ecosystem events (extinctions, blooms, etc.)'
+    ));
+
+    return section;
   }
 
   private createInitialPopulationSection(): HTMLElement {

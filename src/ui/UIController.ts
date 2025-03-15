@@ -4,6 +4,7 @@ import { SettingsPanel } from './SettingsPanel';
 import { SimulationConfig } from '../config';
 import { HelpPanel } from './HelpPanel';
 import { ToastManager, ToastType, ToastEvent } from './ToastManager';
+import { SimulationResultsPanel } from './SimulationResultsPanel';
 
 export class UIController {
   // Dashboard panels
@@ -11,6 +12,7 @@ export class UIController {
   private ecologyPanel: DashboardPanel;
   private settingsPanel: SettingsPanel;
   private helpPanel: HelpPanel;
+  private resultsPanel: SimulationResultsPanel;
   
   // Control buttons
   private playPauseButton: HTMLButtonElement;
@@ -76,6 +78,7 @@ export class UIController {
     this.ecologyPanel = new DashboardPanel('Ecology Events', 'ecology', uiContainer);
     this.settingsPanel = new SettingsPanel(uiContainer);
     this.helpPanel = new HelpPanel(uiContainer);
+    this.resultsPanel = new SimulationResultsPanel(uiContainer, simulation);
     
     // Set the toast validation function
     ToastManager.getInstance().validateToastCondition = this.validateToastCondition.bind(this);
@@ -325,28 +328,19 @@ export class UIController {
       this.isSimulationRunning = false;
       
       // Update button UI
-      const playIcon = document.getElementById('play-icon');
-      const pauseIcon = document.getElementById('pause-icon');
-      
-      if (playIcon && pauseIcon) {
-        playIcon.style.display = 'block';
-        pauseIcon.style.display = 'none';
-        this.playPauseButton.title = 'Play (Space)';
-      }
+      this.updatePlayPauseButton(false);
     } else {
       // Start the simulation
       this.simulation.start();
       this.isSimulationRunning = true;
       
-      // Update button UI
-      const playIcon = document.getElementById('play-icon');
-      const pauseIcon = document.getElementById('pause-icon');
+      // Show first evergreen tip immediately when starting simulation
+      setTimeout(() => {
+        ToastManager.getInstance().checkEvergreen();
+      }, 2000); // Slight delay to give the simulation time to start
       
-      if (playIcon && pauseIcon) {
-        playIcon.style.display = 'none';
-        pauseIcon.style.display = 'block';
-        this.playPauseButton.title = 'Pause (Space)';
-      }
+      // Update button UI
+      this.updatePlayPauseButton(true);
     }
   }
   
@@ -359,14 +353,7 @@ export class UIController {
     this.isSimulationRunning = false;
     
     // Update button UI
-    const playIcon = document.getElementById('play-icon');
-    const pauseIcon = document.getElementById('pause-icon');
-    
-    if (playIcon && pauseIcon) {
-      playIcon.style.display = 'block';
-      pauseIcon.style.display = 'none';
-      this.playPauseButton.title = 'Play (Space)';
-    }
+    this.updatePlayPauseButton(false);
     
     // Reset flags for info toasts
     this.highPreyDensityShown = false;
@@ -386,6 +373,9 @@ export class UIController {
     this.updateStats();
   }
   
+  private lastEvergreenCheck: number = 0;
+  private readonly EVERGREEN_CHECK_INTERVAL = 100; // Check every 100 frames
+  
   updateStats(): void {
     const stats = this.simulation.getStats();
     const days = this.simulation.getDays();
@@ -394,6 +384,15 @@ export class UIController {
     const evolutionEvents = this.simulation.getEvolutionEvents();
     const resourceBloom = this.simulation.isResourceBloom();
     const reproductionStats = this.simulation.getReproductionStats();
+    
+    // Only check for evergreen toasts if simulation is running
+    if (this.isSimulationRunning) {
+      this.lastEvergreenCheck++;
+      if (this.lastEvergreenCheck >= this.EVERGREEN_CHECK_INTERVAL) {
+        ToastManager.getInstance().checkEvergreen();
+        this.lastEvergreenCheck = 0;
+      }
+    }
     
     // Update population counts with formatted numbers
     this.preyCountElement.textContent = this.formatNumber(stats.preyCount);
@@ -486,6 +485,17 @@ export class UIController {
     
     // Check for info toast conditions
     this.checkInfoToastConditions(stats);
+    
+    // Check for ecosystem extinction (when both prey and predators are gone)
+    if (this.isSimulationRunning && stats.preyCount === 0 && stats.predatorCount === 0) {
+      // Show the final results panel
+      this.resultsPanel.showForExtinction();
+      // Pause the simulation
+      this.simulation.pause();
+      this.isSimulationRunning = false;
+      // Update button UI
+      this.updatePlayPauseButton(false);
+    }
     
     // Update ecology events table
     const ecologyEventsTableElement = document.getElementById('ecology-events-table');
@@ -819,6 +829,24 @@ export class UIController {
       // that should show regardless of current conditions
       default:
         return true;
+    }
+  }
+  
+  // Helper method to update play/pause button UI
+  private updatePlayPauseButton(isPlaying: boolean): void {
+    const playIcon = document.getElementById('play-icon');
+    const pauseIcon = document.getElementById('pause-icon');
+    
+    if (playIcon && pauseIcon) {
+      if (isPlaying) {
+        playIcon.style.display = 'none';
+        pauseIcon.style.display = 'block';
+        this.playPauseButton.title = 'Pause (Space)';
+      } else {
+        playIcon.style.display = 'block';
+        pauseIcon.style.display = 'none';
+        this.playPauseButton.title = 'Play (Space)';
+      }
     }
   }
 }

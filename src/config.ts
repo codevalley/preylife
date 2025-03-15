@@ -1,5 +1,13 @@
 // Simulation configuration parameters - Core settings for the predator-prey simulation
 export const SimulationConfig = {
+  // UI settings - Control visual feedback elements
+  ui: {
+    toasts: {
+      showEphemeral: true,    // Whether to show short notifications for common events (+1 prey, etc.)
+      showInfo: true,         // Whether to show educational info callouts (extinctions, etc.)
+    }
+  },
+  
   // Environment settings - Define the simulation world boundaries
   // don't show in dashboard
   environment: {

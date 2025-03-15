@@ -1,4 +1,3 @@
-
 export enum ToastType {
   EPHEMERAL = 'ephemeral',
   INFO = 'info'
@@ -27,7 +26,16 @@ export enum ToastEvent {
   PREY_ATTRIBUTES_SPECIALIZED = 'prey_attributes_specialized',
   PREDATOR_ATTRIBUTES_SPECIALIZED = 'predator_attributes_specialized',
   ECOSYSTEM_BALANCED = 'ecosystem_balanced',
-  ECOSYSTEM_COLLAPSE_WARNING = 'ecosystem_collapse_warning'
+  ECOSYSTEM_COLLAPSE_WARNING = 'ecosystem_collapse_warning',
+
+  // Evergreen info events (shown when no other events are pending)
+  EVERGREEN_CREATURES = 'evergreen_creatures',
+  EVERGREEN_CREATURE_PANEL = 'evergreen_creature_panel',
+  EVERGREEN_TRAITS = 'evergreen_traits',
+  EVERGREEN_EVOLUTION = 'evergreen_evolution',
+  EVERGREEN_ENERGY = 'evergreen_energy',
+  EVERGREEN_REPRODUCTION = 'evergreen_reproduction',
+  EVERGREEN_LEARNABILITY = 'evergreen_learnability'
 }
 
 interface ToastConfig {
@@ -89,19 +97,19 @@ export class ToastManager {
       duration: 6000,
     },
     [ToastEvent.RESOURCE_CONSUMED]: {
-      message: "Resource consumed",
+      message: "{count} resource consumed",
       icon: "🍽️",
       color: "#55cc55",
       duration: 6000,
     },
     [ToastEvent.PREY_CONSUMED]: {
-      message: "Prey consumed",
+      message: "{count} prey consumed",
       icon: "🎯",
       color: "#ff5555",
       duration: 6000,
     },
     [ToastEvent.PREY_ESCAPED]: {
-      message: "Prey escaped!",
+      message: "{count} prey escaped",
       icon: "💨",
       color: "#5588ff",
       duration: 6000,
@@ -188,6 +196,57 @@ export class ToastManager {
       message: "Multiple indicators suggest the ecosystem is under severe stress.",
       icon: "🔥",
       color: "#ff4444",
+      duration: 20000,
+    },
+
+    // Evergreen info events
+    [ToastEvent.EVERGREEN_CREATURES]: {
+      title: "Circle of Life",
+      message: "Welcome to the food chain! Prey feed on resources (green squares), while predators hunt prey to survive. Each species must find its balance.",
+      icon: "🔄",
+      color: "#44aaff",
+      duration: 20000,
+    },
+    [ToastEvent.EVERGREEN_CREATURE_PANEL]: {
+      title: "Creature Details",
+      message: "Click on any creature to inspect their traits! Each one has unique attributes that determine their survival strategy.",
+      icon: "👆",
+      color: "#aa44ff",
+      duration: 20000,
+    },
+    [ToastEvent.EVERGREEN_TRAITS]: {
+      title: "Survival Traits",
+      message: "Strength and stealth are key survival traits. Strong creatures move faster but use more energy, while stealthy ones are better at detecting threats.",
+      icon: "💪",
+      color: "#ff44aa",
+      duration: 20000,
+    },
+    [ToastEvent.EVERGREEN_EVOLUTION]: {
+      title: "Natural Selection",
+      message: "Watch evolution in action! Creatures inherit traits from parents with slight mutations, and can learn from their peers. The fittest survive to pass on their genes.",
+      icon: "🧬",
+      color: "#44ffaa",
+      duration: 20000,
+    },
+    [ToastEvent.EVERGREEN_ENERGY]: {
+      title: "Energy Management",
+      message: "Energy is life! Every action costs energy - moving, hunting, escaping, and reproducing. Creatures must balance activity with food intake.",
+      icon: "⚡",
+      color: "#ffaa44",
+      duration: 20000,
+    },
+    [ToastEvent.EVERGREEN_REPRODUCTION]: {
+      title: "Reproduction Strategies",
+      message: "Creatures typically reproduce when energy is high, but desperate times call for desperate measures - some may risk reproduction even when resources are scarce.",
+      icon: "🐣",
+      color: "#ff44ff",
+      duration: 20000,
+    },
+    [ToastEvent.EVERGREEN_LEARNABILITY]: {
+      title: "Social Learning",
+      message: "Learnability is a double-edged sword. Quick learners can rapidly adopt successful traits from the group, but they're also more susceptible to negative influences.",
+      icon: "🧠",
+      color: "#44ffff",
       duration: 20000,
     }
   };
@@ -310,19 +369,30 @@ export class ToastManager {
   }
   
   public showToast(type: ToastType, event: ToastEvent): void {
-    const config = this.toastConfigs[event];
-    
-    if (!config) {
-      console.error(`Toast configuration not found for event: ${event}`);
-      return;
-    }
-    
-    if (type === ToastType.EPHEMERAL) {
-      this.showEphemeralToast(event, config);
-    } else if (type === ToastType.INFO) {
-      // Add info toast to queue instead of showing immediately
-      this.queueInfoToast(event, config);
-    }
+    import('../config').then(({ SimulationConfig }) => {
+      // Check toast visibility settings
+      if (type === ToastType.EPHEMERAL && !SimulationConfig.ui.toasts.showEphemeral) {
+        return; // Don't show ephemeral toasts if disabled
+      }
+      
+      if (type === ToastType.INFO && !SimulationConfig.ui.toasts.showInfo) {
+        return; // Don't show info toasts if disabled
+      }
+      
+      const config = this.toastConfigs[event];
+      
+      if (!config) {
+        console.error(`Toast configuration not found for event: ${event}`);
+        return;
+      }
+      
+      if (type === ToastType.EPHEMERAL) {
+        this.showEphemeralToast(event, config);
+      } else if (type === ToastType.INFO) {
+        // Add info toast to queue instead of showing immediately
+        this.queueInfoToast(event, config);
+      }
+    });
   }
   
   // Function to check if a toast's condition is still valid
@@ -349,6 +419,13 @@ export class ToastManager {
   private processInfoToastQueue(): void {
     if (this.infoToastQueue.length === 0) {
       this.processingInfoToast = false;
+      
+      // Check if we should show an evergreen toast
+      // Only show if there are no active info toasts
+      const activeInfoToasts = this.countActiveInfoToasts();
+      if (activeInfoToasts === 0) {
+        this.showRandomEvergreen();
+      }
       return;
     }
     
@@ -367,6 +444,17 @@ export class ToastManager {
     setTimeout(() => {
       this.processInfoToastQueue();
     }, this.INFO_TOAST_DELAY);
+  }
+  
+  // Helper method to count active info toasts
+  private countActiveInfoToasts(): number {
+    let count = 0;
+    this.toastElements.forEach((_, id) => {
+      if (id.startsWith('info-')) {
+        count++;
+      }
+    });
+    return count;
   }
   
   private showEphemeralToast(event: ToastEvent, config: ToastConfig): void {
@@ -554,6 +642,17 @@ export class ToastManager {
     }
   }
   
+  // Check for opportunity to show evergreen toasts
+  public checkEvergreen(): void {
+    // Only check if we're not processing any toast and no active info toasts
+    if (!this.processingInfoToast && this.infoToastQueue.length === 0) {
+      const activeInfoToasts = this.countActiveInfoToasts();
+      if (activeInfoToasts === 0) {
+        this.showRandomEvergreen();
+      }
+    }
+  }
+  
   public resetInfoEvents(): void {
     // Clear seen info events
     this.seenInfoEvents.clear();
@@ -588,5 +687,39 @@ export class ToastManager {
         this.toastElements.delete(id);
       }
     });
+  }
+
+  private showRandomEvergreen(): void {
+    const evergreens = [
+      ToastEvent.EVERGREEN_CREATURES,
+      ToastEvent.EVERGREEN_CREATURE_PANEL,
+      ToastEvent.EVERGREEN_TRAITS,
+      ToastEvent.EVERGREEN_EVOLUTION,
+      ToastEvent.EVERGREEN_ENERGY,
+      ToastEvent.EVERGREEN_REPRODUCTION,
+      ToastEvent.EVERGREEN_LEARNABILITY
+    ];
+
+    // Filter out already seen evergreen toasts
+    const unseenEvergreens = evergreens.filter(event => !this.seenInfoEvents.has(event));
+    
+    if (unseenEvergreens.length > 0) {
+      // Show a random unseen evergreen toast
+      const randomEvent = unseenEvergreens[Math.floor(Math.random() * unseenEvergreens.length)];
+      const config = this.toastConfigs[randomEvent];
+      
+      if (config) {
+        // Mark as seen first, before displaying to prevent duplicate triggers
+        this.seenInfoEvents.add(randomEvent);
+        
+        // Display directly instead of queueing to avoid recursion
+        this.displayInfoToast(randomEvent, config);
+        
+        console.log(`Showing evergreen tip: ${randomEvent}`);
+      }
+    } else {
+      // All evergreen toasts have been seen
+      console.log("All evergreen tips have been seen already");
+    }
   }
 }
