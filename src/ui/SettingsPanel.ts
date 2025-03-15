@@ -1745,7 +1745,7 @@ export class SettingsPanel {
       document.addEventListener('keydown', this.handleGlobalKeyDown);
       
       // Update save button tooltip
-      const saveButton = this.panel.querySelector('button:last-child');
+      const saveButton = this.panel.querySelector('button:last-child') as HTMLButtonElement;
       if (saveButton) {
         saveButton.title = 'Save Changes (Ctrl+Enter or Cmd+Enter)';
       }
