@@ -77,6 +77,9 @@ export class UIController {
     this.settingsPanel = new SettingsPanel(uiContainer);
     this.helpPanel = new HelpPanel(uiContainer);
     
+    // Set the toast validation function
+    ToastManager.getInstance().validateToastCondition = this.validateToastCondition.bind(this);
+    
     // Set up control panel
     const controlContent = this.controlPanel.getContentElement();
     controlContent.innerHTML = `
@@ -153,8 +156,8 @@ export class UIController {
         </div>
       </div>
       
-      <!-- Feedback Button (Bottom Left) -->
-      <div style="position: fixed; bottom: 15px; left: 15px;">
+      <!-- Feedback Button (Top Right) -->
+      <div style="position: fixed; top: 15px; right: 15px;">
         <a href="https://twitter.com/nyn" target="_blank" style="display: flex; align-items: center; background-color: rgba(255, 255, 255, 0.85); color: #1DA1F2; text-decoration: none; padding: 5px 10px; border-radius: 4px; font-size: 11px; transition: background-color 0.2s; font-weight: 500; box-shadow: 0 1px 3px rgba(0,0,0,0.2);">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="#1DA1F2" style="margin-right: 6px;">
             <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
@@ -631,12 +634,12 @@ export class UIController {
   
   // Helper method to check for conditions that should trigger info toasts
   private checkInfoToastConditions(stats: any): void {
-    const initialPreyCount = SimulationConfig.initialPopulation.prey;
-    const initialPredatorCount = SimulationConfig.initialPopulation.predators;
     const initialResourceCount = SimulationConfig.initialPopulation.resources;
     
-    // Check for high prey density
-    if (stats.preyCount > initialPreyCount * 3 && !this.highPreyDensityShown) {
+    // Check for high prey density (prey >= 2x resources)
+    if (stats.preyCount > 0 && stats.resourceCount > 0 && 
+        (stats.preyCount >= 2 * stats.resourceCount) && 
+        !this.highPreyDensityShown) {
       ToastManager.getInstance().showToast(
         ToastType.INFO, 
         ToastEvent.HIGH_PREY_DENSITY
@@ -644,8 +647,10 @@ export class UIController {
       this.highPreyDensityShown = true;
     }
     
-    // Check for high predator density
-    if (stats.predatorCount > initialPredatorCount * 3 && !this.highPredatorDensityShown) {
+    // Check for high predator density (predator:prey ratio >= 1)
+    if (stats.predatorCount > 5 && stats.preyCount > 0 && 
+        (stats.predatorCount / stats.preyCount) >= 1 && 
+        !this.highPredatorDensityShown) {
       ToastManager.getInstance().showToast(
         ToastType.INFO, 
         ToastEvent.HIGH_PREDATOR_DENSITY
@@ -690,10 +695,15 @@ export class UIController {
       this.predatorSpecializedShown = true;
     }
     
-    // Check for ecosystem balance (stable for 100+ days)
+    // Check for ecosystem balance (stable for 100+ days, has 10+ predators, 
+    // 2x resources as prey, and not more than 10x prey compared to predators)
     if (this.populationHistory.length > 100 && !this.ecosystemBalancedShown) {
       const isStable = this.checkEcosystemStability();
-      if (isStable) {
+      const hasRequiredPredators = stats.predatorCount >= 10;
+      const hasHealthyResourcesRatio = stats.preyCount > 0 && stats.resourceCount >= (2 * stats.preyCount);
+      const hasBalancedPredatorRatio = stats.predatorCount > 0 && stats.preyCount <= (10 * stats.predatorCount);
+      
+      if (isStable && hasRequiredPredators && hasHealthyResourcesRatio && hasBalancedPredatorRatio) {
         ToastManager.getInstance().showToast(
           ToastType.INFO, 
           ToastEvent.ECOSYSTEM_BALANCED
@@ -761,5 +771,54 @@ export class UIController {
     const predatorDecline = predatorStart > 5 && predatorEnd < predatorStart * 0.4;
     
     return preyDecline && predatorDecline;
+  }
+  
+  // Validate if toast conditions are still valid when processing the queue
+  private validateToastCondition(event: ToastEvent): boolean {
+    const stats = this.simulation.getStats();
+    
+    switch (event) {
+      case ToastEvent.HIGH_PREY_DENSITY:
+        // Check prey >= 2x resources 
+        return stats.resourceCount > 0 && (stats.preyCount >= 2 * stats.resourceCount);
+        
+      case ToastEvent.HIGH_PREDATOR_DENSITY:
+        // Check predator:prey ratio >= 1
+        return stats.predatorCount > 5 && stats.preyCount > 0 && (stats.predatorCount / stats.preyCount) >= 1;
+        
+      case ToastEvent.LOW_RESOURCE_WARNING:
+        // Check if resources are still low
+        const initialResourceCount = SimulationConfig.initialPopulation.resources;
+        return stats.resourceCount < initialResourceCount * 0.15;
+        
+      case ToastEvent.ECOSYSTEM_BALANCED:
+        // Check all ecosystem balance conditions
+        const isStable = this.checkEcosystemStability();
+        const hasRequiredPredators = stats.predatorCount >= 10;
+        const hasHealthyResourcesRatio = stats.preyCount > 0 && stats.resourceCount >= (2 * stats.preyCount);
+        const hasBalancedPredatorRatio = stats.predatorCount > 0 && stats.preyCount <= (10 * stats.predatorCount);
+        return isStable && hasRequiredPredators && hasHealthyResourcesRatio && hasBalancedPredatorRatio;
+        
+      case ToastEvent.ECOSYSTEM_COLLAPSE_WARNING:
+        // Check if ecosystem is still unstable
+        return this.checkEcosystemInstability();
+        
+      case ToastEvent.PREY_ATTRIBUTES_SPECIALIZED:
+        // Check if prey are still specialized
+        return stats.preyAttributes.strength > 0.75 || 
+               stats.preyAttributes.stealth > 0.75 || 
+               stats.preyAttributes.longevity > 0.75;
+        
+      case ToastEvent.PREDATOR_ATTRIBUTES_SPECIALIZED:
+        // Check if predators are still specialized
+        return stats.predatorAttributes.strength > 0.75 || 
+               stats.predatorAttributes.stealth > 0.75 || 
+               stats.predatorAttributes.longevity > 0.75;
+      
+      // Resource bloom, first extinction, and first evolution are one-time events
+      // that should show regardless of current conditions
+      default:
+        return true;
+    }
   }
 }

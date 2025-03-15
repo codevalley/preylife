@@ -772,8 +772,7 @@ export class SimulationEngine {
               // Show resource consumed toast
               ToastManager.getInstance().showToast(
                 ToastType.EPHEMERAL,
-                ToastEvent.RESOURCE_CONSUMED,
-                resource.position // Optional position in 3D space
+                ToastEvent.RESOURCE_CONSUMED
               );
               
               break; // Each prey can only consume one resource per update
@@ -819,8 +818,7 @@ export class SimulationEngine {
                 // Show prey consumed toast
                 ToastManager.getInstance().showToast(
                   ToastType.EPHEMERAL,
-                  ToastEvent.PREY_CONSUMED,
-                  predator.position // Optional position in 3D space
+                  ToastEvent.PREY_CONSUMED
                 );
                 
                 break; // Each predator can only catch one prey per update
@@ -835,8 +833,7 @@ export class SimulationEngine {
                 // Show prey escaped toast
                 ToastManager.getInstance().showToast(
                   ToastType.EPHEMERAL,
-                  ToastEvent.PREY_ESCAPED,
-                  prey.position // Optional position in 3D space
+                  ToastEvent.PREY_ESCAPED 
                 );
                 
                 break; // Predator fails catch attempt
@@ -1333,14 +1330,12 @@ export class SimulationEngine {
               if (creatures[0] instanceof Prey) {
                 ToastManager.getInstance().showToast(
                   ToastType.EPHEMERAL,
-                  ToastEvent.PREY_LEARNED,
-                  learner.position
+                  ToastEvent.PREY_LEARNED
                 );
               } else {
                 ToastManager.getInstance().showToast(
                   ToastType.EPHEMERAL,
-                  ToastEvent.PREDATOR_LEARNED,
-                  learner.position
+                  ToastEvent.PREDATOR_LEARNED
                 );
               }
             }

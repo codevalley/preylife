@@ -1,4 +1,3 @@
-import { Vector2, Vector3 } from 'three';
 
 export enum ToastType {
   EPHEMERAL = 'ephemeral',
@@ -41,15 +40,20 @@ interface ToastConfig {
 
 export class ToastManager {
   private static instance: ToastManager;
-  private ephemeralContainer: HTMLElement;
-  private infoContainer: HTMLElement;
+  private ephemeralContainer: HTMLElement = document.createElement('div');
+  private infoContainer: HTMLElement = document.createElement('div');
   private seenInfoEvents: Set<ToastEvent> = new Set();
   private eventCounts: Map<ToastEvent, number> = new Map();
   private toastElements: Map<string, HTMLElement> = new Map();
   
+  // Queue for info toasts to prevent overlapping display
+  private infoToastQueue: Array<{event: ToastEvent, config: ToastConfig}> = [];
+  private processingInfoToast: boolean = false;
+  
   // Configuration limits
   private readonly MAX_EPHEMERAL_TOASTS = 10;
   private readonly MAX_INFO_TOASTS = 3;
+  private readonly INFO_TOAST_DELAY = 6000; // 6 seconds between showing info toasts
   
   // Toast configurations
   private toastConfigs: Record<ToastEvent, ToastConfig> = {
@@ -201,13 +205,11 @@ export class ToastManager {
   
   private setupContainers() {
     // Create ephemeral toast container (bottom right)
-    this.ephemeralContainer = document.createElement('div');
     this.ephemeralContainer.id = 'ephemeral-toast-container';
     this.ephemeralContainer.className = 'toast-container';
     document.body.appendChild(this.ephemeralContainer);
     
     // Create info toast container (bottom left)
-    this.infoContainer = document.createElement('div');
     this.infoContainer.id = 'info-toast-container';
     this.infoContainer.className = 'toast-container';
     document.body.appendChild(this.infoContainer);
@@ -307,7 +309,7 @@ export class ToastManager {
     return ToastManager.instance;
   }
   
-  public showToast(type: ToastType, event: ToastEvent, position?: Vector2 | Vector3): void {
+  public showToast(type: ToastType, event: ToastEvent): void {
     const config = this.toastConfigs[event];
     
     if (!config) {
@@ -318,8 +320,53 @@ export class ToastManager {
     if (type === ToastType.EPHEMERAL) {
       this.showEphemeralToast(event, config);
     } else if (type === ToastType.INFO) {
-      this.showInfoToast(event, config);
+      // Add info toast to queue instead of showing immediately
+      this.queueInfoToast(event, config);
     }
+  }
+  
+  // Function to check if a toast's condition is still valid
+  public validateToastCondition: (event: ToastEvent) => boolean = () => true;
+
+  private queueInfoToast(event: ToastEvent, config: ToastConfig): void {
+    // Only queue info toasts once per simulation
+    if (this.seenInfoEvents.has(event)) {
+      return;
+    }
+    
+    // Mark as seen
+    this.seenInfoEvents.add(event);
+    
+    // Add to queue
+    this.infoToastQueue.push({ event, config });
+    
+    // Start processing the queue if not already
+    if (!this.processingInfoToast) {
+      this.processInfoToastQueue();
+    }
+  }
+  
+  private processInfoToastQueue(): void {
+    if (this.infoToastQueue.length === 0) {
+      this.processingInfoToast = false;
+      return;
+    }
+    
+    this.processingInfoToast = true;
+    
+    // Get the next toast from the queue
+    const { event, config } = this.infoToastQueue.shift()!;
+    
+    // Validate that the condition is still true before showing
+    if (this.validateToastCondition(event)) {
+      // Display this toast if condition is still valid
+      this.displayInfoToast(event, config);
+    }
+    
+    // Set a timeout to process the next toast after a delay
+    setTimeout(() => {
+      this.processInfoToastQueue();
+    }, this.INFO_TOAST_DELAY);
   }
   
   private showEphemeralToast(event: ToastEvent, config: ToastConfig): void {
@@ -397,15 +444,7 @@ export class ToastManager {
     toast.dataset.timeoutId = timeoutId.toString();
   }
   
-  private showInfoToast(event: ToastEvent, config: ToastConfig): void {
-    // Only show info toasts once per simulation
-    if (this.seenInfoEvents.has(event)) {
-      return;
-    }
-    
-    // Mark as seen
-    this.seenInfoEvents.add(event);
-    
+  private displayInfoToast(event: ToastEvent, config: ToastConfig): void {
     // Enforce max toasts
     this.enforceMaxToasts(ToastType.INFO);
     
@@ -483,7 +522,6 @@ export class ToastManager {
   }
   
   private enforceMaxToasts(type: ToastType): void {
-    const container = type === ToastType.EPHEMERAL ? this.ephemeralContainer : this.infoContainer;
     const maxToasts = type === ToastType.EPHEMERAL ? this.MAX_EPHEMERAL_TOASTS : this.MAX_INFO_TOASTS;
     const prefix = type === ToastType.EPHEMERAL ? 'ephemeral-' : 'info-';
     
@@ -519,6 +557,10 @@ export class ToastManager {
   public resetInfoEvents(): void {
     // Clear seen info events
     this.seenInfoEvents.clear();
+    
+    // Clear the queue
+    this.infoToastQueue = [];
+    this.processingInfoToast = false;
     
     // Remove all info toasts
     const toastsToRemove: string[] = [];
