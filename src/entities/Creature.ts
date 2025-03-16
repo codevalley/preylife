@@ -528,16 +528,30 @@ export abstract class Creature extends Entity {
       newAttributes.stealth = Math.min(1.0, this.attributes.stealth * 1.1);
       
       try {
-        // Create a new predator
-        const maxEnergy = SimulationConfig.predator.maxEnergy;
+        // Get base predator max energy from config
+        const basePredatorMaxEnergy = SimulationConfig.predator.maxEnergy;
+        
+        // Calculate variance ratio from base prey energy to this prey's actual max energy
+        const preyEnergyVarianceRatio = this.maxEnergy / SimulationConfig.prey.maxEnergy;
+        
+        // Apply same variance ratio to predator's max energy
+        const newPredatorMaxEnergy = basePredatorMaxEnergy * preyEnergyVarianceRatio;
+        
+        // Scale the current energy proportionally
+        const energyRatio = this.energy / this.maxEnergy;
+        const scaledEnergy = newPredatorMaxEnergy * energyRatio;
+        
         // Import using ES modules
         const { Predator } = await import('./Predator');
         newCreature = new Predator(
           this.position.x, this.position.y,
-          maxEnergy * 0.5, // Start with 50% energy
+          newPredatorMaxEnergy, // Use scaled max energy that maintains variance ratio
           newAttributes
         );
-        //console.log(`Successfully created new Predator with ID: ${newCreature.id}`);
+        
+        // Set the scaled energy
+        newCreature.energy = Math.min(newPredatorMaxEnergy, Math.max(newPredatorMaxEnergy * 0.3, scaledEnergy));
+        
       } catch (error) {
         console.error("Error creating predator:", error);
         throw error;
@@ -549,16 +563,30 @@ export abstract class Creature extends Entity {
       newAttributes.longevity = Math.min(1.0, this.attributes.longevity * 1.1);
       
       try {
-        // Create a new prey
-        const maxEnergy = SimulationConfig.prey.maxEnergy;
+        // Get base prey max energy from config
+        const basePreyMaxEnergy = SimulationConfig.prey.maxEnergy;
+        
+        // Calculate variance ratio from base predator energy to this predator's actual max energy
+        const predatorEnergyVarianceRatio = this.maxEnergy / SimulationConfig.predator.maxEnergy;
+        
+        // Apply same variance ratio to prey's max energy
+        const newPreyMaxEnergy = basePreyMaxEnergy * predatorEnergyVarianceRatio;
+        
+        // Scale the current energy proportionally
+        const energyRatio = this.energy / this.maxEnergy;
+        const scaledEnergy = newPreyMaxEnergy * energyRatio;
+        
         // Import using ES modules
         const { Prey } = await import('./Prey');
         newCreature = new Prey(
           this.position.x, this.position.y,
-          maxEnergy * 0.5, // Start with 50% energy
+          newPreyMaxEnergy, // Use scaled max energy that maintains variance ratio
           newAttributes
         );
-        //console.log(`Successfully created new Prey with ID: ${newCreature.id}`);
+        
+        // Set the scaled energy
+        newCreature.energy = Math.min(newPreyMaxEnergy, Math.max(newPreyMaxEnergy * 0.3, scaledEnergy));
+        
       } catch (error) {
         console.error("Error creating prey:", error);
         throw error;
