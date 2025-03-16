@@ -18,8 +18,8 @@ export const SimulationConfig = {
   // Initial population - Starting counts for the simulation entities
   initialPopulation: {
     resources: 250, // Initial number of food resources to spawn at simulation start
-    prey: 150,      // Initial number of prey creatures to spawn at simulation start
-    predators: 0    // Initial number of predator creatures to spawn at simulation start (0 for prey-only ecosystem)
+    prey: 90,      // Initial number of prey creatures to spawn at simulation start
+    predators: 4    // Initial number of predator creatures to spawn at simulation start (0 for prey-only ecosystem)
   },
   
   // Resource settings - Configuration for food sources in the ecosystem

@@ -139,6 +139,9 @@ export class EntityTooltip {
       return;
     }
     
+    // Convert age to days (assuming 10 frames per day from config)
+    const ageInDays = (creature.age / 10).toFixed(1);
+    
     // Generate attribute bars
     const strengthBar = this.generateAttributeBar(creature.attributes.strength, '#ff6666');
     const stealthBar = this.generateAttributeBar(creature.attributes.stealth, '#66aaff');
@@ -154,30 +157,39 @@ export class EntityTooltip {
       </div>
     `;
     
+    // Determine birth type
+    let birthType = creature.isConversionAnimation ? 'Cross-mutation' : 
+                    creature.age < 0.1 ? 'Spawned' : 'Natural';
+    
     const content = `
       <div style="font-weight: bold; color: ${typeColor}; font-size: 16px; border-bottom: 1px solid #444; padding-bottom: 5px; margin-bottom: 10px;">
-        ${typeName} Details
+        ${typeName === 'Predator' ? '🦁' : '🐰'} ${typeName} Details
       </div>
       
       <div style="margin-bottom: 15px;">
         <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-          <span>Energy:</span>
+          <span>⚡ Energy:</span>
           <span>${Math.round(creature.energy)} / ${Math.round(creature.maxEnergy)} (${energyPercentage}%)</span>
         </div>
         ${energyBar}
       </div>
       
       <div style="margin-bottom: 15px;">
-        <div style="margin-bottom: 5px;">Age: ${creature.age.toFixed(1)}s</div>
+        <div style="margin-bottom: 5px;">🐣 Birth: ${birthType}</div>
+        <div style="margin-bottom: 5px;">📅 Age: ${ageInDays} days</div>
+        <div style="margin-bottom: 5px;">👶 Offspring: ${creature.offspringCount || 0}</div>
+        <div style="margin-bottom: 5px;">
+          ${typeName === 'Predator' ? '🍖' : '🌿'} Food consumed: ${creature.foodConsumed || 0}
+        </div>
       </div>
       
       <div style="font-weight: bold; margin-bottom: 10px; border-bottom: 1px solid #444; padding-bottom: 5px;">
-        Genetic Attributes
+        🧬 Genetic Attributes
       </div>
       
       <div style="margin-bottom: 8px;">
         <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
-          <span>Strength:</span>
+          <span>💪 Strength:</span>
           <span>${creature.attributes.strength.toFixed(2)}</span>
         </div>
         ${strengthBar}
@@ -185,7 +197,7 @@ export class EntityTooltip {
       
       <div style="margin-bottom: 8px;">
         <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
-          <span>Stealth:</span>
+          <span>🥷 Stealth:</span>
           <span>${creature.attributes.stealth.toFixed(2)}</span>
         </div>
         ${stealthBar}
@@ -193,7 +205,7 @@ export class EntityTooltip {
       
       <div style="margin-bottom: 8px;">
         <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
-          <span>Learnability:</span>
+          <span>🧠 Learnability:</span>
           <span>${creature.attributes.learnability.toFixed(2)}</span>
         </div>
         ${learnabilityBar}
@@ -201,14 +213,14 @@ export class EntityTooltip {
       
       <div style="margin-bottom: 8px;">
         <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
-          <span>Longevity:</span>
+          <span>♥️ Longevity:</span>
           <span>${creature.attributes.longevity.toFixed(2)}</span>
         </div>
         ${longevityBar}
       </div>
       
       <div style="margin-top: 15px; font-size: 11px; text-align: center; color: #888;">
-        Click anywhere else to unselect
+        🖱️ Click anywhere else to unselect
       </div>
     `;
     

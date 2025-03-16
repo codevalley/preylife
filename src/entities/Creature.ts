@@ -20,6 +20,10 @@ export abstract class Creature extends Entity {
   // Age properties
   age: number = 0;
   
+  // Stats tracking
+  offspringCount: number = 0;
+  foodConsumed: number = 0;
+  
   // Reproduction tracking
   timeSinceLastReproduction: number = 0; // Time since last reproduction event
   
@@ -265,6 +269,15 @@ export abstract class Creature extends Entity {
   }
   
   abstract reproduce(): Creature;
+  
+  protected onReproduction(): void {
+    this.offspringCount++;
+    this.timeSinceLastReproduction = 0;
+  }
+
+  protected onFoodConsumption(): void {
+    this.foodConsumed++;
+  }
   
   /**
    * Handles species conversion logic when creatures of the same type are in proximity

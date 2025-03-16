@@ -117,6 +117,9 @@ export class Predator extends Creature {
     const energyGained = prey.energy * energyGainRate;
     this.energy = Math.min(this.maxEnergy, this.energy + energyGained);
     
+    // Track food consumption
+    this.onFoodConsumption();
+    
     // Update visual appearance to reflect new energy level
     this.updateMeshPosition();
   }
@@ -382,8 +385,8 @@ export class Predator extends Creature {
     // Creates a slightly higher energy cost for predator reproduction
     this.energy *= 0.4;
     
-    // Reset reproduction timer
-    this.timeSinceLastReproduction = 0;
+    // Track reproduction
+    this.onReproduction();
     
     // Update visual appearance of parent to reflect energy loss
     this.updateMeshPosition();
