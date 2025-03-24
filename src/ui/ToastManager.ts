@@ -1,3 +1,5 @@
+import { formatNumber } from '../utils/formatters';
+
 export enum ToastType {
   EPHEMERAL = 'ephemeral',
   INFO = 'info'
@@ -471,7 +473,7 @@ export class ToastManager {
       const messageEl = element.querySelector('.toast-message');
       if (messageEl) {
         const count = this.eventCounts.get(event) || 1;
-        messageEl.textContent = config.message.replace('{count}', count.toString());
+        messageEl.textContent = config.message.replace('{count}', formatNumber(count));
       }
       
       // Reset any removal timer and ensure the toast is visible
@@ -506,7 +508,7 @@ export class ToastManager {
     
     // Add content
     const count = this.eventCounts.get(event) || 1;
-    const message = config.message.replace('{count}', count.toString());
+    const message = config.message.replace('{count}', formatNumber(count));
     
     toast.innerHTML = `
       <div class="toast-icon" style="font-size: 20px; min-width: 24px; text-align: center; line-height: 1;">${config.icon}</div>

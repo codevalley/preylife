@@ -5,6 +5,7 @@ import { SimulationConfig } from '../config';
 import { HelpPanel } from './HelpPanel';
 import { ToastManager, ToastType, ToastEvent } from './ToastManager';
 import { SimulationResultsPanel } from './SimulationResultsPanel';
+import { formatNumber, formatTime } from '../utils/formatters';
 
 export class UIController {
   // Dashboard panels
@@ -59,16 +60,6 @@ export class UIController {
     predators: number,
     resources: number
   }> = [];
-  
-  // Add helper method for number formatting
-  private formatNumber(num: number): string {
-    if (num >= 1000000) {
-      return (num / 1000000).toFixed(1) + 'M';
-    } else if (num >= 1000) {
-      return (num / 1000).toFixed(1) + 'k';
-    }
-    return num.toString();
-  }
   
   constructor(private simulation: SimulationEngine) {
     const uiContainer = document.getElementById('ui-container') as HTMLElement;
@@ -395,15 +386,15 @@ export class UIController {
     }
     
     // Update population counts with formatted numbers
-    this.preyCountElement.textContent = this.formatNumber(stats.preyCount);
-    this.predatorCountElement.textContent = this.formatNumber(stats.predatorCount);
-    this.resourceCountElement.textContent = this.formatNumber(stats.resourceCount);
+    this.preyCountElement.textContent = formatNumber(stats.preyCount);
+    this.predatorCountElement.textContent = formatNumber(stats.predatorCount);
+    this.resourceCountElement.textContent = formatNumber(stats.resourceCount);
     
     // Update tooltips with detailed statistics
     this.updateStatisticsTooltips();
     
     // Update days
-    this.daysElement.textContent = days.toString();
+    this.daysElement.textContent = formatTime(days);
     
     // Check for new extinction events to add to our ecology events
     for (const event of extinctionEvents) {
@@ -458,9 +449,9 @@ export class UIController {
     this.ecologyPanel.setTitle(`Ecology Events (${this.ecologyEvents.length})`);
     
     // Update total spawned with formatted numbers
-    this.preySpawnedElement.textContent = this.formatNumber(totalSpawned.prey);
-    this.predatorSpawnedElement.textContent = this.formatNumber(totalSpawned.predators);
-    this.resourceSpawnedElement.textContent = this.formatNumber(totalSpawned.resources);
+    this.preySpawnedElement.textContent = formatNumber(totalSpawned.prey);
+    this.predatorSpawnedElement.textContent = formatNumber(totalSpawned.predators);
+    this.resourceSpawnedElement.textContent = formatNumber(totalSpawned.resources);
     
     // Update resource bloom status
     const resourceBloomElement = document.getElementById('resource-bloom');
