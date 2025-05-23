@@ -228,12 +228,10 @@ export class SimulationResultsPanel {
   
   // Share directly to Twitter
   private shareToTwitter(): void {
-    // Get stats for sharing
     const totalSpawned = this.simulation.getTotalSpawned();
     const extinctionEvents = this.simulation.getExtinctionEvents();
     const evolutionEvents = this.simulation.getEvolutionEvents();
     
-    // Generate formatted tweet text
     const formattedStats = `🔵 ${totalSpawned.prey} prey | 🔴 ${totalSpawned.predators} predators | 🟢 ${totalSpawned.resources} resources`;
     const formattedEvents = `💀 ${extinctionEvents.length} extinctions | 🧬 ${evolutionEvents.length} evolutions`;
     
@@ -244,7 +242,6 @@ export class SimulationResultsPanel {
     
     const tweetUrl = 'https://preylife.com';
     
-    // Open Twitter intent URL directly
     const tweetIntentUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(tweetUrl)}`;
     window.open(tweetIntentUrl, '_blank');
   }
