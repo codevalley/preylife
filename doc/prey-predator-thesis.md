@@ -866,3 +866,11 @@ The predator-prey interaction mechanics have been refined to create better balan
   - Attribute profile shifts in response to extinction events
 
 This simulation provides a foundation for exploring evolutionary dynamics in a simplified ecosystem while maintaining biological realism through meaningful trade-offs and interdependencies.
+## Current Implementation Status
+- **Three.js based rendering** with a 2D orthographic camera.
+- **Dashboard panels** display population counts and ecological events.
+- **Settings panel** allows live tweaking of `SimulationConfig` values.
+- **Toast notifications** highlight notable events (births, deaths, resource blooms).
+- **Results panel** summarizes statistics when the simulation ends.
+
+These features reflect the current codebase and complement the core mechanics described above.
