@@ -1,10 +1,10 @@
 import * as THREE from 'three';
-import { Vector2 } from 'three';
 import { Creature, GeneticAttributes } from './Creature';
 import { EntityType } from './Entity';
 import { Resource } from './Resource';
 import { Predator } from './Predator';
 import { SimulationConfig } from '../config';
+import { applyRepulsion } from '../utils/behavior';
 
 export class Prey extends Creature {
   static readonly DEFAULT_MAX_ENERGY: number = SimulationConfig.prey.maxEnergy;
@@ -224,50 +224,7 @@ export class Prey extends Creature {
     // Add mild repulsion between prey to prevent clumping
     // This is a lower priority than predator avoidance and food seeking
     if (!nearbyPredator && nearbyPrey.length > 0) {
-      // Calculate repulsion vector (away from other prey)
-      const repulsionVector = new Vector2(0, 0);
-      
-      // Only consider very close prey (personal space radius)
-      const personalSpaceRadius = 20; // Units of personal space
-      let tooCloseCount = 0;
-      
-      for (const otherPrey of nearbyPrey) {
-        // Skip self
-        if (otherPrey === this) continue;
-        
-        const distance = this.position.distanceTo(otherPrey.position);
-        if (distance < personalSpaceRadius) {
-          // Calculate vector away from this prey
-          const awayVector = this.position.clone().sub(otherPrey.position).normalize();
-          
-          // Closer prey have stronger repulsion effect
-          const repulsionStrength = 1 - (distance / personalSpaceRadius);
-          awayVector.multiplyScalar(repulsionStrength);
-          
-          repulsionVector.add(awayVector);
-          tooCloseCount++;
-        }
-      }
-      
-      // If there are nearby prey, apply a mild repulsion effect
-      if (tooCloseCount > 0) {
-        // Only normalize if the vector is not zero length
-        if (repulsionVector.lengthSq() > 0.0001) {
-          repulsionVector.normalize();
-          
-          // Repulsion is a mild effect (10% of normal movement) and decreases when hunting for food
-          const repulsionFactor = 0.1 * Math.min(1, energyRatio * 2); // Stronger when full, weaker when hungry
-          
-          // Add the repulsion component to the velocity (don't replace it)
-          const repulsionComponent = repulsionVector.clone().multiplyScalar(this.speed * repulsionFactor);
-          this.velocity.add(repulsionComponent);
-          
-          // Only normalize if velocity is not zero length
-          if (this.velocity.lengthSq() > 0.0001) {
-            this.velocity.normalize().multiplyScalar(this.speed);
-          }
-        }
-      }
+      applyRepulsion(this, nearbyPrey, 'prey');
     }
     
     // If a predator is nearby, flee from it
@@ -376,63 +333,10 @@ export class Prey extends Creature {
   }
   
   reproduce(): Prey {
-    // Create offspring with slightly mutated attributes
-    const childAttributes: GeneticAttributes = {
-      strength: this.attributes.strength + (Math.random() * 0.1 - 0.05),
-      stealth: this.attributes.stealth + (Math.random() * 0.1 - 0.05),
-      learnability: this.attributes.learnability + (Math.random() * 0.1 - 0.05),
-      longevity: this.attributes.longevity + (Math.random() * 0.1 - 0.05)
-    };
-    
-    // Significant mutation chance for attributes
-    if (Math.random() < SimulationConfig.reproduction.mutationChance) {
-      // Pick a random attribute for significant mutation
-      const attributes = ['strength', 'stealth', 'learnability', 'longevity'];
-      const attributeToMutate = attributes[Math.floor(Math.random() * attributes.length)] as keyof GeneticAttributes;
-      
-      // Apply significant mutation
-      const mutationAmount = Math.random() * SimulationConfig.reproduction.significantMutationRange - (SimulationConfig.reproduction.significantMutationRange / 2);
-      childAttributes[attributeToMutate] += mutationAmount;
-    }
-    
-    // Clamp attributes to valid range
-    Object.keys(childAttributes).forEach(key => {
-      childAttributes[key as keyof GeneticAttributes] = Math.max(0, Math.min(1, childAttributes[key as keyof GeneticAttributes]));
-    });
-    
-    // Mutate energy capacity (inheriting parent's with some variation)
-    let childEnergyCapacity = this.maxEnergy;
-    
-    // Apply small random mutation to energy capacity
-    const energyMutation = Math.random() * SimulationConfig.reproduction.energyCapacityMutationRange - (SimulationConfig.reproduction.energyCapacityMutationRange / 2);
-    childEnergyCapacity *= (1 + energyMutation);
-    
-    // Small chance of significant energy capacity mutation
-    if (Math.random() < SimulationConfig.reproduction.mutationChance) {
-      const significantEnergyMutation = Math.random() * SimulationConfig.reproduction.significantEnergyCapacityMutationRange - (SimulationConfig.reproduction.significantEnergyCapacityMutationRange / 2);
-      childEnergyCapacity *= (1 + significantEnergyMutation);
-    }
-    
-    // Ensure energy capacity doesn't get too small or too large
-    childEnergyCapacity = Math.max(SimulationConfig.prey.maxEnergy * 0.5, Math.min(SimulationConfig.prey.maxEnergy * 2.0, childEnergyCapacity));
-    
-    // Create new prey instance with mutated attributes and energy capacity
-    const offspring = new Prey(
-      this.position.x + (Math.random() * 20 - 10),
-      this.position.y + (Math.random() * 20 - 10),
-      childEnergyCapacity,  // Pass the mutated energy capacity
-      childAttributes
+    return this.reproduceOffspring(
+      Prey,
+      SimulationConfig.prey.maxEnergy,
+      0.5
     );
-    
-    // Parent loses energy from reproduction
-    this.energy *= 0.5;
-    
-    // Track reproduction
-    this.onReproduction();
-    
-    // Update visual appearance of parent to reflect energy loss
-    this.updateMeshPosition();
-    
-    return offspring;
   }
 }

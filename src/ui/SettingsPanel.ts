@@ -1,4 +1,5 @@
 import { SimulationConfig } from '../config';
+import { applyStyles } from '../utils/dom';
 
 export class SettingsPanel {
   private panel: HTMLElement;
@@ -19,23 +20,23 @@ export class SettingsPanel {
     // Create the panel container
     this.panel = document.createElement('div');
     this.panel.className = 'settings-panel';
-    this.panel.style.cssText = `
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 80%;
-      max-width: 1000px;
-      height: 80vh;
-      background: rgba(30, 30, 30, 0.95);
-      border-radius: 8px;
-      padding: 20px;
-      display: none;
-      z-index: 1000;
-      overflow-y: auto;
-      color: #fff;
-      box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-    `;
+    applyStyles(this.panel, {
+      position: 'fixed',
+      top: '50%',
+      left: '50%',
+      transform: 'translate(-50%, -50%)',
+      width: '80%',
+      maxWidth: '1000px',
+      height: '80vh',
+      background: 'rgba(30, 30, 30, 0.95)',
+      borderRadius: '8px',
+      padding: '20px',
+      display: 'none',
+      zIndex: '1000',
+      overflowY: 'auto',
+      color: '#fff',
+      boxShadow: '0 0 20px rgba(0, 0, 0, 0.5)'
+    });
     
     // Add keyboard event listener
     this.panel.tabIndex = 0; // Make the panel focusable
@@ -60,19 +61,19 @@ export class SettingsPanel {
         <span style="font-size: 10px; margin-left: 4px; opacity: 0.7; background: rgba(255,255,255,0.1); padding: 2px 4px; border-radius: 3px;">ESC</span>
       </div>
     `;
-    closeButton.style.cssText = `
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      background: none;
-      border: none;
-      color: #fff;
-      cursor: pointer;
-      padding: 5px 10px;
-      border-radius: 4px;
-      display: flex;
-      align-items: center;
-    `;
+    applyStyles(closeButton, {
+      position: 'absolute',
+      top: '10px',
+      right: '10px',
+      background: 'none',
+      border: 'none',
+      color: '#fff',
+      cursor: 'pointer',
+      padding: '5px 10px',
+      borderRadius: '4px',
+      display: 'flex',
+      alignItems: 'center'
+    });
     closeButton.addEventListener('mouseenter', () => {
       closeButton.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
     });

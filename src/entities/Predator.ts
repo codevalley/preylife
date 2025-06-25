@@ -1,10 +1,10 @@
 import * as THREE from 'three';
-import { Vector2 } from 'three';
 import { Creature, GeneticAttributes } from './Creature';
 import { EntityType } from './Entity';
 import { Prey } from './Prey';
 
 import { SimulationConfig } from '../config';
+import { applyRepulsion } from '../utils/behavior';
 
 export class Predator extends Creature {
   static readonly DEFAULT_MAX_ENERGY: number = SimulationConfig.predator.maxEnergy;
@@ -238,48 +238,7 @@ export class Predator extends Creature {
     // Add mild repulsion between predators to prevent clumping
     // This is a lower priority than hunting
     if (nearbyPredators.length > 0) {
-      // Calculate repulsion vector (away from other predators)
-      const repulsionVector = new Vector2(0, 0);
-      
-      // Only consider very close predators (personal space radius)
-      const personalSpaceRadius = 30; // Predators need more personal space than prey
-      let tooCloseCount = 0;
-      
-      for (const otherPredator of nearbyPredators) {
-        const distance = this.position.distanceTo(otherPredator.position);
-        if (distance < personalSpaceRadius) {
-          // Calculate vector away from this predator
-          const awayVector = this.position.clone().sub(otherPredator.position).normalize();
-          
-          // Closer predators have stronger repulsion effect
-          const repulsionStrength = 1 - (distance / personalSpaceRadius);
-          awayVector.multiplyScalar(repulsionStrength);
-          
-          repulsionVector.add(awayVector);
-          tooCloseCount++;
-        }
-      }
-      
-      // If there are nearby predators, apply a mild repulsion effect
-      if (tooCloseCount > 0) {
-        // Only normalize if the vector is not zero length
-        if (repulsionVector.lengthSq() > 0.0001) {
-          repulsionVector.normalize();
-          
-          // Predators are more territorial than prey, so repulsion is slightly stronger
-          const energyRatio = this.energy / this.maxEnergy;
-          const repulsionFactor = 0.15 * Math.min(1, energyRatio * 2); // Stronger when full, weaker when hungry
-          
-          // Add the repulsion component to the velocity (don't replace it)
-          const repulsionComponent = repulsionVector.clone().multiplyScalar(this.speed * repulsionFactor);
-          this.velocity.add(repulsionComponent);
-          
-          // Only normalize if velocity is not zero length
-          if (this.velocity.lengthSq() > 0.0001) {
-            this.velocity.normalize().multiplyScalar(this.speed);
-          }
-        }
-      }
+      applyRepulsion(this, nearbyPredators, 'predator');
     }
     
     // Check hunger level to determine hunting behavior
@@ -333,69 +292,11 @@ export class Predator extends Creature {
   }
   
   reproduce(): Predator {
-    // Create offspring with slightly mutated attributes
-    const childAttributes: GeneticAttributes = {
-      strength: this.attributes.strength + (Math.random() * 0.1 - 0.05),
-      stealth: this.attributes.stealth + (Math.random() * 0.1 - 0.05),
-      learnability: this.attributes.learnability + (Math.random() * 0.1 - 0.05),
-      longevity: this.attributes.longevity + (Math.random() * 0.1 - 0.05)
-    };
-    
-    // Significant mutation chance for attributes
-    if (Math.random() < SimulationConfig.reproduction.mutationChance) {
-      // Pick a random attribute for significant mutation
-      const attributes = ['strength', 'stealth', 'learnability', 'longevity'];
-      const attributeToMutate = attributes[Math.floor(Math.random() * attributes.length)] as keyof GeneticAttributes;
-      
-      // Apply significant mutation
-      const mutationAmount = Math.random() * SimulationConfig.reproduction.significantMutationRange - (SimulationConfig.reproduction.significantMutationRange / 2);
-      childAttributes[attributeToMutate] += mutationAmount;
-    }
-    
-    // Clamp attributes to valid range
-    Object.keys(childAttributes).forEach(key => {
-      childAttributes[key as keyof GeneticAttributes] = Math.max(0, Math.min(1, childAttributes[key as keyof GeneticAttributes]));
-    });
-    
-    // Mutate energy capacity (inheriting parent's with some variation)
-    let childEnergyCapacity = this.maxEnergy;
-    
-    // Apply small random mutation to energy capacity
-    const energyMutation = Math.random() * SimulationConfig.reproduction.energyCapacityMutationRange - (SimulationConfig.reproduction.energyCapacityMutationRange / 2);
-    childEnergyCapacity *= (1 + energyMutation);
-    
-    // Small chance of significant energy capacity mutation
-    if (Math.random() < SimulationConfig.reproduction.mutationChance) {
-      const significantEnergyMutation = Math.random() * SimulationConfig.reproduction.significantEnergyCapacityMutationRange - (SimulationConfig.reproduction.significantEnergyCapacityMutationRange / 2);
-      childEnergyCapacity *= (1 + significantEnergyMutation);
-    }
-    
-    // Ensure energy capacity doesn't get too small or too large
-    childEnergyCapacity = Math.max(SimulationConfig.predator.maxEnergy * 0.5, Math.min(SimulationConfig.predator.maxEnergy * 2.0, childEnergyCapacity));
-    
-    // Create new predator instance with mutated attributes and energy capacity
-    const offspring = new Predator(
-      this.position.x + (Math.random() * 20 - 10),
-      this.position.y + (Math.random() * 20 - 10),
-      childEnergyCapacity,  // Pass the mutated energy capacity
-      childAttributes
+    return this.reproduceOffspring(
+      Predator,
+      SimulationConfig.predator.maxEnergy,
+      0.4,
+      true
     );
-    
-    // Parent loses energy from reproduction - 60% instead of 50%
-    // Creates a slightly higher energy cost for predator reproduction
-    this.energy *= 0.4;
-    
-    // Track reproduction
-    this.onReproduction();
-    
-    // Update visual appearance of parent to reflect energy loss
-    this.updateMeshPosition();
-    
-    // Log reproduction event when extremely hungry (for debugging)
-    if (this.energy / this.maxEnergy < 0.2) {
-      console.warn(`WARNING: Predator reproduced with very low energy: ${(this.energy / this.maxEnergy * 100).toFixed(1)}%`);
-    }
-    
-    return offspring;
   }
 }

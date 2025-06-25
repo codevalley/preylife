@@ -3,8 +3,10 @@ import { Resource } from '../entities/Resource';
 import { Prey } from '../entities/Prey';
 import { Predator } from '../entities/Predator';
 import { SimulationConfig } from '../config';
-import { GeneticAttributes } from '../entities/Creature';
+import { Creature, GeneticAttributes } from '../entities/Creature';
 import { ToastManager, ToastType, ToastEvent } from '../ui/ToastManager';
+
+const clamp = (value: number, min: number, max: number): number => Math.max(min, Math.min(max, value));
 
 interface AttributeStats {
   strength: number;
@@ -117,6 +119,44 @@ export class SimulationEngine {
   // Track last prey and predator counts for extinction logging
   private lastPreyCount: number = 0;
   private lastPredatorCount: number = 0;
+
+  private spawnClusteredCreatures<T extends Creature>(
+    count: number,
+    clusterCount: number,
+    clusterTypes: { attributes: GeneticAttributes; energyMod: number }[],
+    radius: number,
+    baseEnergy: number,
+    create: (x: number, y: number, energy: number, attrs: GeneticAttributes) => T,
+    add: (c: T) => void
+  ): void {
+    const perCluster = Math.floor(count / clusterCount);
+    const remainder = count % clusterCount;
+
+    for (let cluster = 0; cluster < clusterCount; cluster++) {
+      const centerX = Math.random() * this.environmentWidth - this.environmentWidth / 2;
+      const centerY = Math.random() * this.environmentHeight - this.environmentHeight / 2;
+      const clusterType = clusterTypes[cluster];
+      const clusterSize = cluster < remainder ? perCluster + 1 : perCluster;
+
+      for (let i = 0; i < clusterSize; i++) {
+        const r = Math.random() * radius;
+        const angle = Math.random() * Math.PI * 2;
+        const x = centerX + Math.cos(angle) * r;
+        const y = centerY + Math.sin(angle) * r;
+
+        const attrs: GeneticAttributes = {
+          strength: clamp(clusterType.attributes.strength + (Math.random() * 0.2 - 0.1), 0.05, 0.95),
+          stealth: clamp(clusterType.attributes.stealth + (Math.random() * 0.2 - 0.1), 0.05, 0.95),
+          learnability: clamp(clusterType.attributes.learnability + (Math.random() * 0.2 - 0.1), 0.05, 0.95),
+          longevity: clamp(clusterType.attributes.longevity + (Math.random() * 0.2 - 0.1), 0.05, 0.95)
+        };
+
+        const energy = baseEnergy * clusterType.energyMod * (0.85 + Math.random() * 0.3);
+        const creature = create(x, y, energy, attrs);
+        add(creature);
+      }
+    }
+  }
   
   // Methods to spawn new creatures on demand with clustering
   spawnPrey(count: number = 10, clustered: boolean = true): void {
@@ -177,57 +217,20 @@ export class SimulationEngine {
       
       // Use all cluster types for initial spawning to ensure diversity
       const clusterCount = Math.min(clusterTypes.length, count > 25 ? 5 : 3);
-      const preyPerCluster = Math.floor(count / clusterCount);
-      const remainder = count % clusterCount;
-      
       console.info(`Spawning ${count} prey in ${clusterCount} specialized clusters:`);
-      
-      for (let cluster = 0; cluster < clusterCount; cluster++) {
-        // Generate a cluster center
-        const centerX = Math.random() * this.environmentWidth - this.environmentWidth/2;
-        const centerY = Math.random() * this.environmentHeight - this.environmentHeight/2;
-        
-        // Get the cluster type definition
-        const clusterType = clusterTypes[cluster];
-        const clusterPreyCount = cluster < remainder ? preyPerCluster + 1 : preyPerCluster;
-        
-        //console.log(`- Cluster ${cluster+1}: ${clusterType.name} (${clusterPreyCount} prey)`);
-        
-        // Spawn prey in this cluster
-        for (let i = 0; i < clusterPreyCount; i++) {
-          // Calculate position within the cluster
-          const radius = Math.random() * 80; // Cluster radius
-          const angle = Math.random() * Math.PI * 2;
-          const x = centerX + Math.cos(angle) * radius;
-          const y = centerY + Math.sin(angle) * radius;
-          
-          // Create prey with cluster-specific attributes + small individual variation (±10%)
-          const preyAttributes = {
-            strength: clusterType.attributes.strength + (Math.random() * 0.2 - 0.1),
-            stealth: clusterType.attributes.stealth + (Math.random() * 0.2 - 0.1),
-            learnability: clusterType.attributes.learnability + (Math.random() * 0.2 - 0.1),
-            longevity: clusterType.attributes.longevity + (Math.random() * 0.2 - 0.1),
-          };
-          
-          // Clamp values to valid range
-          Object.keys(preyAttributes).forEach(key => {
-            preyAttributes[key as keyof GeneticAttributes] = Math.max(0.05, Math.min(0.95, preyAttributes[key as keyof GeneticAttributes]));
-          });
-          
-          // Apply energy modifier for this cluster type with additional random variation (±10-15%)
-          const baseEnergy = Prey.DEFAULT_MAX_ENERGY * clusterType.energyMod;
-          const randomVariation = 0.85 + (Math.random() * 0.3); // 0.85 to 1.15 (±15%)
-          const energy = baseEnergy * randomVariation;
-          
-          const newPrey = new Prey(x, y, energy, preyAttributes);
-          this.addPrey(newPrey, true);
-        }
-      }
+      this.spawnClusteredCreatures(
+        count,
+        clusterCount,
+        clusterTypes,
+        80,
+        Prey.DEFAULT_MAX_ENERGY,
+        (x, y, energy, attrs) => new Prey(x, y, energy, attrs),
+        c => this.addPrey(c, true)
+      );
       
       // The total spawned count is already updated in the addPrey method
       // No need to update it again here
       
-      //console.log(`Total prey: ${this.prey.length}`);
     } else {
       // Original random spawning
       for (let i = 0; i < count; i++) {
@@ -290,57 +293,19 @@ export class SimulationEngine {
       // Use all cluster types for initial spawning to ensure diversity
       // For small predator counts, use at least 2 types
       const clusterCount = Math.min(clusterTypes.length, Math.max(2, count > 8 ? 4 : count > 4 ? 3 : 2));
-      const predatorsPerCluster = Math.floor(count / clusterCount);
-      const remainder = count % clusterCount;
-      
-      //console.log(`Spawning ${count} predators in ${clusterCount} specialized clusters:`);
-      
-      for (let cluster = 0; cluster < clusterCount; cluster++) {
-        // Generate a cluster center
-        const centerX = Math.random() * this.environmentWidth - this.environmentWidth/2;
-        const centerY = Math.random() * this.environmentHeight - this.environmentHeight/2;
-        
-        // Get the cluster type definition
-        const clusterType = clusterTypes[cluster];
-        const clusterPredCount = cluster < remainder ? predatorsPerCluster + 1 : predatorsPerCluster;
-        
-        //console.log(`- Cluster ${cluster+1}: ${clusterType.name} (${clusterPredCount} predators)`);
-        
-        // Spawn predators in this cluster
-        for (let i = 0; i < clusterPredCount; i++) {
-          // Calculate position within the cluster
-          const radius = Math.random() * 60; // Cluster radius
-          const angle = Math.random() * Math.PI * 2;
-          const x = centerX + Math.cos(angle) * radius;
-          const y = centerY + Math.sin(angle) * radius;
-          
-          // Create predator with cluster-specific attributes + small individual variation (±10%)
-          const predatorAttributes = {
-            strength: clusterType.attributes.strength + (Math.random() * 0.2 - 0.1),
-            stealth: clusterType.attributes.stealth + (Math.random() * 0.2 - 0.1),
-            learnability: clusterType.attributes.learnability + (Math.random() * 0.2 - 0.1),
-            longevity: clusterType.attributes.longevity + (Math.random() * 0.2 - 0.1),
-          };
-          
-          // Clamp values to valid range
-          Object.keys(predatorAttributes).forEach(key => {
-            predatorAttributes[key as keyof GeneticAttributes] = Math.max(0.05, Math.min(0.95, predatorAttributes[key as keyof GeneticAttributes]));
-          });
-          
-          // Apply energy modifier for this cluster type with additional random variation (±10-15%)
-          const baseEnergy = Predator.DEFAULT_MAX_ENERGY * clusterType.energyMod;
-          const randomVariation = 0.85 + (Math.random() * 0.3); // 0.85 to 1.15 (±15%)
-          const energy = baseEnergy * randomVariation;
-          
-          const newPredator = new Predator(x, y, energy, predatorAttributes);
-          this.addPredator(newPredator, true);
-        }
-      }
       
       // The total spawned count is already updated in the addPredator method
       // No need to update it again here
+      this.spawnClusteredCreatures(
+        count,
+        clusterCount,
+        clusterTypes,
+        60,
+        Predator.DEFAULT_MAX_ENERGY,
+        (x, y, energy, attrs) => new Predator(x, y, energy, attrs),
+        c => this.addPredator(c, true)
+      );
       
-      //console.log(`Total predators: ${this.predators.length}`);
     } else {
       // Original random spawning
       for (let i = 0; i < count; i++) {
@@ -350,7 +315,6 @@ export class SimulationEngine {
         this.addPredator(newPredator, true);
       }
       
-      //console.log(`Spawned ${count} new predators randomly. Total predators: ${this.predators.length}`);
     }
   }
   
@@ -384,7 +348,6 @@ export class SimulationEngine {
       this.statistics.resources.natural += actualCount;
     }
     
-    //console.log(`Spawned ${actualCount} new resources. Total resources: ${this.resources.length}`);
     
     // Alert if we hit the resource cap
     // if (actualCount < count) {
@@ -651,7 +614,6 @@ export class SimulationEngine {
     if (this.days % this.seasonLength === 0) {
       this.resourceBloom = true;
       
-      //console.log(`=== Day ${this.days}: MAJOR SEASONAL RESOURCE BLOOM ===`);
       
       // Show resource bloom info toast
       ToastManager.getInstance().showToast(
@@ -670,7 +632,6 @@ export class SimulationEngine {
       const resourcesSpawned = Math.max(0, actualAmount);
       
       // if (resourcesSpawned < desiredAmount) {
-      //   //console.log(`Resource cap limited bloom to ${resourcesSpawned} resources instead of ${desiredAmount}`);
       // }
       
       if (resourcesSpawned > 0) {
@@ -735,17 +696,12 @@ export class SimulationEngine {
       }
       
       // Announce the bloom in the console with more detail
-      //console.log(`Spawned resources in ${SimulationConfig.resources.bloom.clusterCount} rich clusters. Total resources: ${this.resources.length}`);
-      //console.log(`Primary resource energy: ${Resource.DEFAULT_ENERGY * SimulationConfig.resources.bloom.primaryEnergyMultiplier}`);
-      //console.log(`Secondary resource energy: ${Resource.DEFAULT_ENERGY * SimulationConfig.resources.bloom.secondaryEnergyMultiplier}`);
       
       // Get bloom duration from config
       const bloomDuration = SimulationConfig.resources.bloom.bloomDuration;
-      //console.log(`Resource bloom will last for ${bloomDuration} days`);
       
       setTimeout(() => {
         this.resourceBloom = false;
-        //console.log(`=== Day ${this.days}: Resource bloom has ended ===`);
       }, bloomDuration * this.framesPerDay * 1000 / 60); // Convert to milliseconds (assuming 60fps)
     }
   }
@@ -998,7 +954,6 @@ export class SimulationEngine {
                 break; // Each predator can only catch one prey per update
               } else {
                 // Prey escapes using stealth!
-                //console.log("Prey escaped using stealth!");
                 
                 // Give the prey a speed boost to escape (temporary)
                 const escapeDirection = prey.position.clone().sub(predator.position).normalize();
@@ -1042,7 +997,6 @@ export class SimulationEngine {
     }
     
     if (newPrey.length > 0) {
-      //console.log(`${newPrey.length} new prey born through reproduction. Total spawned: ${this.totalSpawned.prey}`);
       
       // Show prey born toast
       ToastManager.getInstance().showToast(
@@ -1084,7 +1038,6 @@ export class SimulationEngine {
         // Log only for the first few low-energy predators to avoid console spam
         // if (lowEnergyChecks <= 3) {
         //   const energyPercentage = (predator.energy / predator.maxEnergy * 100).toFixed(1);
-        //   //console.log(`DEBUG: Low energy predator (${energyPercentage}%) being checked for reproduction`);
         // }
       }
       
@@ -1106,7 +1059,6 @@ export class SimulationEngine {
     }
     
     if (newPredators.length > 0) {
-      //console.log(`${newPredators.length} new predators born through reproduction. Total spawned: ${this.totalSpawned.predators}`);
       
       // Show predator born toast
       ToastManager.getInstance().showToast(
@@ -1286,8 +1238,6 @@ export class SimulationEngine {
     if (!SimulationConfig.speciesConversion.enabled) return;
     
     // Log conversion attempt
-    //console.log(`\n=== CHECKING FOR SPECIES CONVERSIONS (Day ${this.days}) ===`);
-    //console.log(`Current populations - Prey: ${this.prey.length}, Predators: ${this.predators.length}`);
     
     // Create a population stats object for conversion checks
     const populationStats = {
@@ -1688,7 +1638,6 @@ export class SimulationEngine {
       const excessCount = this.resources.length - maxResources;
       this.resources.splice(0, excessCount); // Remove oldest resources
       
-      //console.log(`Resource cap enforced: removed ${excessCount} oldest resources`);
     }
   }
   
