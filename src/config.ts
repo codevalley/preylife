@@ -77,6 +77,16 @@ export const SimulationConfig = {
       preyDetectionRange: 80,          // Distance in units at which predators can detect prey
       preyResourceDetectionRange: 50,  // Distance in units at which prey can detect resources
       preyPredatorDetectionRange: 100  // Distance in units at which prey can detect approaching predators
+    },
+
+    // Personal space and repulsion settings
+    personalSpaceRadius: {
+      prey: 20,
+      predator: 30
+    },
+    repulsionFactor: {
+      prey: 0.1,
+      predator: 0.15
     }
   },
   

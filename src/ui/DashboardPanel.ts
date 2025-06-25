@@ -1,3 +1,5 @@
+import { applyStyles } from '../utils/dom';
+
 export class DashboardPanel {
   private container: HTMLElement;
   private isCollapsed: boolean = false;
@@ -8,38 +10,38 @@ export class DashboardPanel {
     this.container = document.createElement('div');
     this.container.id = `${id}-panel`;
     this.container.className = 'dashboard-panel';
-    this.container.style.cssText = `
-      background-color: rgba(0, 0, 0, 0.7);
-      border-radius: 4px;
-      border: 1px solid #444;
-      margin-bottom: 10px;
-      overflow: hidden;
-      transition: height 0.3s ease;
-    `;
+    applyStyles(this.container, {
+      backgroundColor: 'rgba(0, 0, 0, 0.7)',
+      borderRadius: '4px',
+      border: '1px solid #444',
+      marginBottom: '10px',
+      overflow: 'hidden',
+      transition: 'height 0.3s ease'
+    });
     
     // Create header with title and toggle button
     const header = document.createElement('div');
     header.className = 'panel-header';
-    header.style.cssText = `
-      padding: 8px 10px;
-      font-weight: bold;
-      background-color: rgba(0, 0, 0, 0.4);
-      border-bottom: 1px solid #444;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      cursor: pointer;
-    `;
+    applyStyles(header, {
+      padding: '8px 10px',
+      fontWeight: 'bold',
+      backgroundColor: 'rgba(0, 0, 0, 0.4)',
+      borderBottom: '1px solid #444',
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      cursor: 'pointer'
+    });
     
     this.titleElement = document.createElement('span');
     this.titleElement.textContent = title;
     
     const toggleButton = document.createElement('span');
     toggleButton.textContent = '▼';
-    toggleButton.style.cssText = `
-      font-size: 10px;
-      transition: transform 0.3s ease;
-    `;
+    applyStyles(toggleButton, {
+      fontSize: '10px',
+      transition: 'transform 0.3s ease'
+    });
     
     header.appendChild(this.titleElement);
     header.appendChild(toggleButton);
@@ -47,9 +49,9 @@ export class DashboardPanel {
     // Create content container
     const content = document.createElement('div');
     content.className = 'panel-content';
-    content.style.cssText = `
-      padding: 10px;
-    `;
+    applyStyles(content, {
+      padding: '10px'
+    });
     
     // Add toggle functionality
     header.addEventListener('click', () => {

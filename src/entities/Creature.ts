@@ -89,14 +89,9 @@ export abstract class Creature extends Entity {
     if (this.isConversionAnimation) {
       this.conversionEffectTime -= deltaTime;
       
-      // Add debug log to see what's happening with the timer
-      // if (Math.random() < 0.01) {
-      //   console.log(`Conversion animation in progress: ${this.conversionEffectTime.toFixed(2)}/${SimulationConfig.speciesConversion.visualEffectDuration}`);
-      // }
       
       if (this.conversionEffectTime <= 0) {
         // Animation complete
-        //console.log(`Conversion animation complete for ${this.type} with ID: ${this.id}`);
         this.isConversionAnimation = false;
         this.conversionEffectTime = 0;
       }
@@ -181,7 +176,6 @@ export abstract class Creature extends Entity {
         if (Math.random() < threshold.probability) {
           // Random starvation death occurs!
           this.die();
-          //console.log(`${this.type} died from starvation at ${(energyRatio * 100).toFixed(1)}% energy`);
           break; // No need to check further thresholds
         }
         break; // Only apply the first (lowest) matching threshold
@@ -269,6 +263,62 @@ export abstract class Creature extends Entity {
   }
   
   abstract reproduce(): Creature;
+
+  protected reproduceOffspring<T extends Creature>(
+    ctor: new (x: number, y: number, energy: number, attrs: GeneticAttributes) => T,
+    baseMaxEnergy: number,
+    energyRetention: number,
+    warnOnLowEnergy = false
+  ): T {
+    const childAttributes: GeneticAttributes = {
+      strength: this.attributes.strength + (Math.random() * 0.1 - 0.05),
+      stealth: this.attributes.stealth + (Math.random() * 0.1 - 0.05),
+      learnability: this.attributes.learnability + (Math.random() * 0.1 - 0.05),
+      longevity: this.attributes.longevity + (Math.random() * 0.1 - 0.05)
+    };
+
+    if (Math.random() < SimulationConfig.reproduction.mutationChance) {
+      const keys = ['strength', 'stealth', 'learnability', 'longevity'];
+      const key = keys[Math.floor(Math.random() * keys.length)] as keyof GeneticAttributes;
+      const range = SimulationConfig.reproduction.significantMutationRange;
+      childAttributes[key] += Math.random() * range - range / 2;
+    }
+
+    Object.keys(childAttributes).forEach(k => {
+      const key = k as keyof GeneticAttributes;
+      childAttributes[key] = Math.max(0, Math.min(1, childAttributes[key]));
+    });
+
+    let childEnergy = this.maxEnergy;
+    const erange = SimulationConfig.reproduction.energyCapacityMutationRange;
+    childEnergy *= 1 + (Math.random() * erange - erange / 2);
+
+    if (Math.random() < SimulationConfig.reproduction.mutationChance) {
+      const range = SimulationConfig.reproduction.significantEnergyCapacityMutationRange;
+      childEnergy *= 1 + (Math.random() * range - range / 2);
+    }
+
+    childEnergy = Math.max(baseMaxEnergy * 0.5, Math.min(baseMaxEnergy * 2.0, childEnergy));
+
+    const offspring = new ctor(
+      this.position.x + (Math.random() * 20 - 10),
+      this.position.y + (Math.random() * 20 - 10),
+      childEnergy,
+      childAttributes
+    );
+
+    this.energy *= energyRetention;
+    this.onReproduction();
+    this.updateMeshPosition();
+
+    if (warnOnLowEnergy && this.energy / this.maxEnergy < 0.2) {
+      console.warn(
+        `WARNING: ${this.type} reproduced with very low energy: ${((this.energy / this.maxEnergy) * 100).toFixed(1)}%`
+      );
+    }
+
+    return offspring;
+  }
   
   protected onReproduction(): void {
     this.offspringCount++;
@@ -375,12 +425,7 @@ export abstract class Creature extends Entity {
         if (SimulationConfig.speciesConversion.debugConversionChecks) {
           // Only log occasionally to avoid spam
           if (Math.random() < 0.01) {
-            //console.log(`Conversion check: ${this.type} failed population condition check`);
-            if (this.type === EntityType.PREDATOR) {
-              //console.log(`Prey ratio: ${(totalPopulation.prey/totalCreatures).toFixed(3)}, threshold: ${enableRatio}`);
-            } else {
-              //console.log(`Predator ratio: ${(totalPopulation.predators/totalCreatures).toFixed(3)}, threshold: ${enableRatio}`);
-            }
+            // Intentionally left blank to reduce console noise during normal operation
           }
         }
         return null;
