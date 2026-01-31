@@ -278,7 +278,7 @@ export class InteractionEffects {
 
   /**
    * Create a learning effect
-   * Shows a pulse traveling between two points
+   * Shows a brief simultaneous glow at both learner and teacher positions
    */
   createLearningEffect(
     fromX: number,
@@ -287,35 +287,44 @@ export class InteractionEffects {
     toY: number,
     color: string
   ): void {
-    const material = new THREE.MeshBasicMaterial({
+    // Glow at learner position
+    const learnerMaterial = new THREE.MeshBasicMaterial({
       color: new THREE.Color(color),
       transparent: true,
-      opacity: 0.8,
+      opacity: 0.4,
     });
+    const learnerGlow = new THREE.Mesh(this.circleGeometry.clone(), learnerMaterial);
+    learnerGlow.position.set(fromX, fromY, 6);
+    learnerGlow.scale.set(4, 4, 1);
+    this.scene.add(learnerGlow);
 
-    const pulse = new THREE.Mesh(this.circleGeometry.clone(), material);
-    pulse.position.set(fromX, fromY, 6);
-    pulse.scale.set(3, 3, 1);
-    this.scene.add(pulse);
+    // Glow at teacher position
+    const teacherMaterial = new THREE.MeshBasicMaterial({
+      color: new THREE.Color(color),
+      transparent: true,
+      opacity: 0.4,
+    });
+    const teacherGlow = new THREE.Mesh(this.circleGeometry.clone(), teacherMaterial);
+    teacherGlow.position.set(toX, toY, 6);
+    teacherGlow.scale.set(4, 4, 1);
+    this.scene.add(teacherGlow);
 
     const effect: Effect = {
-      mesh: pulse,
+      mesh: learnerGlow,
       startTime: performance.now(),
-      duration: 400,
+      duration: 300,
       update: (progress: number) => {
-        // Move along path
-        pulse.position.x = fromX + (toX - fromX) * progress;
-        pulse.position.y = fromY + (toY - fromY) * progress;
-
-        // Pulse size
-        const pulseScale = 3 + Math.sin(progress * Math.PI * 2) * 1;
-        pulse.scale.set(pulseScale, pulseScale, 1);
-
-        // Fade at end
-        material.opacity = 0.8 * (1 - progress * 0.5);
+        // Quick expand and fade at both positions
+        const scale = 4 + progress * 6;
+        const opacity = 0.4 * (1 - progress);
+        learnerGlow.scale.set(scale, scale, 1);
+        learnerMaterial.opacity = opacity;
+        teacherGlow.scale.set(scale, scale, 1);
+        teacherMaterial.opacity = opacity;
       },
     };
 
+    (effect as any).particles = [teacherGlow]; // for cleanup
     this.effects.push(effect);
   }
 

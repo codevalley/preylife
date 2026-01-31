@@ -125,7 +125,7 @@ export class Predator extends Creature {
       uEnergy: { value: this.energy / this.maxEnergy },
       uStealth: { value: this.attributes.stealth },
       uStrength: { value: this.attributes.strength },
-      uGlowIntensity: { value: 1.3 }, // Bright enough to bloom
+      uGlowIntensity: { value: 0.5 }, // Subtle glow
       uHunting: { value: 0 },
     });
 

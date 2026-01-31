@@ -97,13 +97,14 @@ export class OceanBackground {
           float horizontalNoise = noise(vec2(vUv.x * 3.0, uTime * 0.05)) * 0.1;
           depthCurve += horizontalNoise * (1.0 - depth);
 
-          // Three-point gradient: surface -> mid -> abyss
-          vec3 color;
-          if (depthCurve < 0.4) {
-            color = mix(uSurfaceColor, uMidColor, depthCurve / 0.4);
-          } else {
-            color = mix(uMidColor, uAbyssColor, (depthCurve - 0.4) / 0.6);
-          }
+          // Three-point gradient: surface -> mid -> abyss (smooth continuous blend)
+          float midBlend = smoothstep(0.0, 0.45, depthCurve);
+          float abyssBlend = smoothstep(0.35, 1.0, depthCurve);
+          vec3 color = mix(
+            mix(uSurfaceColor, uMidColor, midBlend),
+            uAbyssColor,
+            abyssBlend
+          );
 
           // Add caustic light patterns
           float causticPattern = caustics(vUv, uTime);

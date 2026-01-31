@@ -81,8 +81,8 @@ export const planktonFragmentShader = `
     float core = smoothstep(0.15, 0.0, dist);
     color += uGlowColor * core * 0.5 * energyBrightness;
 
-    // Boost for bloom
-    color *= 1.0 + uGlowIntensity * 0.4;
+    // Slight boost for bloom (subtle)
+    color *= 1.0 + uGlowIntensity * 0.1;
 
     // Discard pixels outside the circle
     if (alpha < 0.01) discard;

@@ -18,9 +18,9 @@ export class PostProcessing {
 
   // Bloom configuration
   private readonly bloomConfig = {
-    strength: 0.8,      // Bloom intensity
-    radius: 0.6,        // Bloom spread
-    threshold: 0.3,     // Brightness threshold for bloom
+    strength: 0.35,     // Bloom intensity (subtle glow, not overwhelming)
+    radius: 0.4,        // Bloom spread
+    threshold: 0.6,     // Brightness threshold for bloom (higher = less bloom)
   };
 
   constructor(

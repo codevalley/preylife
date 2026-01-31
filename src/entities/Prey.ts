@@ -86,20 +86,21 @@ export class Prey extends Creature {
     const baseColor = new THREE.Color();
     const glowColor = new THREE.Color();
 
-    // Mix between teal (low stealth) and deep blue (high stealth)
-    const tealComponent = 1 - this.attributes.stealth * 0.5;
-    const blueComponent = 0.5 + this.attributes.stealth * 0.5;
+    // Blue-dominant palette — clearly distinct from green plankton
+    // Stealth shifts toward deeper blue, strength adds slight cyan
+    const stealthBlue = 0.6 + this.attributes.stealth * 0.4;
+    const strengthCyan = this.attributes.strength * 0.25;
 
     baseColor.setRGB(
-      0.0,
-      tealComponent * 0.8 * (0.7 + this.attributes.strength * 0.3),
-      blueComponent
+      0.05,                          // Minimal red
+      0.15 + strengthCyan,            // Small amount of green (cyan hint)
+      stealthBlue                     // Strong blue
     );
 
-    // Glow color is brighter version
+    // Glow color is brighter blue-white
     glowColor.setRGB(
-      0.2,
-      0.9 * tealComponent,
+      0.15,
+      0.3 + strengthCyan,
       1.0
     );
 
@@ -110,7 +111,7 @@ export class Prey extends Creature {
       uEnergy: { value: this.energy / this.maxEnergy },
       uStealth: { value: this.attributes.stealth },
       uStrength: { value: this.attributes.strength },
-      uGlowIntensity: { value: 1.2 }, // Bright enough to bloom
+      uGlowIntensity: { value: 0.6 }, // Subtle glow
       uPulseSpeed: { value: 2.0 + this.attributes.learnability }, // Faster pulse = more active learner
     });
 

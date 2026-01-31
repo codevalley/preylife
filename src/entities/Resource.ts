@@ -71,17 +71,17 @@ export class Resource extends Entity {
     const baseColor = new THREE.Color();
     const glowColor = new THREE.Color();
 
-    // Mix between dim green (low energy) and vibrant cyan-green (high energy)
+    // Warm green palette — clearly distinct from cyan-blue fish
     baseColor.setRGB(
-      0.1 + energyRatio * 0.1,
-      0.5 + energyRatio * 0.3,
-      0.3 + energyRatio * 0.3
+      0.15 + energyRatio * 0.15,   // Warm tint
+      0.55 + energyRatio * 0.35,   // Strong green
+      0.05 + energyRatio * 0.1     // Very little blue
     );
 
     glowColor.setRGB(
-      0.2,
-      0.8 + energyRatio * 0.2,
-      0.5 + energyRatio * 0.3
+      0.3 + energyRatio * 0.1,     // Warm glow
+      0.85 + energyRatio * 0.15,   // Bright green
+      0.1 + energyRatio * 0.1      // Minimal blue
     );
 
     // Create plankton shader material
@@ -90,7 +90,7 @@ export class Resource extends Entity {
       uGlowColor: { value: glowColor },
       uEnergy: { value: energyRatio },
       uPulseSpeed: { value: 1.0 + Math.random() * 0.5 }, // Varied pulse speeds
-      uGlowIntensity: { value: 0.7 + energyRatio * 0.4 },
+      uGlowIntensity: { value: 0.4 + energyRatio * 0.2 },
     });
 
     this.mesh = new THREE.Mesh(geometry, material);

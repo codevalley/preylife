@@ -105,8 +105,8 @@ export const predatorFragmentShader = `
     float edgeGlow = smoothstep(0.4, 1.0, edgeDist);
     finalColor += uEyeColor * edgeGlow * 0.3 * uGlowIntensity * energyBrightness;
 
-    // Boost for bloom
-    finalColor *= 1.0 + uGlowIntensity * 0.3;
+    // Slight boost for bloom (subtle)
+    finalColor *= 1.0 + uGlowIntensity * 0.1;
 
     gl_FragColor = vec4(finalColor, 1.0);
   }

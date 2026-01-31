@@ -108,8 +108,8 @@ export const bioluminescentFragmentShader = `
     // Add glow color at edges
     finalColor += uGlowColor * edgeGlow * energyBrightness;
 
-    // Ensure the color can bloom (values > 1.0)
-    finalColor *= 1.0 + glowAmount * 0.5;
+    // Slight boost for bloom (subtle, not overwhelming)
+    finalColor *= 1.0 + glowAmount * 0.15;
 
     gl_FragColor = vec4(finalColor, 1.0);
   }
