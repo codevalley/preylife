@@ -507,7 +507,13 @@ export class SimulationEngine {
   }
 
   getTotalSpawned(): { prey: number; predators: number; resources: number } {
-    return { ...this.totalSpawned };
+    // Return lifetime total (all births: reproduction + conversion + spawned)
+    const stats = this.world.statistics;
+    return {
+      prey: stats.prey.births.reproduction + stats.prey.births.conversion + stats.prey.births.spawned,
+      predators: stats.predators.births.reproduction + stats.predators.births.conversion + stats.predators.births.spawned,
+      resources: stats.resources.fromCreatureDeath + stats.resources.natural + stats.resources.spawned
+    };
   }
 
   isResourceBloom(): boolean {

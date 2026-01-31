@@ -333,36 +333,31 @@ export class InteractionEffects {
    * Shows expanding waves across the screen
    */
   createBloomEffect(): void {
-    const waveCount = 3;
+    // Single subtle expanding ring (not screen-filling)
+    const material = new THREE.MeshBasicMaterial({
+      color: new THREE.Color(OceanicColors.resource),
+      transparent: true,
+      opacity: 0.15,
+      side: THREE.DoubleSide,
+    });
 
-    for (let i = 0; i < waveCount; i++) {
-      const material = new THREE.MeshBasicMaterial({
-        color: new THREE.Color(OceanicColors.resource),
-        transparent: true,
-        opacity: 0.3,
-        side: THREE.DoubleSide,
-      });
+    const ring = new THREE.Mesh(new THREE.RingGeometry(1, 2, 32), material);
+    ring.position.set(0, 0, 2);
+    ring.scale.set(5, 5, 1);
+    this.scene.add(ring);
 
-      const ring = new THREE.Mesh(new THREE.RingGeometry(1, 3, 64), material);
-      ring.position.set(0, 0, 2);
-      ring.scale.set(10, 10, 1);
-      this.scene.add(ring);
+    const effect: Effect = {
+      mesh: ring,
+      startTime: performance.now(),
+      duration: 1200,
+      update: (progress: number) => {
+        const scale = 5 + progress * 80;
+        ring.scale.set(scale, scale, 1);
+        material.opacity = 0.15 * (1 - progress);
+      },
+    };
 
-      const delay = i * 200;
-
-      const effect: Effect = {
-        mesh: ring,
-        startTime: performance.now() + delay,
-        duration: 2000,
-        update: (progress: number) => {
-          const scale = 10 + progress * 300;
-          ring.scale.set(scale, scale, 1);
-          material.opacity = 0.3 * (1 - progress);
-        },
-      };
-
-      this.effects.push(effect);
-    }
+    this.effects.push(effect);
   }
 
   /**
