@@ -1,4 +1,4 @@
-import { SimulationEngine } from './engine/SimulationEngine';
+import { SimulationEngine } from './core/SimulationEngine';
 import { Renderer } from './rendering/Renderer';
 import { UIController } from './ui/UIController';
 import { SimulationConfig } from './config';

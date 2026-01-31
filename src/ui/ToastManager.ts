@@ -1,4 +1,5 @@
 import { formatNumber } from '../utils/formatters';
+import { EventBus } from '../events/EventBus';
 
 export enum ToastType {
   EPHEMERAL = 'ephemeral',
@@ -256,6 +257,97 @@ export class ToastManager {
   private constructor() {
     this.setupContainers();
     this.addGlobalStyles();
+    this.subscribeToEvents();
+  }
+
+  /**
+   * Subscribe to EventBus events and show corresponding toasts
+   */
+  private subscribeToEvents(): void {
+    const eventBus = EventBus.getInstance();
+
+    // Reproduction events
+    eventBus.subscribe('REPRODUCTION', (event) => {
+      if (event.entityType === 'prey') {
+        this.showToast(ToastType.EPHEMERAL, ToastEvent.PREY_BORN);
+      } else if (event.entityType === 'predator') {
+        this.showToast(ToastType.EPHEMERAL, ToastEvent.PREDATOR_BORN);
+      }
+    });
+
+    // Death events
+    eventBus.subscribe('ENTITY_DIED', (event) => {
+      if (event.entityType === 'prey' && event.cause !== 'predation') {
+        this.showToast(ToastType.EPHEMERAL, ToastEvent.PREY_DIED);
+      } else if (event.entityType === 'predator') {
+        this.showToast(ToastType.EPHEMERAL, ToastEvent.PREDATOR_DIED);
+      }
+    });
+
+    // Predation events
+    eventBus.subscribe('PREY_CONSUMED', () => {
+      this.showToast(ToastType.EPHEMERAL, ToastEvent.PREY_CONSUMED);
+    });
+
+    eventBus.subscribe('PREY_ESCAPED', () => {
+      this.showToast(ToastType.EPHEMERAL, ToastEvent.PREY_ESCAPED);
+    });
+
+    // Resource events
+    eventBus.subscribe('RESOURCE_CONSUMED', () => {
+      this.showToast(ToastType.EPHEMERAL, ToastEvent.RESOURCE_CONSUMED);
+    });
+
+    eventBus.subscribe('RESOURCE_SPAWNED', (event) => {
+      if (event.cause === 'bloom') {
+        this.showToast(ToastType.EPHEMERAL, ToastEvent.RESOURCE_SPAWNED);
+      }
+    });
+
+    eventBus.subscribe('RESOURCE_BLOOM', () => {
+      this.showToast(ToastType.INFO, ToastEvent.RESOURCE_BLOOM);
+    });
+
+    // Learning events
+    eventBus.subscribe('LEARNING', (event) => {
+      if (event.entityType === 'prey') {
+        this.showToast(ToastType.EPHEMERAL, ToastEvent.PREY_LEARNED);
+      } else if (event.entityType === 'predator') {
+        this.showToast(ToastType.EPHEMERAL, ToastEvent.PREDATOR_LEARNED);
+      }
+    });
+
+    // Species conversion (evolution) events
+    eventBus.subscribe('SPECIES_CONVERSION', () => {
+      this.showToast(ToastType.INFO, ToastEvent.FIRST_EVOLUTION);
+    });
+
+    // Extinction events
+    eventBus.subscribe('EXTINCTION', () => {
+      this.showToast(ToastType.INFO, ToastEvent.FIRST_EXTINCTION);
+    });
+
+    // Population milestone events
+    eventBus.subscribe('POPULATION_MILESTONE', (event) => {
+      if (event.species === 'prey') {
+        if (event.milestone === 'high') {
+          this.showToast(ToastType.INFO, ToastEvent.HIGH_PREY_DENSITY);
+        }
+      } else if (event.species === 'predator') {
+        if (event.milestone === 'high') {
+          this.showToast(ToastType.INFO, ToastEvent.HIGH_PREDATOR_DENSITY);
+        }
+      } else if (event.species === 'resource') {
+        if (event.milestone === 'low' || event.milestone === 'critical') {
+          this.showToast(ToastType.INFO, ToastEvent.LOW_RESOURCE_WARNING);
+        }
+      }
+    });
+
+    // Simulation reset clears toast history
+    eventBus.subscribe('SIMULATION_RESET', () => {
+      this.resetInfoEvents();
+    });
   }
   
   // This method is kept for backward compatibility

@@ -1,4 +1,4 @@
-import { SimulationEngine } from '../engine/SimulationEngine';
+import { SimulationEngine } from '../core/SimulationEngine';
 import { DashboardPanel } from './DashboardPanel';
 import { SettingsPanel } from './SettingsPanel';
 import { SimulationConfig } from '../config';

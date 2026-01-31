@@ -1,4 +1,4 @@
-import { SimulationEngine } from '../engine/SimulationEngine';
+import { SimulationEngine } from '../core/SimulationEngine';
 
 // Add roundRect type declaration for TypeScript
 declare global {

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { Entity } from '../entities/Entity';
-import { SimulationEngine } from '../engine/SimulationEngine';
+import { SimulationEngine } from '../core/SimulationEngine';
 import { EntityTooltip } from '../ui/EntityTooltip';
 
 export class Renderer {
