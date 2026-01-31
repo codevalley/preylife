@@ -48,31 +48,32 @@ export class InteractionEffects {
       })
     );
 
-    // Predation failure - prey escaped
+    // Predation failure - prey escaped with a burst effect
     this.subscriptionIds.push(
-      eventBus.subscribe('PREY_ESCAPED', (_event) => {
-        // Position not available in escape event - would need to be added to event payload
-        // to enable escape visual effect at prey location
+      eventBus.subscribe('PREY_ESCAPED', (event) => {
+        this.createEscapeEffect(event.preyPosition.x, event.preyPosition.y);
       })
     );
 
-    // Reproduction - effect requires position data which is not currently in the event
-    // TODO: Add position to ReproductionEvent to enable this visual effect
+    // Reproduction - mitosis-like split effect at parent position
     this.subscriptionIds.push(
-      eventBus.subscribe('REPRODUCTION', (_event) => {
-        // Visual effect disabled: ReproductionEvent doesn't include position
-        // When position is added to the event, call:
-        // this.createReproductionEffect(x, y, color);
+      eventBus.subscribe('REPRODUCTION', (event) => {
+        const color = event.entityType === 'prey' ? OceanicColors.prey : OceanicColors.predator;
+        this.createReproductionEffect(event.position.x, event.position.y, color);
       })
     );
 
-    // Learning - effect requires positions of both learner and teacher
-    // TODO: Add learner/teacher positions to LearningEvent to enable this visual effect
+    // Learning - neural pulse between learner and teacher
     this.subscriptionIds.push(
-      eventBus.subscribe('LEARNING', (_event) => {
-        // Visual effect disabled: LearningEvent doesn't include positions
-        // When positions are added to the event, call:
-        // this.createLearningEffect(fromX, fromY, toX, toY, color);
+      eventBus.subscribe('LEARNING', (event) => {
+        const color = event.entityType === 'prey' ? OceanicColors.prey : OceanicColors.predator;
+        this.createLearningEffect(
+          event.learnerPosition.x,
+          event.learnerPosition.y,
+          event.teacherPosition.x,
+          event.teacherPosition.y,
+          color
+        );
       })
     );
 

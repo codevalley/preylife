@@ -46,7 +46,8 @@ export class ReproductionSystem extends BaseSystem {
           offspringId: offspring.id,
           parentAttributes: { ...prey.attributes },
           offspringAttributes: { ...offspring.attributes },
-          mutated: this.checkIfMutated(prey, offspring)
+          mutated: this.checkIfMutated(prey, offspring),
+          position: { x: prey.position.x, y: prey.position.y }
         });
       }
     }
@@ -89,7 +90,8 @@ export class ReproductionSystem extends BaseSystem {
           offspringId: offspring.id,
           parentAttributes: { ...predator.attributes },
           offspringAttributes: { ...offspring.attributes },
-          mutated: this.checkIfMutated(predator, offspring)
+          mutated: this.checkIfMutated(predator, offspring),
+          position: { x: predator.position.x, y: predator.position.y }
         });
       }
     }

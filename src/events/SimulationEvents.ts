@@ -50,6 +50,7 @@ export interface PreyEscapedEvent extends BaseEvent {
   preyId: string;
   predatorId: string;
   escapeMethod: 'stealth' | 'speed';
+  preyPosition: { x: number; y: number };
 }
 
 // Resource events
@@ -82,6 +83,7 @@ export interface ReproductionEvent extends BaseEvent {
   parentAttributes: GeneticAttributes;
   offspringAttributes: GeneticAttributes;
   mutated: boolean;
+  position: { x: number; y: number };
 }
 
 // Learning events
@@ -93,6 +95,8 @@ export interface LearningEvent extends BaseEvent {
   attribute: keyof GeneticAttributes;
   oldValue: number;
   newValue: number;
+  learnerPosition: { x: number; y: number };
+  teacherPosition: { x: number; y: number };
 }
 
 // Species conversion events

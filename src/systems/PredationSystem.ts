@@ -72,7 +72,8 @@ export class PredationSystem extends BaseSystem {
               day: world.days,
               preyId: prey.id,
               predatorId: predator.id,
-              escapeMethod: 'stealth'
+              escapeMethod: 'stealth',
+              preyPosition: { x: prey.position.x, y: prey.position.y }
             });
 
             // Predator fails catch attempt, try next prey

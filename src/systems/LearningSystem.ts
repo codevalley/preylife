@@ -119,7 +119,9 @@ export class LearningSystem extends BaseSystem {
                 teacherId: teacher.id,
                 attribute: attributeToLearn,
                 oldValue,
-                newValue: learner.attributes[attributeToLearn]
+                newValue: learner.attributes[attributeToLearn],
+                learnerPosition: { x: learner.position.x, y: learner.position.y },
+                teacherPosition: { x: teacher.position.x, y: teacher.position.y }
               });
             }
           }
