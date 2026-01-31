@@ -1,0 +1,155 @@
+import * as THREE from 'three';
+
+/**
+ * Shader configuration for deep sea predator/hunter creatures.
+ * Creates menacing, glowing hunters with lure-like eye effects.
+ */
+export interface PredatorUniforms {
+  uTime: { value: number };
+  uEnergy: { value: number };        // 0-1, affects eye glow and saturation
+  uStealth: { value: number };       // 0-1, affects body darkness vs lure contrast
+  uStrength: { value: number };      // 0-1, affects color intensity
+  uBaseColor: { value: THREE.Color };
+  uEyeColor: { value: THREE.Color };
+  uHunting: { value: number };       // 0-1, hunting intensity
+  uGlowIntensity: { value: number }; // Base glow intensity
+}
+
+/**
+ * Creates uniforms for predator shader with default values
+ */
+export function createPredatorUniforms(
+  baseColor: THREE.Color = new THREE.Color(0xcc4400),
+  eyeColor: THREE.Color = new THREE.Color(0xff6600)
+): PredatorUniforms {
+  return {
+    uTime: { value: 0 },
+    uEnergy: { value: 1.0 },
+    uStealth: { value: 0.5 },
+    uStrength: { value: 0.5 },
+    uBaseColor: { value: baseColor },
+    uEyeColor: { value: eyeColor },
+    uHunting: { value: 0 },
+    uGlowIntensity: { value: 1.2 },
+  };
+}
+
+/**
+ * Vertex shader for predator creatures
+ */
+export const predatorVertexShader = `
+  varying vec2 vUv;
+  varying vec3 vPosition;
+
+  void main() {
+    vUv = uv;
+    vPosition = position;
+
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`;
+
+/**
+ * Fragment shader for predator creatures
+ * Creates menacing glow with hunting-state intensification
+ */
+export const predatorFragmentShader = `
+  uniform float uTime;
+  uniform float uEnergy;
+  uniform float uStealth;
+  uniform float uStrength;
+  uniform vec3 uBaseColor;
+  uniform vec3 uEyeColor;
+  uniform float uHunting;
+  uniform float uGlowIntensity;
+
+  varying vec2 vUv;
+  varying vec3 vPosition;
+
+  void main() {
+    // Base color with strength affecting intensity
+    vec3 color = uBaseColor * (0.6 + uStrength * 0.4);
+
+    // Energy affects overall brightness (40% - 100%)
+    float energyBrightness = 0.4 + uEnergy * 0.6;
+
+    // Stealth creates contrast: dark body with brighter highlights
+    // High stealth = darker base, more contrast
+    float bodyDarkness = 1.0 - (uStealth * 0.4);
+    color *= bodyDarkness;
+
+    // Hunting intensification
+    float huntPulse = sin(uTime * 4.0) * 0.5 + 0.5;
+    float huntIntensity = uHunting * huntPulse * 0.3;
+
+    // Eye glow effect - positioned at front of predator
+    // UV x > 0.6 is the "front" of the creature
+    float eyeZone = smoothstep(0.5, 0.7, vUv.x);
+
+    // Eye glow intensity based on energy and hunting state
+    float eyeGlow = eyeZone * (0.5 + uEnergy * 0.5 + uHunting * 0.5);
+
+    // Pulse the eye glow
+    float eyePulse = sin(uTime * 3.0 + uHunting * 2.0) * 0.3 + 0.7;
+    eyeGlow *= eyePulse;
+
+    // Add eye color to the base
+    vec3 finalColor = color * energyBrightness;
+    finalColor += uEyeColor * eyeGlow * uGlowIntensity;
+
+    // Add hunting glow over entire body
+    finalColor += uEyeColor * huntIntensity;
+
+    // Edge glow for bloom effect
+    float edgeDist = length(vUv - vec2(0.5)) * 2.0;
+    float edgeGlow = smoothstep(0.4, 1.0, edgeDist);
+    finalColor += uEyeColor * edgeGlow * 0.3 * uGlowIntensity * energyBrightness;
+
+    // Boost for bloom
+    finalColor *= 1.0 + uGlowIntensity * 0.3;
+
+    gl_FragColor = vec4(finalColor, 1.0);
+  }
+`;
+
+/**
+ * Creates a predator shader material
+ */
+export function createPredatorMaterial(
+  uniforms?: Partial<PredatorUniforms>
+): THREE.ShaderMaterial {
+  const defaultUniforms = createPredatorUniforms();
+
+  // Merge provided uniforms with defaults
+  const mergedUniforms = { ...defaultUniforms };
+  if (uniforms) {
+    Object.assign(mergedUniforms, uniforms);
+  }
+
+  return new THREE.ShaderMaterial({
+    uniforms: mergedUniforms,
+    vertexShader: predatorVertexShader,
+    fragmentShader: predatorFragmentShader,
+    transparent: false,
+    side: THREE.DoubleSide,
+  });
+}
+
+/**
+ * Update shader uniforms based on predator state
+ */
+export function updatePredatorUniforms(
+  material: THREE.ShaderMaterial,
+  time: number,
+  energy: number,
+  maxEnergy: number,
+  stealth: number,
+  strength: number,
+  isHunting: boolean = false
+): void {
+  material.uniforms.uTime.value = time;
+  material.uniforms.uEnergy.value = energy / maxEnergy;
+  material.uniforms.uStealth.value = stealth;
+  material.uniforms.uStrength.value = strength;
+  material.uniforms.uHunting.value = isHunting ? 1.0 : 0.0;
+}
