@@ -12,6 +12,7 @@ export interface GeneticAttributes {
 export abstract class Creature extends Entity {
   // Movement properties
   velocity: Vector2 = new Vector2(0, 0);
+  private _prevVelocity: Vector2 = new Vector2(0, 0);
   speed: number = SimulationConfig.creatures.baseSpeed; // Base speed from config
   
   // Genetic attributes
@@ -56,6 +57,15 @@ export abstract class Creature extends Entity {
   }
   
   update(deltaTime: number): void {
+    // Smooth velocity transitions - lerp from previous velocity toward desired
+    // This prevents instant direction snaps, creating natural arcing movement
+    const turnRate = 0.12;
+    if (this._prevVelocity.lengthSq() > 0.0001) {
+      const desiredVelocity = this.velocity.clone();
+      this.velocity.copy(this._prevVelocity).lerp(desiredVelocity, turnRate);
+    }
+    this._prevVelocity.copy(this.velocity);
+
     // Update position based on velocity
     const moveSpeed = this.speed * this.attributes.strength * deltaTime;
     this.position.add(this.velocity.clone().multiplyScalar(moveSpeed));

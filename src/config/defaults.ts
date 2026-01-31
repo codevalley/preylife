@@ -63,7 +63,7 @@ export const DEFAULT_CONFIG: SimulationConfigType = {
 
   // Creature settings - General parameters that apply to both prey and predators
   creatures: {
-    baseSpeed: 8,
+    baseSpeed: 6.5,
     baseCost: 1.0,
     movementCostMultiplier: 2.0,
     maxLifespan: {
