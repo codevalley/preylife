@@ -1,5 +1,5 @@
 import { SimulationEngine } from '../core/SimulationEngine';
-import { DashboardPanel } from './DashboardPanel';
+import { DashboardPanel, OceanicColors } from './DashboardPanel';
 import { SettingsPanel } from './SettingsPanel';
 import { SimulationConfig } from '../config';
 import { HelpPanel } from './HelpPanel';
@@ -78,75 +78,75 @@ export class UIController {
     const controlContent = this.controlPanel.getContentElement();
     controlContent.innerHTML = `
       <!-- First row: Controls -->
-      <div style="display: flex; align-items: center; margin-bottom: 8px; background-color: rgba(40, 40, 40, 0.6); border-radius: 4px; padding: 6px 10px; gap: 8px;">
+      <div style="display: flex; align-items: center; margin-bottom: 8px; background-color: ${OceanicColors.headerBg}; border-radius: 6px; padding: 6px 10px; gap: 8px; border: 1px solid ${OceanicColors.borderPrimary};">
         <!-- Play/Pause button -->
-        <button id="play-pause-btn" class="control-button" style="background-color: rgba(50, 120, 70, 0.7); border: none; width: 30px; height: 30px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 4px;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+        <button id="play-pause-btn" class="control-button" style="background-color: rgba(0, 180, 130, 0.4); border: 1px solid rgba(0, 220, 170, 0.3); width: 30px; height: 30px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 6px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="${OceanicColors.textPrimary}">
             <path id="play-icon" d="M8 5v14l11-7z" style="display: block;"/>
             <path id="pause-icon" d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" style="display: none;"/>
           </svg>
         </button>
-        
+
         <!-- Reset button -->
-        <button id="reset-btn" class="control-button" style="background-color: rgba(60, 60, 60, 0.7); border: none; width: 30px; height: 30px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 4px;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+        <button id="reset-btn" class="control-button" style="background-color: rgba(80, 180, 220, 0.2); border: 1px solid ${OceanicColors.borderPrimary}; width: 30px; height: 30px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 6px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="${OceanicColors.textSecondary}">
             <path d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
           </svg>
         </button>
 
         <!-- Custom/Settings button -->
-        <button id="custom-btn" class="control-button" style="background-color: rgba(60, 60, 60, 0.7); border: none; width: 30px; height: 30px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 4px;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+        <button id="custom-btn" class="control-button" style="background-color: rgba(80, 180, 220, 0.2); border: 1px solid ${OceanicColors.borderPrimary}; width: 30px; height: 30px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 6px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="${OceanicColors.textSecondary}">
             <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
           </svg>
         </button>
 
         <!-- Help button -->
-        <button id="help-btn" class="control-button" style="background-color: rgba(60, 60, 60, 0.7); border: none; width: 30px; height: 30px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 4px;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+        <button id="help-btn" class="control-button" style="background-color: rgba(80, 180, 220, 0.2); border: 1px solid ${OceanicColors.borderPrimary}; width: 30px; height: 30px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 6px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="${OceanicColors.textSecondary}">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/>
           </svg>
         </button>
 
         <!-- Day display -->
-        <div class="control-button" style="display: flex; align-items: center; background-color: rgba(60, 60, 60, 0.7); border-radius: 4px; padding: 0 10px; height: 30px; line-height: 30px; font-size: 11px;">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="#aaa" style="margin-right: 4px;">
+        <div class="control-button" style="display: flex; align-items: center; background-color: rgba(80, 180, 220, 0.15); border: 1px solid ${OceanicColors.borderPrimary}; border-radius: 6px; padding: 0 10px; height: 30px; line-height: 30px; font-size: 11px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="${OceanicColors.textMuted}" style="margin-right: 4px;">
             <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.2 3.2.8-1.3-4.5-2.7V7z"/>
           </svg>
-          <span id="days-count" style="font-weight: bold; min-width: 16px; text-align: center;">0</span>
+          <span id="days-count" style="font-weight: bold; min-width: 16px; text-align: center; color: ${OceanicColors.textPrimary};">0</span>
         </div>
       </div>
 
       <!-- Second row: Stats -->
-      <div style="display: flex; align-items: center; background-color: rgba(40, 40, 40, 0.6); border-radius: 4px; padding: 6px 10px; gap: 8px;">
-        <!-- Prey stats -->
-        <div id="prey-widget" style="display: flex; align-items: center; background-color: rgba(40, 70, 130, 0.3); border-radius: 4px; padding: 4px 8px; flex: 1; cursor: pointer; transition: background-color 0.2s; font-size: 11px;">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="#5588ff" style="margin-right: 4px;">
+      <div style="display: flex; align-items: center; background-color: ${OceanicColors.headerBg}; border-radius: 6px; padding: 6px 10px; gap: 8px; border: 1px solid ${OceanicColors.borderPrimary};">
+        <!-- Prey stats (cyan/teal theme) -->
+        <div id="prey-widget" style="display: flex; align-items: center; background-color: rgba(0, 200, 255, 0.15); border: 1px solid rgba(0, 200, 255, 0.3); border-radius: 6px; padding: 4px 8px; flex: 1; cursor: pointer; transition: all 0.2s; font-size: 11px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="${OceanicColors.prey}" style="margin-right: 4px;">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"/>
           </svg>
-          <span id="prey-count" style="color: #5588ff; font-weight: bold;">0</span>
-          <span style="color: #777; margin: 0 4px;">/</span>
-          <span id="prey-spawned" style="color: #5588ff;">0</span>
+          <span id="prey-count" style="color: ${OceanicColors.prey}; font-weight: bold;">0</span>
+          <span style="color: ${OceanicColors.textMuted}; margin: 0 4px;">/</span>
+          <span id="prey-spawned" style="color: ${OceanicColors.prey}; opacity: 0.7;">0</span>
         </div>
 
-        <!-- Predator stats -->
-        <div id="predator-widget" style="display: flex; align-items: center; background-color: rgba(130, 40, 40, 0.3); border-radius: 4px; padding: 4px 8px; flex: 1; cursor: pointer; transition: background-color 0.2s; font-size: 11px;">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="#ff5555" style="margin-right: 4px;">
+        <!-- Predator stats (amber/orange theme) -->
+        <div id="predator-widget" style="display: flex; align-items: center; background-color: rgba(255, 120, 30, 0.15); border: 1px solid rgba(255, 120, 30, 0.3); border-radius: 6px; padding: 4px 8px; flex: 1; cursor: pointer; transition: all 0.2s; font-size: 11px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="${OceanicColors.predator}" style="margin-right: 4px;">
             <path d="M12 2 L22 9 L19 20 L5 20 L2 9 Z"/>
           </svg>
-          <span id="predator-count" style="color: #ff5555; font-weight: bold;">0</span>
-          <span style="color: #777; margin: 0 4px;">/</span>
-          <span id="predator-spawned" style="color: #ff5555;">0</span>
+          <span id="predator-count" style="color: ${OceanicColors.predator}; font-weight: bold;">0</span>
+          <span style="color: ${OceanicColors.textMuted}; margin: 0 4px;">/</span>
+          <span id="predator-spawned" style="color: ${OceanicColors.predator}; opacity: 0.7;">0</span>
         </div>
 
-        <!-- Resource stats -->
-        <div id="resource-widget" style="display: flex; align-items: center; background-color: rgba(40, 130, 40, 0.3); border-radius: 4px; padding: 4px 8px; flex: 1; cursor: pointer; transition: background-color 0.2s; font-size: 11px;">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="#55cc55" style="margin-right: 4px;">
+        <!-- Resource stats (green theme) -->
+        <div id="resource-widget" style="display: flex; align-items: center; background-color: rgba(68, 255, 170, 0.15); border: 1px solid rgba(68, 255, 170, 0.3); border-radius: 6px; padding: 4px 8px; flex: 1; cursor: pointer; transition: all 0.2s; font-size: 11px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="${OceanicColors.resource}" style="margin-right: 4px;">
             <rect x="4" y="4" width="16" height="16" />
           </svg>
-          <span id="resource-count" style="color: #55cc55; font-weight: bold;">0</span>
-          <span style="color: #777; margin: 0 4px;">/</span>
-          <span id="resource-spawned" style="color: #55cc55;">0</span>
+          <span id="resource-count" style="color: ${OceanicColors.resource}; font-weight: bold;">0</span>
+          <span style="color: ${OceanicColors.textMuted}; margin: 0 4px;">/</span>
+          <span id="resource-spawned" style="color: ${OceanicColors.resource}; opacity: 0.7;">0</span>
         </div>
       </div>
       
@@ -199,13 +199,15 @@ export class UIController {
     const customButton = document.getElementById('custom-btn') as HTMLButtonElement;
     if (customButton) {
       customButton.title = 'Customize Simulation';
-      
-      // Add hover effect
+
+      // Add hover effect (oceanic theme)
       customButton.addEventListener('mouseenter', () => {
-        customButton.style.backgroundColor = 'rgba(80, 80, 80, 0.7)';
+        customButton.style.backgroundColor = 'rgba(80, 180, 220, 0.35)';
+        customButton.style.borderColor = OceanicColors.borderHighlight;
       });
       customButton.addEventListener('mouseleave', () => {
-        customButton.style.backgroundColor = 'rgba(60, 60, 60, 0.7)';
+        customButton.style.backgroundColor = 'rgba(80, 180, 220, 0.2)';
+        customButton.style.borderColor = OceanicColors.borderPrimary;
       });
     }
 
@@ -213,13 +215,15 @@ export class UIController {
     const helpButton = document.getElementById('help-btn') as HTMLButtonElement;
     if (helpButton) {
       helpButton.title = 'Help & Information';
-      
-      // Add hover effect
+
+      // Add hover effect (oceanic theme)
       helpButton.addEventListener('mouseenter', () => {
-        helpButton.style.backgroundColor = 'rgba(80, 80, 80, 0.7)';
+        helpButton.style.backgroundColor = 'rgba(80, 180, 220, 0.35)';
+        helpButton.style.borderColor = OceanicColors.borderHighlight;
       });
       helpButton.addEventListener('mouseleave', () => {
-        helpButton.style.backgroundColor = 'rgba(60, 60, 60, 0.7)';
+        helpButton.style.backgroundColor = 'rgba(80, 180, 220, 0.2)';
+        helpButton.style.borderColor = OceanicColors.borderPrimary;
       });
     }
     
@@ -243,20 +247,26 @@ export class UIController {
       this.updateStats();
     });
 
-    // Add hover effects for the widgets
+    // Add hover effects for the widgets (oceanic theme)
     const widgets = ['prey-widget', 'predator-widget', 'resource-widget'];
     widgets.forEach(id => {
       const widget = document.getElementById(id);
       if (widget) {
         widget.addEventListener('mouseenter', () => {
-          widget.style.backgroundColor = id === 'prey-widget' ? 'rgba(40, 70, 130, 0.5)' :
-                                      id === 'predator-widget' ? 'rgba(130, 40, 40, 0.5)' :
-                                      'rgba(40, 130, 40, 0.5)';
+          widget.style.backgroundColor = id === 'prey-widget' ? 'rgba(0, 200, 255, 0.25)' :
+                                      id === 'predator-widget' ? 'rgba(255, 120, 30, 0.25)' :
+                                      'rgba(68, 255, 170, 0.25)';
+          widget.style.borderColor = id === 'prey-widget' ? 'rgba(0, 200, 255, 0.5)' :
+                                      id === 'predator-widget' ? 'rgba(255, 120, 30, 0.5)' :
+                                      'rgba(68, 255, 170, 0.5)';
         });
         widget.addEventListener('mouseleave', () => {
-          widget.style.backgroundColor = id === 'prey-widget' ? 'rgba(40, 70, 130, 0.3)' :
-                                      id === 'predator-widget' ? 'rgba(130, 40, 40, 0.3)' :
-                                      'rgba(40, 130, 40, 0.3)';
+          widget.style.backgroundColor = id === 'prey-widget' ? 'rgba(0, 200, 255, 0.15)' :
+                                      id === 'predator-widget' ? 'rgba(255, 120, 30, 0.15)' :
+                                      'rgba(68, 255, 170, 0.15)';
+          widget.style.borderColor = id === 'prey-widget' ? 'rgba(0, 200, 255, 0.3)' :
+                                      id === 'predator-widget' ? 'rgba(255, 120, 30, 0.3)' :
+                                      'rgba(68, 255, 170, 0.3)';
         });
       }
     });
@@ -514,8 +524,8 @@ export class UIController {
         `;
         
         sortedEvents.forEach(event => {
-          // Choose color based on species
-          const color = event.species === 'prey' ? '#5588ff' : '#ff5555';
+          // Choose color based on species (oceanic theme)
+          const color = event.species === 'prey' ? OceanicColors.prey : OceanicColors.predator;
           
           // Create event description
           let eventText = '';
@@ -529,16 +539,16 @@ export class UIController {
             }
           }
           
-          // Create population status with icons
+          // Create population status with icons (oceanic theme)
           const populationText = `
             <span style="display: flex; align-items: center; font-size: 10px; white-space: nowrap;">
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="#5588ff" style="margin: 0 2px;">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="${OceanicColors.prey}" style="margin: 0 2px;">
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"/>
               </svg>${event.preyCount}
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="#ff5555" style="margin: 0 2px 0 4px;">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="${OceanicColors.predator}" style="margin: 0 2px 0 4px;">
                 <path d="M12 2 L22 9 L19 20 L5 20 L2 9 Z"/>
               </svg>${event.predatorCount}
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="#55cc55" style="margin: 0 2px 0 4px;">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="${OceanicColors.resource}" style="margin: 0 2px 0 4px;">
                 <rect x="4" y="4" width="16" height="16" />
               </svg>${event.resourceCount}
             </span>
@@ -853,11 +863,11 @@ export class UIController {
     const predatorWidget = document.getElementById('predator-widget');
     const resourceWidget = document.getElementById('resource-widget');
     
-    // Create custom tooltip elements if they don't exist
+    // Create custom tooltip elements with oceanic styling
     this.createOrUpdateTooltip('prey-tooltip', `
-      <div style="padding: 10px; background-color: rgba(0, 0, 0, 0.8); color: white; border-radius: 4px; font-family: Arial, sans-serif; font-size: 12px; pointer-events: none; max-width: 240px; border: 1px solid #5588ff;">
-        <div style="font-weight: bold; color: #5588ff; margin-bottom: 5px;">Prey Population Statistics</div>
-        <div style="display: grid; gap: 4px; margin-bottom: 8px;">
+      <div style="padding: 12px; background-color: ${OceanicColors.panelBg}; backdrop-filter: blur(10px); color: ${OceanicColors.textPrimary}; border-radius: 8px; font-family: Arial, sans-serif; font-size: 12px; pointer-events: none; max-width: 240px; border: 1px solid rgba(0, 200, 255, 0.4); box-shadow: 0 4px 20px rgba(0, 50, 80, 0.4);">
+        <div style="font-weight: bold; color: ${OceanicColors.prey}; margin-bottom: 5px; text-shadow: 0 0 8px rgba(0, 200, 255, 0.3);">Bioluminescent Fish Stats</div>
+        <div style="display: grid; gap: 4px; margin-bottom: 8px; color: ${OceanicColors.textSecondary};">
           <div>• <strong>Median Lifespan:</strong> ${stats.prey.medianLifespan} days</div>
           <div>• <strong>Death by Hunting:</strong> ${stats.prey.deathByHunting}</div>
           <div>• <strong>Death by Starvation:</strong> ${stats.prey.deathByStarvation}</div>
@@ -865,38 +875,38 @@ export class UIController {
           <div>• <strong>Birth by Conversion:</strong> ${stats.prey.birthByConversion}</div>
           <div>• <strong>Birth by Spawning:</strong> ${stats.prey.birthBySpawning}</div>
         </div>
-        <div style="font-style: italic; font-size: 11px; color: #aaa; text-align: center; border-top: 1px solid rgba(85, 136, 255, 0.3); padding-top: 5px;">
-          Tap to spawn a Prey
+        <div style="font-style: italic; font-size: 11px; color: ${OceanicColors.textMuted}; text-align: center; border-top: 1px solid rgba(0, 200, 255, 0.2); padding-top: 5px;">
+          Tap to spawn a Fish
         </div>
       </div>
     `);
-    
+
     this.createOrUpdateTooltip('predator-tooltip', `
-      <div style="padding: 10px; background-color: rgba(0, 0, 0, 0.8); color: white; border-radius: 4px; font-family: Arial, sans-serif; font-size: 12px; pointer-events: none; max-width: 240px; border: 1px solid #ff5555;">
-        <div style="font-weight: bold; color: #ff5555; margin-bottom: 5px;">Predator Population Statistics</div>
-        <div style="display: grid; gap: 4px; margin-bottom: 8px;">
+      <div style="padding: 12px; background-color: ${OceanicColors.panelBg}; backdrop-filter: blur(10px); color: ${OceanicColors.textPrimary}; border-radius: 8px; font-family: Arial, sans-serif; font-size: 12px; pointer-events: none; max-width: 240px; border: 1px solid rgba(255, 120, 30, 0.4); box-shadow: 0 4px 20px rgba(0, 50, 80, 0.4);">
+        <div style="font-weight: bold; color: ${OceanicColors.predator}; margin-bottom: 5px; text-shadow: 0 0 8px rgba(255, 120, 30, 0.3);">Deep Sea Hunter Stats</div>
+        <div style="display: grid; gap: 4px; margin-bottom: 8px; color: ${OceanicColors.textSecondary};">
           <div>• <strong>Median Lifespan:</strong> ${stats.predators.medianLifespan} days</div>
           <div>• <strong>Birth by Reproduction:</strong> ${stats.predators.birthByReproduction}</div>
           <div>• <strong>Birth by Conversion:</strong> ${stats.predators.birthByConversion}</div>
           <div>• <strong>Birth by Spawning:</strong> ${stats.predators.birthBySpawning}</div>
-          <div>• <strong>Median Prey Consumed:</strong> ${stats.predators.medianPreyConsumed} per predator</div>
+          <div>• <strong>Median Prey Consumed:</strong> ${stats.predators.medianPreyConsumed} per hunter</div>
         </div>
-        <div style="font-style: italic; font-size: 11px; color: #aaa; text-align: center; border-top: 1px solid rgba(255, 85, 85, 0.3); padding-top: 5px;">
-          Tap to spawn a Predator
+        <div style="font-style: italic; font-size: 11px; color: ${OceanicColors.textMuted}; text-align: center; border-top: 1px solid rgba(255, 120, 30, 0.2); padding-top: 5px;">
+          Tap to spawn a Hunter
         </div>
       </div>
     `);
-    
+
     this.createOrUpdateTooltip('resource-tooltip', `
-      <div style="padding: 10px; background-color: rgba(0, 0, 0, 0.8); color: white; border-radius: 4px; font-family: Arial, sans-serif; font-size: 12px; pointer-events: none; max-width: 240px; border: 1px solid #55cc55;">
-        <div style="font-weight: bold; color: #55cc55; margin-bottom: 5px;">Resource Statistics</div>
-        <div style="display: grid; gap: 4px; margin-bottom: 8px;">
+      <div style="padding: 12px; background-color: ${OceanicColors.panelBg}; backdrop-filter: blur(10px); color: ${OceanicColors.textPrimary}; border-radius: 8px; font-family: Arial, sans-serif; font-size: 12px; pointer-events: none; max-width: 240px; border: 1px solid rgba(68, 255, 170, 0.4); box-shadow: 0 4px 20px rgba(0, 50, 80, 0.4);">
+        <div style="font-weight: bold; color: ${OceanicColors.resource}; margin-bottom: 5px; text-shadow: 0 0 8px rgba(68, 255, 170, 0.3);">Plankton Statistics</div>
+        <div style="display: grid; gap: 4px; margin-bottom: 8px; color: ${OceanicColors.textSecondary};">
           <div>• <strong>Natural Generation:</strong> ${stats.resources.natural} (${stats.resources.naturalPercentage})</div>
           <div>• <strong>From Creature Death:</strong> ${stats.resources.fromCreatureDeath} (${stats.resources.fromCreatureDeathPercentage})</div>
           <div>• <strong>From Spawning:</strong> ${stats.resources.spawned} (${stats.resources.spawnedPercentage})</div>
         </div>
-        <div style="font-style: italic; font-size: 11px; color: #aaa; text-align: center; border-top: 1px solid rgba(85, 204, 85, 0.3); padding-top: 5px;">
-          Tap to spawn 10 Resources
+        <div style="font-style: italic; font-size: 11px; color: ${OceanicColors.textMuted}; text-align: center; border-top: 1px solid rgba(68, 255, 170, 0.2); padding-top: 5px;">
+          Tap to spawn 10 Plankton
         </div>
       </div>
     `);

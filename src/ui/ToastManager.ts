@@ -1,5 +1,6 @@
 import { formatNumber } from '../utils/formatters';
 import { EventBus } from '../events/EventBus';
+import { OceanicColors } from './DashboardPanel';
 
 export enum ToastType {
   EPHEMERAL = 'ephemeral',
@@ -66,190 +67,190 @@ export class ToastManager {
   private readonly MAX_INFO_TOASTS = 3;
   private readonly INFO_TOAST_DELAY = 6000; // 6 seconds between showing info toasts
   
-  // Toast configurations
+  // Toast configurations with oceanic theme colors
   private toastConfigs: Record<ToastEvent, ToastConfig> = {
-    // Ephemeral events
+    // Ephemeral events (using oceanic creature colors)
     [ToastEvent.PREY_BORN]: {
-      message: "+{count} prey",
-      icon: "🔵",
-      color: "#5588ff",
+      message: "+{count} fish",
+      icon: "🐟",
+      color: OceanicColors.prey,
       duration: 6000,
     },
     [ToastEvent.PREDATOR_BORN]: {
-      message: "+{count} predator",
-      icon: "🔺",
-      color: "#ff5555",
+      message: "+{count} hunter",
+      icon: "🦈",
+      color: OceanicColors.predator,
       duration: 6000,
     },
     [ToastEvent.PREY_DIED]: {
-      message: "-{count} prey",
-      icon: "🔵",
-      color: "#4477dd",
+      message: "-{count} fish",
+      icon: "🐟",
+      color: "#0099cc",
       duration: 6000,
     },
     [ToastEvent.PREDATOR_DIED]: {
-      message: "-{count} predator",
-      icon: "🔺",
-      color: "#dd4444",
+      message: "-{count} hunter",
+      icon: "🦈",
+      color: "#cc5500",
       duration: 6000,
     },
     [ToastEvent.RESOURCE_SPAWNED]: {
-      message: "+{count} resources",
-      icon: "🟩",
-      color: "#55cc55",
+      message: "+{count} plankton",
+      icon: "🌿",
+      color: OceanicColors.resource,
       duration: 6000,
     },
     [ToastEvent.RESOURCE_CONSUMED]: {
-      message: "{count} resource consumed",
+      message: "{count} plankton consumed",
       icon: "🍽️",
-      color: "#55cc55",
+      color: OceanicColors.resource,
       duration: 6000,
     },
     [ToastEvent.PREY_CONSUMED]: {
-      message: "{count} prey consumed",
+      message: "{count} fish consumed",
       icon: "🎯",
-      color: "#ff5555",
+      color: OceanicColors.predator,
       duration: 6000,
     },
     [ToastEvent.PREY_ESCAPED]: {
-      message: "{count} prey escaped",
+      message: "{count} fish escaped",
       icon: "💨",
-      color: "#5588ff",
+      color: OceanicColors.prey,
       duration: 6000,
     },
     [ToastEvent.PREY_LEARNED]: {
-      message: "{count} prey learned",
+      message: "{count} fish learned",
       icon: "💡",
-      color: "#5588ff",
+      color: OceanicColors.prey,
       duration: 6000,
     },
     [ToastEvent.PREDATOR_LEARNED]: {
-      message: "{count} predator learned",
+      message: "{count} hunter learned",
       icon: "💡",
-      color: "#ff5555",
+      color: OceanicColors.predator,
       duration: 6000,
     },
-    
-    // Info events
+
+    // Info events (oceanic accent colors)
     [ToastEvent.FIRST_EXTINCTION]: {
       title: "Extinction Event",
-      message: "A species has gone extinct. This affects the entire ecosystem balance.",
+      message: "A species has gone extinct. This affects the entire deep sea ecosystem balance.",
       icon: "⚠️",
-      color: "#ffaa44", 
+      color: OceanicColors.accentWarm,
       duration: 20000,
     },
     [ToastEvent.FIRST_EVOLUTION]: {
       title: "Evolution Detected",
-      message: "Species have evolved! Creatures can change type based on traits and environment.",
+      message: "Species have evolved! Deep sea creatures can transform based on traits and environment.",
       icon: "🧬",
-      color: "#aa44ff",
+      color: "#aa66ff",
       duration: 20000,
     },
     [ToastEvent.RESOURCE_BLOOM]: {
-      title: "Resource Bloom",
-      message: "Environmental conditions have triggered a resource bloom - food is abundant!",
-      icon: "🌱",
-      color: "#44dd44",
+      title: "Plankton Bloom",
+      message: "Ocean currents have triggered a plankton bloom - food is abundant in the depths!",
+      icon: "🌊",
+      color: OceanicColors.resource,
       duration: 20000,
     },
     [ToastEvent.HIGH_PREY_DENSITY]: {
-      title: "High Prey Density",
-      message: "Prey population is very high. This may lead to resource depletion.",
+      title: "High Fish Density",
+      message: "Bioluminescent fish population is very high. Plankton may become scarce.",
       icon: "📈",
-      color: "#5588ff",
+      color: OceanicColors.prey,
       duration: 20000,
     },
     [ToastEvent.HIGH_PREDATOR_DENSITY]: {
-      title: "High Predator Density",
-      message: "Predator population surge detected. Prey may face extinction risk.",
+      title: "High Hunter Density",
+      message: "Deep sea hunter surge detected. Fish may face extinction risk.",
       icon: "📈",
-      color: "#ff5555",
+      color: OceanicColors.predator,
       duration: 20000,
     },
     [ToastEvent.LOW_RESOURCE_WARNING]: {
-      title: "Resource Depletion",
-      message: "Resources are running low. Prey population may crash soon.",
+      title: "Plankton Depletion",
+      message: "Plankton levels are critically low. Fish population may crash soon.",
       icon: "⚠️",
       color: "#dddd44",
       duration: 20000,
     },
     [ToastEvent.PREY_ATTRIBUTES_SPECIALIZED]: {
-      title: "Prey Specialization",
-      message: "Prey have developed specialized traits to survive in this environment.",
+      title: "Fish Specialization",
+      message: "Bioluminescent fish have developed specialized traits for deep sea survival.",
       icon: "🔬",
-      color: "#5588ff",
+      color: OceanicColors.prey,
       duration: 20000,
     },
     [ToastEvent.PREDATOR_ATTRIBUTES_SPECIALIZED]: {
-      title: "Predator Specialization", 
-      message: "Predators have evolved specialized hunting strategies.",
+      title: "Hunter Specialization",
+      message: "Deep sea hunters have evolved specialized hunting strategies.",
       icon: "🔬",
-      color: "#ff5555",
+      color: OceanicColors.predator,
       duration: 20000,
     },
     [ToastEvent.ECOSYSTEM_BALANCED]: {
       title: "Balanced Ecosystem",
-      message: "The ecosystem has reached a sustainable balance between all species.",
+      message: "The deep sea ecosystem has reached a sustainable balance between all species.",
       icon: "⚖️",
-      color: "#44aaff",
+      color: OceanicColors.accentCyan,
       duration: 20000,
     },
     [ToastEvent.ECOSYSTEM_COLLAPSE_WARNING]: {
       title: "Ecosystem Stress",
-      message: "Multiple indicators suggest the ecosystem is under severe stress.",
+      message: "Multiple indicators suggest the ocean ecosystem is under severe stress.",
       icon: "🔥",
       color: "#ff4444",
       duration: 20000,
     },
 
-    // Evergreen info events
+    // Evergreen info events (oceanic educational content)
     [ToastEvent.EVERGREEN_CREATURES]: {
       title: "Circle of Life",
-      message: "Welcome to the food chain! Prey feed on resources (green squares), while predators hunt prey to survive. Each species must find its balance.",
+      message: "Welcome to the deep sea food chain! Fish feed on plankton, while hunters prey on fish. Each species must find its balance in the abyss.",
       icon: "🔄",
-      color: "#44aaff",
+      color: OceanicColors.accentCyan,
       duration: 20000,
     },
     [ToastEvent.EVERGREEN_CREATURE_PANEL]: {
       title: "Creature Details",
-      message: "Click on any creature to inspect their traits! Each one has unique attributes that determine their survival strategy.",
+      message: "Click on any creature to inspect their traits! Each one has unique bioluminescent patterns that reveal their survival strategy.",
       icon: "👆",
-      color: "#aa44ff",
+      color: "#aa66ff",
       duration: 20000,
     },
     [ToastEvent.EVERGREEN_TRAITS]: {
       title: "Survival Traits",
-      message: "Strength and stealth are key survival traits. Strong creatures move faster but use more energy, while stealthy ones are better at detecting threats.",
+      message: "Strength and stealth are key survival traits. Strong creatures swim faster but use more energy, while stealthy ones can hide in the darkness.",
       icon: "💪",
-      color: "#ff44aa",
+      color: "#ff66aa",
       duration: 20000,
     },
     [ToastEvent.EVERGREEN_EVOLUTION]: {
       title: "Natural Selection",
-      message: "Watch evolution in action! Creatures inherit traits from parents with slight mutations, and can learn from their peers. The fittest survive to pass on their genes.",
+      message: "Watch evolution in action! Deep sea creatures inherit traits from parents with slight mutations. The fittest survive the abyss.",
       icon: "🧬",
-      color: "#44ffaa",
+      color: OceanicColors.resource,
       duration: 20000,
     },
     [ToastEvent.EVERGREEN_ENERGY]: {
       title: "Energy Management",
-      message: "Energy is life! Every action costs energy - moving, hunting, escaping, and reproducing. Creatures must balance activity with food intake.",
+      message: "Energy is life in the depths! Every action costs energy - swimming, hunting, escaping. Creatures must balance activity with feeding.",
       icon: "⚡",
-      color: "#ffaa44",
+      color: OceanicColors.accentWarm,
       duration: 20000,
     },
     [ToastEvent.EVERGREEN_REPRODUCTION]: {
       title: "Reproduction Strategies",
-      message: "Creatures typically reproduce when energy is high, but desperate times call for desperate measures - some may risk reproduction even when resources are scarce.",
+      message: "Deep sea creatures reproduce when energy is high. Some may risk reproduction even when food is scarce - a desperate survival strategy.",
       icon: "🐣",
-      color: "#ff44ff",
+      color: "#ff66ff",
       duration: 20000,
     },
     [ToastEvent.EVERGREEN_LEARNABILITY]: {
       title: "Social Learning",
-      message: "Learnability is a double-edged sword. Quick learners can rapidly adopt successful traits from the group, but they're also more susceptible to negative influences.",
+      message: "Learnability is a double-edged sword. Quick learners can rapidly adopt successful traits from nearby creatures in the darkness.",
       icon: "🧠",
-      color: "#44ffff",
+      color: OceanicColors.accentCyan,
       duration: 20000,
     }
   };
@@ -378,7 +379,7 @@ export class ToastManager {
         font-display: swap;
         src: url(https://fonts.gstatic.com/s/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1ZL7.woff2) format('woff2');
       }
-      
+
       .toast-container {
         position: fixed;
         bottom: 20px;
@@ -390,66 +391,77 @@ export class ToastManager {
         pointer-events: none;
         font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
       }
-      
+
       #ephemeral-toast-container {
         right: 20px;
       }
-      
+
       #info-toast-container {
         left: 20px;
       }
-      
+
       .toast {
         opacity: 0;
         transform: translateY(20px);
         transition: opacity 0.5s ease, transform 0.5s ease;
         margin-top: 0px;
-        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 4px 20px rgba(0, 50, 80, 0.4);
       }
-      
+
       .toast.visible {
         opacity: 1;
         transform: translateY(0);
       }
-      
+
       .toast.removing {
         opacity: 0;
         transform: translateY(20px);
         pointer-events: none;
       }
-      
+
       .ephemeral-toast {
         display: flex;
         align-items: center;
         gap: 10px;
-        background-color: rgba(20, 20, 20, 0.85);
-        color: white;
+        background-color: ${OceanicColors.panelBg};
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        color: ${OceanicColors.textPrimary};
         border-radius: 30px;
         padding: 8px 16px;
         margin-bottom: 0px;
         max-width: 300px;
+        border: 1px solid ${OceanicColors.borderPrimary};
       }
-      
+
       .info-toast {
-        background-color: rgba(20, 20, 20, 0.95);
-        color: white;
-        border-radius: 8px;
+        background-color: ${OceanicColors.panelBg};
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        color: ${OceanicColors.textPrimary};
+        border-radius: 10px;
         padding: 14px 18px;
         margin-bottom: 0px;
         width: 100%;
         max-width: 350px;
         pointer-events: auto;
+        border: 1px solid ${OceanicColors.borderPrimary};
       }
-      
+
       .close-btn {
         background: none;
         border: none;
-        color: #999;
+        color: ${OceanicColors.textMuted};
         cursor: pointer;
         font-size: 18px;
         padding: 0;
         line-height: 1;
         margin-left: 6px;
+        transition: color 0.2s;
+      }
+
+      .close-btn:hover {
+        color: ${OceanicColors.textPrimary};
       }
     `;
     document.head.appendChild(style);

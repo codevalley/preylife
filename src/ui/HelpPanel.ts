@@ -1,8 +1,10 @@
+import { OceanicColors } from './DashboardPanel';
+
 export class HelpPanel {
   private panel: HTMLElement;
 
   constructor(container: HTMLElement) {
-    // Create the panel container
+    // Create the panel container with oceanic glass-morphism
     this.panel = document.createElement('div');
     this.panel.className = 'help-panel';
     this.panel.style.cssText = `
@@ -13,14 +15,17 @@ export class HelpPanel {
       width: 90%;
       max-width: 1200px;
       height: 85vh;
-      background: rgba(30, 30, 30, 0.97);
+      background: ${OceanicColors.panelBg};
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
       border-radius: 12px;
       padding: 20px;
       display: none;
       z-index: 1000;
       overflow-y: auto;
-      color: #fff;
-      box-shadow: 0 0 30px rgba(0, 0, 0, 0.7);
+      color: ${OceanicColors.textPrimary};
+      box-shadow: 0 8px 32px rgba(0, 50, 80, 0.5);
+      border: 1px solid ${OceanicColors.borderPrimary};
     `;
 
     // Add keyboard event listener
@@ -136,13 +141,20 @@ export class HelpPanel {
     this.panel.appendChild(content);
   }
 
+  /**
+   * Create a styled section for the help panel.
+   * Note: icon and content use innerHTML but are ONLY called with hardcoded
+   * string literals from createIntroSection, createHowToPlaySection, etc.
+   * These are NOT user inputs - they are internal static content.
+   */
   private createSection(title: string, icon: string, content: string): HTMLElement {
     const section = document.createElement('div');
     section.style.cssText = `
-      background: rgba(40, 40, 40, 0.5);
-      border-radius: 8px;
+      background: ${OceanicColors.headerBg};
+      border-radius: 10px;
       padding: 20px;
       height: fit-content;
+      border: 1px solid ${OceanicColors.borderPrimary};
     `;
 
     const header = document.createElement('div');
@@ -151,10 +163,11 @@ export class HelpPanel {
       align-items: center;
       margin-bottom: 15px;
       padding-bottom: 10px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      border-bottom: 1px solid ${OceanicColors.borderPrimary};
     `;
 
     const iconElement = document.createElement('span');
+    // SECURITY: icon is hardcoded SVG/emoji from internal methods, not user input
     iconElement.innerHTML = icon;
     iconElement.style.cssText = `
       margin-right: 10px;
@@ -169,9 +182,10 @@ export class HelpPanel {
     titleElement.textContent = title;
     titleElement.style.cssText = `
       margin: 0;
-      font-size: 20px;
+      font-size: 18px;
       font-weight: bold;
-      color: #fff;
+      color: ${OceanicColors.textPrimary};
+      text-shadow: 0 0 10px rgba(100, 200, 255, 0.2);
     `;
 
     header.appendChild(iconElement);
@@ -179,11 +193,12 @@ export class HelpPanel {
     section.appendChild(header);
 
     const contentElement = document.createElement('div');
+    // SECURITY: content is hardcoded HTML from internal methods, not user input
     contentElement.innerHTML = content;
     contentElement.style.cssText = `
-      font-size: 14px;
+      font-size: 13px;
       line-height: 1.6;
-      color: #ddd;
+      color: ${OceanicColors.textSecondary};
     `;
 
     section.appendChild(contentElement);

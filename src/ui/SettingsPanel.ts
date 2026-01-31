@@ -1,5 +1,6 @@
 import { SimulationConfig } from '../config';
 import { applyStyles } from '../utils/dom';
+import { OceanicColors } from './DashboardPanel';
 
 export class SettingsPanel {
   private panel: HTMLElement;
@@ -17,7 +18,7 @@ export class SettingsPanel {
     // Store a deep copy of the default config for resetting
     this.defaultConfig = JSON.parse(JSON.stringify(SimulationConfig));
     
-    // Create the panel container
+    // Create the panel container with oceanic glass-morphism
     this.panel = document.createElement('div');
     this.panel.className = 'settings-panel';
     applyStyles(this.panel, {
@@ -28,15 +29,19 @@ export class SettingsPanel {
       width: '80%',
       maxWidth: '1000px',
       height: '80vh',
-      background: 'rgba(30, 30, 30, 0.95)',
-      borderRadius: '8px',
+      background: OceanicColors.panelBg,
+      backdropFilter: 'blur(15px)',
+      borderRadius: '12px',
       padding: '20px',
       display: 'none',
       zIndex: '1000',
       overflowY: 'auto',
-      color: '#fff',
-      boxShadow: '0 0 20px rgba(0, 0, 0, 0.5)'
+      color: OceanicColors.textPrimary,
+      boxShadow: '0 8px 32px rgba(0, 50, 80, 0.5)',
+      border: `1px solid ${OceanicColors.borderPrimary}`
     });
+    // Safari support for backdrop-filter
+    (this.panel.style as any).webkitBackdropFilter = 'blur(15px)';
     
     // Add keyboard event listener
     this.panel.tabIndex = 0; // Make the panel focusable
@@ -84,21 +89,23 @@ export class SettingsPanel {
     closeButton.addEventListener('click', () => this.hide());
     this.panel.appendChild(closeButton);
 
-    // Add title
+    // Add title with oceanic styling
     const title = document.createElement('h2');
     title.textContent = 'Simulation Settings';
     title.style.cssText = `
       margin: 0 0 20px 0;
       font-size: 24px;
       font-weight: bold;
-      color: #fff;
+      color: ${OceanicColors.textPrimary};
+      text-shadow: 0 0 15px rgba(100, 200, 255, 0.3);
+      letter-spacing: 1px;
     `;
     this.panel.appendChild(title);
 
     // Create settings content
     this.createSettingsContent();
 
-    // Add buttons row
+    // Add buttons row with oceanic styling
     const buttonsRow = document.createElement('div');
     buttonsRow.style.cssText = `
       display: flex;
@@ -106,54 +113,62 @@ export class SettingsPanel {
       margin-top: 20px;
       position: sticky;
       bottom: 0;
-      background: rgba(30, 30, 30, 0.95);
-      padding: 10px 0;
+      background: ${OceanicColors.headerBg};
+      padding: 15px 10px;
+      border-top: 1px solid ${OceanicColors.borderPrimary};
+      border-radius: 0 0 12px 12px;
     `;
 
-    // Add restore defaults button
+    // Add restore defaults button with oceanic styling
     const restoreButton = document.createElement('button');
     restoreButton.textContent = 'Restore Defaults';
     restoreButton.style.cssText = `
-      background: #777;
-      color: white;
+      background: rgba(80, 180, 220, 0.2);
+      color: ${OceanicColors.textSecondary};
       padding: 10px 20px;
-      border: none;
-      border-radius: 4px;
+      border: 1px solid ${OceanicColors.borderPrimary};
+      border-radius: 6px;
       cursor: pointer;
-      font-size: 16px;
+      font-size: 14px;
       display: flex;
       align-items: center;
+      transition: all 0.2s;
     `;
     restoreButton.title = 'Reset all settings to their default values';
     restoreButton.addEventListener('mouseenter', () => {
-      restoreButton.style.backgroundColor = '#888';
+      restoreButton.style.backgroundColor = 'rgba(80, 180, 220, 0.35)';
+      restoreButton.style.borderColor = OceanicColors.borderHighlight;
     });
     restoreButton.addEventListener('mouseleave', () => {
-      restoreButton.style.backgroundColor = '#777';
+      restoreButton.style.backgroundColor = 'rgba(80, 180, 220, 0.2)';
+      restoreButton.style.borderColor = OceanicColors.borderPrimary;
     });
     restoreButton.addEventListener('click', () => this.restoreDefaults());
     buttonsRow.appendChild(restoreButton);
 
-    // Add toggle advanced button
+    // Add toggle advanced button with oceanic styling
     const toggleAdvancedButton = document.createElement('button');
     toggleAdvancedButton.textContent = 'Show Advanced Settings';
     toggleAdvancedButton.style.cssText = `
-      background: #555;
-      color: white;
+      background: rgba(80, 180, 220, 0.2);
+      color: ${OceanicColors.textSecondary};
       padding: 10px 20px;
-      border: none;
-      border-radius: 4px;
+      border: 1px solid ${OceanicColors.borderPrimary};
+      border-radius: 6px;
       cursor: pointer;
-      font-size: 16px;
+      font-size: 14px;
       display: flex;
       align-items: center;
+      transition: all 0.2s;
     `;
     toggleAdvancedButton.title = 'Toggle visibility of advanced settings';
     toggleAdvancedButton.addEventListener('mouseenter', () => {
-      toggleAdvancedButton.style.backgroundColor = '#666';
+      toggleAdvancedButton.style.backgroundColor = 'rgba(80, 180, 220, 0.35)';
+      toggleAdvancedButton.style.borderColor = OceanicColors.borderHighlight;
     });
     toggleAdvancedButton.addEventListener('mouseleave', () => {
-      toggleAdvancedButton.style.backgroundColor = '#555';
+      toggleAdvancedButton.style.backgroundColor = 'rgba(80, 180, 220, 0.2)';
+      toggleAdvancedButton.style.borderColor = OceanicColors.borderPrimary;
     });
     toggleAdvancedButton.addEventListener('click', () => {
       this.showAdvanced = !this.showAdvanced;
@@ -162,7 +177,7 @@ export class SettingsPanel {
     });
     buttonsRow.appendChild(toggleAdvancedButton);
 
-    // Add save button
+    // Add save button with oceanic accent
     const saveButton = document.createElement('button');
     
     // Create content with keyboard shortcut indicator
@@ -181,20 +196,23 @@ export class SettingsPanel {
     
     saveButton.appendChild(saveButtonContent);
     saveButton.style.cssText = `
-      background: #4CAF50;
-      color: white;
+      background: rgba(0, 200, 170, 0.4);
+      color: ${OceanicColors.textPrimary};
       padding: 10px 20px;
-      border: none;
-      border-radius: 4px;
+      border: 1px solid rgba(0, 220, 180, 0.5);
+      border-radius: 6px;
       cursor: pointer;
-      font-size: 16px;
+      font-size: 14px;
+      transition: all 0.2s;
     `;
     saveButton.title = 'Save Changes (Ctrl+Enter or Cmd+Enter)';
     saveButton.addEventListener('mouseenter', () => {
-      saveButton.style.backgroundColor = '#45a049';
+      saveButton.style.backgroundColor = 'rgba(0, 200, 170, 0.6)';
+      saveButton.style.borderColor = 'rgba(0, 220, 180, 0.8)';
     });
     saveButton.addEventListener('mouseleave', () => {
-      saveButton.style.backgroundColor = '#4CAF50';
+      saveButton.style.backgroundColor = 'rgba(0, 200, 170, 0.4)';
+      saveButton.style.borderColor = 'rgba(0, 220, 180, 0.5)';
     });
     saveButton.addEventListener('click', () => this.saveSettings());
     buttonsRow.appendChild(saveButton);
@@ -251,9 +269,10 @@ export class SettingsPanel {
     const section = document.createElement('div');
     section.className = 'settings-section';
     section.style.cssText = `
-      background: rgba(40, 40, 40, 0.5);
-      border-radius: 8px;
+      background: ${OceanicColors.headerBg};
+      border-radius: 10px;
       padding: 15px;
+      border: 1px solid ${OceanicColors.borderPrimary};
     `;
 
     const header = document.createElement('div');
@@ -262,10 +281,11 @@ export class SettingsPanel {
       align-items: center;
       margin-bottom: 15px;
       padding-bottom: 10px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      border-bottom: 1px solid ${OceanicColors.borderPrimary};
     `;
 
     const iconElement = document.createElement('span');
+    // Note: icon is generated internally as SVG markup, not user input
     iconElement.innerHTML = icon;
     iconElement.style.cssText = `
       margin-right: 10px;
@@ -280,9 +300,10 @@ export class SettingsPanel {
     titleElement.textContent = title;
     titleElement.style.cssText = `
       margin: 0;
-      font-size: 18px;
+      font-size: 16px;
       font-weight: bold;
-      color: #fff;
+      color: ${OceanicColors.textPrimary};
+      text-shadow: 0 0 10px rgba(100, 200, 255, 0.2);
     `;
 
     header.appendChild(iconElement);
@@ -318,8 +339,8 @@ export class SettingsPanel {
     labelElement.style.cssText = `
       display: block;
       margin-bottom: 5px;
-      font-size: 14px;
-      color: #aaa;
+      font-size: 13px;
+      color: ${OceanicColors.textSecondary};
     `;
     labelElement.textContent = label;
 
@@ -400,18 +421,19 @@ export class SettingsPanel {
     input.type = 'number';
     input.value = value.toString();
     input.dataset.configPath = configPath;
-    
+
     if (min !== undefined) input.min = min.toString();
     if (max !== undefined) input.max = max.toString();
     if (step !== undefined) input.step = step.toString();
     input.style.cssText = `
       width: 100%;
       padding: 8px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 4px;
-      background: rgba(30, 30, 30, 0.5);
-      color: #fff;
-      font-size: 14px;
+      border: 1px solid ${OceanicColors.borderPrimary};
+      border-radius: 6px;
+      background: rgba(5, 15, 30, 0.6);
+      color: ${OceanicColors.textPrimary};
+      font-size: 13px;
+      transition: border-color 0.2s;
     `;
 
     // Add change event to store value
