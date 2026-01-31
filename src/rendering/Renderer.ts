@@ -5,6 +5,7 @@ import { EntityTooltip } from '../ui/EntityTooltip';
 import { OceanBackground } from './OceanBackground';
 import { MarineSnow } from './MarineSnow';
 import { PostProcessing } from './PostProcessing';
+import { InteractionEffects } from './InteractionEffects';
 
 export class Renderer {
   private scene: THREE.Scene;
@@ -18,7 +19,11 @@ export class Renderer {
   private oceanBackground: OceanBackground;
   private marineSnow: MarineSnow;
   private postProcessing: PostProcessing;
-  private usePostProcessing: boolean = true;
+  private usePostProcessing: boolean;
+  private isMobile: boolean;
+
+  // Interaction visual effects
+  private interactionEffects: InteractionEffects;
 
   // For raycasting and interaction
   private raycaster: THREE.Raycaster;
@@ -84,11 +89,19 @@ export class Renderer {
     );
     this.scene.add(this.oceanBackground.getMesh());
 
+    // Detect mobile for performance scaling
+    this.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+      || window.innerWidth < 768;
+    const particleCount = this.isMobile ? 75 : 150; // Reduce particles on mobile
+
+    // Disable post-processing on mobile by default (can be enabled via setPostProcessingEnabled)
+    this.usePostProcessing = !this.isMobile;
+
     // Initialize marine snow particles
     this.marineSnow = new MarineSnow(
       frustumSize * aspectRatio,
       frustumSize,
-      150 // Particle count - balanced for atmosphere vs performance
+      particleCount
     );
     this.scene.add(this.marineSnow.getPoints());
 
@@ -101,6 +114,9 @@ export class Renderer {
       this.height
     );
 
+    // Initialize interaction effects (subscribes to EventBus for visual feedback)
+    this.interactionEffects = new InteractionEffects(this.scene);
+
     // Initialize tooltip
     this.entityTooltip = new EntityTooltip();
 
@@ -108,10 +124,15 @@ export class Renderer {
     this.raycaster = new THREE.Raycaster();
     this.mouse = new THREE.Vector2();
 
-    // Set up event listeners
+    // Set up event listeners (mouse)
     this.renderer.domElement.addEventListener('mousemove', this.onMouseMove.bind(this));
     this.renderer.domElement.addEventListener('click', this.onClick.bind(this));
     document.addEventListener('click', this.onDocumentClick.bind(this));
+
+    // Set up event listeners (touch for mobile)
+    this.renderer.domElement.addEventListener('touchstart', this.onTouchStart.bind(this), { passive: false });
+    this.renderer.domElement.addEventListener('touchmove', this.onTouchMove.bind(this), { passive: false });
+    this.renderer.domElement.addEventListener('touchend', this.onTouchEnd.bind(this));
 
     // Handle window resize
     window.addEventListener('resize', this.onWindowResize.bind(this));
@@ -178,6 +199,66 @@ export class Renderer {
     if (event.target !== this.renderer.domElement || !this.hoveredEntity) {
       this.entityTooltip.clearSelection();
     }
+  }
+
+  private onTouchStart(event: TouchEvent): void {
+    if (event.touches.length === 1) {
+      const touch = event.touches[0];
+      this.handleTouchInteraction(touch.clientX, touch.clientY);
+
+      // If we found an entity, select it and prevent default to avoid scroll
+      if (this.hoveredEntity) {
+        this.entityTooltip.selectEntity(this.hoveredEntity);
+        event.preventDefault();
+      }
+    }
+  }
+
+  private onTouchMove(event: TouchEvent): void {
+    if (event.touches.length === 1) {
+      const touch = event.touches[0];
+      this.handleTouchInteraction(touch.clientX, touch.clientY);
+
+      // Update tooltip position if entity is selected
+      if (this.hoveredEntity) {
+        this.entityTooltip.showTooltip(this.hoveredEntity, touch.clientX, touch.clientY);
+        event.preventDefault();
+      }
+    }
+  }
+
+  private onTouchEnd(): void {
+    // Keep selection active on touch end (user can tap elsewhere to deselect)
+    // Just hide the hover state
+    this.hoveredEntity = null;
+    this.entityTooltip.hideTooltip();
+  }
+
+  private handleTouchInteraction(clientX: number, clientY: number): void {
+    // Calculate touch position in normalized device coordinates (-1 to +1)
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    this.mouse.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+    this.mouse.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+
+    // Update raycaster
+    this.raycaster.setFromCamera(this.mouse, this.camera);
+
+    // Find intersections with meshes
+    const intersects = this.raycaster.intersectObjects(Array.from(this.entityMeshes.values()), false);
+
+    if (intersects.length > 0) {
+      const mesh = intersects[0].object as THREE.Mesh;
+      const entity = this.findEntityByMesh(mesh);
+
+      if (entity) {
+        this.hoveredEntity = entity;
+        this.entityTooltip.showTooltip(entity, clientX, clientY);
+        return;
+      }
+    }
+
+    // No entity touched
+    this.hoveredEntity = null;
   }
 
   private findEntityByMesh(mesh: THREE.Mesh): Entity | null {
@@ -257,6 +338,9 @@ export class Renderer {
     this.oceanBackground.update(deltaTime);
     this.marineSnow.update(deltaTime);
 
+    // Update interaction effects (predation, death, reproduction visuals)
+    this.interactionEffects.update();
+
     // Render with or without post-processing
     if (this.usePostProcessing) {
       this.postProcessing.render();
@@ -308,11 +392,18 @@ export class Renderer {
     this.oceanBackground.dispose();
     this.marineSnow.dispose();
     this.postProcessing.dispose();
+    this.interactionEffects.dispose();
 
-    // Remove event listeners
+    // Remove event listeners (mouse)
     this.renderer.domElement.removeEventListener('mousemove', this.onMouseMove.bind(this));
     this.renderer.domElement.removeEventListener('click', this.onClick.bind(this));
     document.removeEventListener('click', this.onDocumentClick.bind(this));
+
+    // Remove event listeners (touch)
+    this.renderer.domElement.removeEventListener('touchstart', this.onTouchStart.bind(this));
+    this.renderer.domElement.removeEventListener('touchmove', this.onTouchMove.bind(this));
+    this.renderer.domElement.removeEventListener('touchend', this.onTouchEnd.bind(this));
+
     window.removeEventListener('resize', this.onWindowResize.bind(this));
 
     // Remove renderer from DOM
