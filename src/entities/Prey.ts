@@ -23,6 +23,9 @@ export class Prey extends Creature {
   // Shader time for animation
   private static globalTime: number = 0;
 
+  // Flee exhaustion: continuous fleeing accumulates fatigue
+  private consecutiveFleeFrames: number = 0;
+
   constructor(
     x: number,
     y: number,
@@ -257,6 +260,9 @@ export class Prey extends Creature {
 
     // If a predator is nearby, flee from it
     if (nearbyPredator) {
+      // Accumulate flee exhaustion
+      this.consecutiveFleeFrames++;
+
       // Direction away from predator
       const fleeDirection = this.position.clone().sub(nearbyPredator.position).normalize();
 
@@ -305,7 +311,17 @@ export class Prey extends Creature {
       const fleeBonus = Math.max(this.attributes.stealth * 0.5, strengthFleeBonus);
 
       // Boost speed based on best attribute and avoidance multiplier
-      const fleeSpeed = this.speed * (1 + fleeBonus + specializedFleeBonus) * avoidanceMultiplier;
+      let fleeSpeed = this.speed * (1 + fleeBonus + specializedFleeBonus) * avoidanceMultiplier;
+
+      // Apply flee exhaustion penalty: after threshold frames of continuous fleeing, speed degrades
+      const exhaustion = SimulationConfig.prey.fleeExhaustion;
+      if (this.consecutiveFleeFrames > exhaustion.threshold) {
+        const penalty = Math.min(
+          (this.consecutiveFleeFrames - exhaustion.threshold) * exhaustion.rate,
+          exhaustion.maxPenalty
+        );
+        fleeSpeed *= (1 - penalty);
+      }
 
       // Only apply the flee direction if it's valid
       if (fleeDirection.lengthSq() > 0.0001) {
@@ -324,6 +340,8 @@ export class Prey extends Creature {
     }
     // If no predator nearby, focus on foraging based on hunger level
     else {
+      // Recover from flee exhaustion (recovers 2x faster than it accumulates)
+      this.consecutiveFleeFrames = Math.max(0, this.consecutiveFleeFrames - 2);
       const hungerLevel = 1 - energyRatio;
 
       // If prey is fairly full (less than 30% hunger), it's less focused on finding food

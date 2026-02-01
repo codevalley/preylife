@@ -122,6 +122,16 @@ export interface CaptureChanceConfig {
   maxChance: number;
 }
 
+/** Predator desperation configuration */
+export interface PredatorDesperationConfig {
+  hungerThreshold: number;
+  speedBonus: number;
+  detectionBonus: number;
+  turnRateBonus: number;
+  isolationRange: number;
+  maxNearbyPredators: number;
+}
+
 /** Predator configuration */
 export interface PredatorConfig {
   maxEnergy: number;
@@ -130,6 +140,14 @@ export interface PredatorConfig {
   energyGainFromPrey: number;
   huntingSpeedMultiplier: number;
   detectionRangeMultiplier: number;
+  desperation: PredatorDesperationConfig;
+}
+
+/** Prey flee exhaustion configuration */
+export interface PreyFleeExhaustionConfig {
+  threshold: number;
+  rate: number;
+  maxPenalty: number;
 }
 
 /** Prey configuration */
@@ -141,6 +159,7 @@ export interface PreyConfig {
   predatorDetectionMultiplier: number;
   escapeBaseChance: number;
   escapeEnergyConsumption: number;
+  fleeExhaustion: PreyFleeExhaustionConfig;
 }
 
 /** Learning configuration */
@@ -271,6 +290,14 @@ export interface SpeciesConversionConfig {
   visualEffectDuration: number;
 }
 
+/** Spontaneous prey spawning configuration */
+export interface SpontaneousPreyConfig {
+  enabled: boolean;
+  resourceThreshold: number;
+  spawnChance: number;
+  maxPerCycle: number;
+}
+
 /** Complete simulation configuration */
 export interface SimulationConfigType {
   ui: UIConfig;
@@ -285,4 +312,5 @@ export interface SimulationConfigType {
   starvation: StarvationConfig;
   clusteredSpawning: ClusteredSpawningConfig;
   speciesConversion: SpeciesConversionConfig;
+  spontaneousPrey: SpontaneousPreyConfig;
 }

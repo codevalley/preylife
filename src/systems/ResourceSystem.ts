@@ -13,6 +13,7 @@
 import { BaseSystem, SystemPriority } from './System';
 import type { World } from '../core/World';
 import { Resource } from '../entities/Resource';
+import { Prey } from '../entities/Prey';
 import { SimulationConfig } from '../config';
 import { EventBus } from '../events/EventBus';
 
@@ -190,6 +191,9 @@ export class ResourceSystem extends BaseSystem {
         const randomIndex = Math.floor(Math.random() * resources.length);
         world.removeResource(resources[randomIndex]);
       }
+
+      // Spontaneous prey spawning: safety net when prey go extinct + resources abundant
+      this.trySpontaneousPreySpawn(world);
     }
   }
 
@@ -232,6 +236,30 @@ export class ResourceSystem extends BaseSystem {
       const resource = new Resource(x, y, Resource.DEFAULT_ENERGY * energyMultiplier);
       resource.creationTime = world.days;
       world.addResource(resource, 'natural');
+    }
+  }
+
+  /**
+   * Attempt spontaneous prey spawn when prey are extinct and resources are abundant.
+   * Acts as abiogenesis — a very rare event to prevent permanent ecosystem collapse.
+   */
+  private trySpontaneousPreySpawn(world: World): void {
+    const config = SimulationConfig.spontaneousPrey;
+    if (!config.enabled) return;
+    if (world.resourceCount < config.resourceThreshold) return;
+
+    let spawned = 0;
+    while (spawned < config.maxPerCycle && Math.random() < config.spawnChance) {
+      // Pick a random resource position to spawn near
+      const resources = world.getMutableResources();
+      const source = resources[Math.floor(Math.random() * resources.length)];
+
+      const prey = new Prey(
+        source.position.x + (Math.random() * 20 - 10),
+        source.position.y + (Math.random() * 20 - 10)
+      );
+      world.addPrey(prey, 'spawned');
+      spawned++;
     }
   }
 

@@ -32,6 +32,9 @@ export abstract class Creature extends Entity {
   greatGrandparentTraits: GeneticAttributes | null = null;
   parentSpecies: EntityType | null = null;
 
+  // Turn rate bonus from subclass-specific mechanics (e.g. predator desperation)
+  protected turnRateBonus: number = 0;
+
   // Reproduction tracking
   timeSinceLastReproduction: number = 0; // Time since last reproduction event
   
@@ -66,7 +69,10 @@ export abstract class Creature extends Entity {
   update(deltaTime: number): void {
     // Smooth velocity transitions - lerp from previous velocity toward desired
     // This prevents instant direction snaps, creating natural arcing movement
-    const turnRate = 0.20;
+    // Stealthy creatures turn faster (more agile), strong creatures are more linear
+    const baseTurnRate = 0.15;
+    const agilityBonus = this.attributes.stealth * 0.10 + this.attributes.learnability * 0.05;
+    const turnRate = Math.min(1.0, baseTurnRate + agilityBonus + this.turnRateBonus); // Range: 0.15 - 0.30+
     if (this._prevVelocity.lengthSq() > 0.0001) {
       const desiredVelocity = this.velocity.clone();
       this.velocity.copy(this._prevVelocity).lerp(desiredVelocity, turnRate);
@@ -74,7 +80,7 @@ export abstract class Creature extends Entity {
     this._prevVelocity.copy(this.velocity);
 
     // Update position based on velocity
-    const moveSpeed = this.speed * this.attributes.strength * deltaTime;
+    const moveSpeed = this.getEffectiveSpeed(deltaTime);
     this.position.add(this.velocity.clone().multiplyScalar(moveSpeed));
     
     // Consume energy based on movement and metabolism
@@ -118,6 +124,41 @@ export abstract class Creature extends Entity {
     this.updateMeshPosition();
   }
   
+  /**
+   * Calculate effective movement speed based on genetics, energy, and age.
+   *
+   * Design: strength owns speed, stealth owns concealment/agility (turn rate).
+   * Learnability adds a small reactivity bonus.
+   * Wide age curve (young→prime→old) creates visible diversity on screen.
+   * Gentle energy curve prevents death-spiral feedback loops during chases.
+   */
+  protected getEffectiveSpeed(deltaTime: number): number {
+    // Strength-dominant speed: strength is locomotion (85%), learnability adds reactivity (15%)
+    // Stealth deliberately excluded — it governs detection/agility, not raw speed
+    const attributeFactor = (this.attributes.strength * 0.85)
+                          + (this.attributes.learnability * 0.15);
+
+    // Gentle energy curve: full = 1.0, half = 0.875, empty = 0.75
+    // Prevents chase death-spiral (fleeing costs energy → slower → can't escape → repeat)
+    const energyRatio = this.energy / this.maxEnergy;
+    const energyFactor = 0.75 + (energyRatio * 0.25);
+
+    // Wide age curve for visible diversity: young fast → prime peak → old slow
+    const maxLifespan = 60 + (this.attributes.longevity * 40);
+    const ageRatio = this.age / maxLifespan;
+    let ageFactor: number;
+    if (ageRatio < 0.15) {
+      ageFactor = 0.75 + (ageRatio / 0.15) * 0.25;    // growing: 0.75 → 1.0
+    } else if (ageRatio < 0.5) {
+      ageFactor = 1.0;                                   // prime: full speed
+    } else {
+      ageFactor = 1.0 - (ageRatio - 0.5) * 1.1;        // aging: 1.0 → 0.45 at end of life
+      ageFactor = Math.max(0.45, ageFactor);             // floor at 0.45
+    }
+
+    return this.speed * attributeFactor * energyFactor * ageFactor * deltaTime;
+  }
+
   consumeEnergy(deltaTime: number): void {
     // Base metabolism cost - all creatures lose energy over time
     // Higher longevity reduces base metabolism cost (creatures are more efficient)

@@ -111,6 +111,14 @@ export const DEFAULT_CONFIG: SimulationConfigType = {
     energyGainFromPrey: 0.55,
     huntingSpeedMultiplier: 0.5,
     detectionRangeMultiplier: 0.5,
+    desperation: {
+      hungerThreshold: 0.8,
+      speedBonus: 0.4,
+      detectionBonus: 0.5,
+      turnRateBonus: 0.15,
+      isolationRange: 150,
+      maxNearbyPredators: 1,
+    },
   },
 
   // Prey settings - Parameters specific to prey behavior and attributes
@@ -127,6 +135,11 @@ export const DEFAULT_CONFIG: SimulationConfigType = {
     predatorDetectionMultiplier: 1.1,
     escapeBaseChance: 0.2,
     escapeEnergyConsumption: 5,
+    fleeExhaustion: {
+      threshold: 60,
+      rate: 0.005,
+      maxPenalty: 0.35,
+    },
   },
 
   // Learning settings - Parameters for how creatures adapt traits from others
@@ -265,5 +278,13 @@ export const DEFAULT_CONFIG: SimulationConfigType = {
     maxConversionsPerUpdate: 3,
     evolutionCooldown: 600,
     visualEffectDuration: 3.0
+  },
+
+  // Spontaneous prey spawning - safety net when prey go extinct
+  spontaneousPrey: {
+    enabled: true,
+    resourceThreshold: 50,
+    spawnChance: 0.002,
+    maxPerCycle: 1,
   }
 };

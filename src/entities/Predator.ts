@@ -317,6 +317,25 @@ export class Predator extends Creature {
     return Math.random() < capped;
   }
 
+  /**
+   * Check if this predator is in a desperate state: starving and isolated.
+   * Returns true when hunger exceeds threshold and few predators are nearby.
+   */
+  private isDesperate(hungerLevel: number, nearbyPredators: Predator[]): boolean {
+    const desp = SimulationConfig.predator.desperation;
+    if (hungerLevel < desp.hungerThreshold) return false;
+
+    // Count predators within isolation range
+    let closeCount = 0;
+    for (const other of nearbyPredators) {
+      if (this.position.distanceTo(other.position) < desp.isolationRange) {
+        closeCount++;
+        if (closeCount > desp.maxNearbyPredators) return false;
+      }
+    }
+    return true;
+  }
+
   // Override update to include prey detection and hunting
   update(deltaTime: number, preyList: Prey[] = [], nearbyPredators: Predator[] = []): void {
     // Reset hunting state each frame
@@ -336,6 +355,13 @@ export class Predator extends Creature {
 
     // Check hunger level to determine hunting behavior
     const hungerLevel = 1 - (this.energy / this.maxEnergy);
+
+    // Check desperation state: starving + isolated
+    const desperate = this.isDesperate(hungerLevel, nearbyPredators);
+    const desp = SimulationConfig.predator.desperation;
+
+    // Apply desperation turn rate bonus (read by parent Creature.update)
+    this.turnRateBonus = desperate ? desp.turnRateBonus : 0;
 
     // If the predator is fairly full (less than 25% hunger), it's less aggressive
     // Increased from 20% to 25% to make predators hunt more often
@@ -358,7 +384,12 @@ export class Predator extends Creature {
       // When hungry, actively hunt prey
       // Scale detection range with hunger - hungrier predators are more motivated
       const detectionMultiplier = SimulationConfig.predator.detectionRangeMultiplier || 0.5;
-      const detectionRange = 80 * (1 + hungerLevel * detectionMultiplier); // Up to 50% increase when starving
+      let detectionRange = 80 * (1 + hungerLevel * detectionMultiplier); // Up to 50% increase when starving
+
+      // Desperation: boost detection range
+      if (desperate) {
+        detectionRange *= (1 + desp.detectionBonus);
+      }
 
       const nearbyPrey = this.detectPrey(preyList, detectionRange);
       if (nearbyPrey) {
@@ -366,7 +397,13 @@ export class Predator extends Creature {
         // Move toward the prey - hungrier predators move faster to match fleeing prey speed
         // Using config value for hunt speed multiplier
         const huntingSpeedMultiplier = SimulationConfig.predator.huntingSpeedMultiplier || 0.5;
-        const huntSpeed = this.speed * (1 + hungerLevel * huntingSpeedMultiplier); // Up to 50% faster when starving, matching fleeing prey
+        let huntSpeed = this.speed * (1 + hungerLevel * huntingSpeedMultiplier); // Up to 50% faster when starving, matching fleeing prey
+
+        // Desperation: boost hunting speed
+        if (desperate) {
+          huntSpeed *= (1 + desp.speedBonus);
+        }
+
         const direction = nearbyPrey.position.clone().sub(this.position).normalize();
         this.velocity.copy(direction).multiplyScalar(huntSpeed);
       }
