@@ -26,6 +26,9 @@ export class UIController {
   private preyCountElement: HTMLElement;
   private predatorCountElement: HTMLElement;
   private resourceCountElement: HTMLElement;
+  private preyLifetimeElement: HTMLElement;
+  private predatorLifetimeElement: HTMLElement;
+  private resourceLifetimeElement: HTMLElement;
   private daysElement: HTMLElement;
 
   // Flags for tracking which info toasts have been shown
@@ -70,6 +73,9 @@ export class UIController {
     this.preyCountElement = preyPill.countSpan;
     this.predatorCountElement = predatorPill.countSpan;
     this.resourceCountElement = resourcePill.countSpan;
+    this.preyLifetimeElement = preyPill.lifetimeSpan;
+    this.predatorLifetimeElement = predatorPill.lifetimeSpan;
+    this.resourceLifetimeElement = resourcePill.lifetimeSpan;
 
     // Pill click handlers
     preyPill.element.addEventListener('click', () => {
@@ -250,20 +256,24 @@ export class UIController {
     svg.setAttribute('fill', color);
 
     if (type === 'prey') {
+      // Fish silhouette with tail fin
       const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      path.setAttribute('d', 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z');
+      path.setAttribute('d', 'M12 20c4.97 0 9-3.58 9-8s-4.03-8-9-8c-1 0-2 .16-2.93.47L3 4v4.32C3.6 9.4 4 10.65 4 12s-.4 2.6-1 3.68V20l6.07-.47C10 19.84 11 20 12 20zm3-9.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3z');
       svg.appendChild(path);
     } else if (type === 'predator') {
+      // Shark silhouette with dorsal fin
       const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      path.setAttribute('d', 'M12 2 L22 9 L19 20 L5 20 L2 9 Z');
+      path.setAttribute('d', 'M22 12l-4-4v2H13l2-6-5 4h-2L3 6v2l2 4-2 4v2l5-2h2l5 4-2-6h5v2l4-4z');
       svg.appendChild(path);
     } else {
-      const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-      rect.setAttribute('x', '4');
-      rect.setAttribute('y', '4');
-      rect.setAttribute('width', '16');
-      rect.setAttribute('height', '16');
-      svg.appendChild(rect);
+      // Plankton dot cluster (3 small circles)
+      for (const [cx, cy, r] of [['9', '8', '3'], ['16', '10', '2.5'], ['11', '16', '2.5']] as const) {
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('cx', cx);
+        circle.setAttribute('cy', cy);
+        circle.setAttribute('r', r);
+        svg.appendChild(circle);
+      }
     }
 
     return svg;
@@ -271,7 +281,7 @@ export class UIController {
 
   // --- Pill and button factories ---
 
-  private createPill(color: string, borderColor: string, type: 'prey' | 'predator' | 'resource'): { element: HTMLElement, countSpan: HTMLElement } {
+  private createPill(color: string, borderColor: string, type: 'prey' | 'predator' | 'resource'): { element: HTMLElement, countSpan: HTMLElement, lifetimeSpan: HTMLElement } {
     const pill = document.createElement('div');
     pill.style.cssText = `
       display: flex; align-items: center; gap: 8px;
@@ -295,6 +305,16 @@ export class UIController {
     countSpan.textContent = '0';
     pill.appendChild(countSpan);
 
+    const separator = document.createElement('span');
+    separator.style.cssText = `color: ${OceanicColors.textMuted}; font-size: 11px;`;
+    separator.textContent = '/';
+    pill.appendChild(separator);
+
+    const lifetimeSpan = document.createElement('span');
+    lifetimeSpan.style.cssText = `color: ${OceanicColors.textMuted}; font-size: 11px;`;
+    lifetimeSpan.textContent = '0';
+    pill.appendChild(lifetimeSpan);
+
     // Hover effects
     const hoverBorder = borderColor.replace('0.4', '0.7');
     pill.addEventListener('mouseenter', () => {
@@ -308,7 +328,7 @@ export class UIController {
       pill.style.boxShadow = 'none';
     });
 
-    return { element: pill, countSpan };
+    return { element: pill, countSpan, lifetimeSpan };
   }
 
   private createControlButton(): HTMLButtonElement {
@@ -400,6 +420,12 @@ export class UIController {
     this.preyCountElement.textContent = formatNumber(stats.preyCount);
     this.predatorCountElement.textContent = formatNumber(stats.predatorCount);
     this.resourceCountElement.textContent = formatNumber(stats.resourceCount);
+
+    // Update lifetime counts
+    const totalSpawned = this.simulation.getTotalSpawned();
+    this.preyLifetimeElement.textContent = formatNumber(totalSpawned.prey);
+    this.predatorLifetimeElement.textContent = formatNumber(totalSpawned.predators);
+    this.resourceLifetimeElement.textContent = formatNumber(totalSpawned.resources);
 
     // Update sparkline
     this.sparkline.addDataPoint(stats.preyCount, stats.predatorCount, stats.resourceCount);

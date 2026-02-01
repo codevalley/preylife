@@ -18,6 +18,8 @@ npm run start    # Run Express server (server.js)
 
 Note: No test suite is currently configured (`npm run test` exits with error).
 
+Build warnings about dynamic imports (`config.ts`, `Prey.ts`, `Predator.ts`) are pre-existing and benign — Vite notes they won't be code-split since they're also statically imported. The chunk size warning (>500KB) is expected for a single-page simulation app.
+
 ## Architecture
 
 ### MVC Pattern with Event-Based Communication
@@ -81,6 +83,14 @@ All simulation parameters are centralized in `src/config.ts` (SimulationConfig).
 ### Event System
 
 ToastManager provides decoupled notifications via `ToastManager.getInstance().showToast(event, ...)`. Events include births, deaths, extinctions, evolutions, resource blooms, and educational callouts.
+
+## UI Component Patterns
+
+- UI components in `src/ui/` build DOM elements programmatically (createElement, appendChild) — avoid innerHTML except where values come strictly from internal simulation state (creature attributes, energy). A security hook will warn on innerHTML usage.
+- `OceanicColors` in `src/ui/DashboardPanel.ts` is the single source of truth for the color palette — use it for all UI theming.
+- `SimulationEngine.getTotalSpawned()` returns lifetime birth counts (reproduction + conversion + spawned) per species.
+- `SimulationEngine.getStats()` returns current alive counts and average genetic attributes.
+- Population pills, sparkline, creature drawer, tooltip, and toast cards are all independent DOM-based components (no framework) — each manages its own element lifecycle.
 
 ## Code Style
 

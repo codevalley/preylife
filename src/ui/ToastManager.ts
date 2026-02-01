@@ -285,6 +285,16 @@ export class ToastManager {
         pointer-events: none;
       }
 
+      @keyframes shimmer-border {
+        0%, 100% { border-color: rgba(255, 170, 68, 0.3); }
+        50% { border-color: rgba(255, 170, 68, 0.6); }
+      }
+
+      @keyframes progress-shrink {
+        from { width: 100%; }
+        to { width: 0%; }
+      }
+
       .educational-card {
         background: rgba(45, 30, 8, 0.85);
         backdrop-filter: blur(12px);
@@ -293,7 +303,7 @@ export class ToastManager {
         border-radius: 10px;
         padding: 12px 16px;
         color: #ffe8c8;
-        font-size: 13px;
+        font-size: 14px;
         line-height: 1.4;
         pointer-events: auto;
         max-width: 400px;
@@ -301,6 +311,9 @@ export class ToastManager {
         transform: translateY(20px);
         transition: opacity 0.4s ease, transform 0.4s ease;
         box-shadow: 0 4px 20px rgba(80, 50, 0, 0.3);
+        animation: shimmer-border 3s ease-in-out infinite;
+        position: relative;
+        overflow: hidden;
       }
 
       .educational-card.visible {
@@ -312,6 +325,15 @@ export class ToastManager {
         opacity: 0;
         transform: translateY(20px);
         pointer-events: none;
+      }
+
+      .educational-progress-bar {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        height: 2px;
+        background: rgba(255, 170, 68, 0.4);
+        border-radius: 0 0 10px 10px;
       }
 
       .notification-close-btn {
@@ -425,6 +447,14 @@ export class ToastManager {
 
     const titleColor = isEducational ? '#ffe8c8' : config.color;
 
+    // Insight label badge for educational cards
+    if (isEducational) {
+      const insightBadge = document.createElement('div');
+      insightBadge.style.cssText = 'font-size: 10px; color: rgba(255, 170, 68, 0.7); margin-bottom: 4px; font-weight: 500;';
+      insightBadge.textContent = '\u{1F4A1} Insight';
+      toast.appendChild(insightBadge);
+    }
+
     // Build toast content using DOM methods
     const headerDiv = document.createElement('div');
     headerDiv.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;';
@@ -441,11 +471,19 @@ export class ToastManager {
     headerDiv.appendChild(closeBtn);
 
     const messageDiv = document.createElement('div');
-    messageDiv.style.cssText = 'font-size: 13px; line-height: 1.4;';
+    messageDiv.style.cssText = `font-size: ${isEducational ? '14' : '13'}px; line-height: 1.4;`;
     messageDiv.textContent = config.message;
 
     toast.appendChild(headerDiv);
     toast.appendChild(messageDiv);
+
+    // Progress bar for educational cards
+    if (isEducational) {
+      const progressBar = document.createElement('div');
+      progressBar.className = 'educational-progress-bar';
+      progressBar.style.animation = `progress-shrink ${config.duration}ms linear forwards`;
+      toast.appendChild(progressBar);
+    }
 
     // Add to container (newest at bottom)
     this.container.appendChild(toast);

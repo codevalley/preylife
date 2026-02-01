@@ -13,10 +13,10 @@ export class CreatureDrawer {
     this.container = document.createElement('div');
     this.container.style.cssText = `
       position: fixed;
-      top: 0;
+      top: 56px;
       right: 0;
       width: 280px;
-      height: 100vh;
+      height: calc(100vh - 56px);
       background: rgba(8, 25, 45, 0.92);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
@@ -131,7 +131,7 @@ export class CreatureDrawer {
     return `
       <div style="margin-bottom: 16px;">
         <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
-          <span style="color: ${OceanicColors.textSecondary};">Energy</span>
+          <span style="color: ${OceanicColors.textSecondary};">⚡ Energy</span>
           <span style="color: ${energyColor};">
             ${Math.round(creature.energy)} / ${Math.round(creature.maxEnergy)} (${energyPct}%)
           </span>
@@ -147,12 +147,12 @@ export class CreatureDrawer {
     return `
       <div style="margin-bottom: 16px;">
         <div style="font-size: 13px; font-weight: 600; color: ${OceanicColors.textPrimary}; margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid rgba(80, 180, 220, 0.2);">
-          Genetics
+          🧬 Genetics
         </div>
-        ${this.renderTraitBar('Strength', creature.attributes.strength, '#ff6666')}
-        ${this.renderTraitBar('Stealth', creature.attributes.stealth, '#66aaff')}
-        ${this.renderTraitBar('Learnability', creature.attributes.learnability, '#ffcc44')}
-        ${this.renderTraitBar('Longevity', creature.attributes.longevity, '#cc66cc')}
+        ${this.renderTraitBar('💪 Strength', creature.attributes.strength, '#ff6666')}
+        ${this.renderTraitBar('🥷 Stealth', creature.attributes.stealth, '#66aaff')}
+        ${this.renderTraitBar('🧠 Learnability', creature.attributes.learnability, '#ffcc44')}
+        ${this.renderTraitBar('❤️ Longevity', creature.attributes.longevity, '#cc66cc')}
       </div>
     `;
   }
@@ -161,7 +161,7 @@ export class CreatureDrawer {
     return `
       <div style="margin-bottom: 16px;">
         <div style="font-size: 13px; font-weight: 600; color: ${OceanicColors.textPrimary}; margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid rgba(80, 180, 220, 0.2);">
-          Stats
+          📊 Stats
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 12px;">
           <div style="color: ${OceanicColors.textMuted};">Age</div>
@@ -200,7 +200,7 @@ export class CreatureDrawer {
     if (creature.generation === 0 && !creature.parentTraits) {
       return `
         <div style="margin-bottom: 16px;">
-          ${sectionHeader}Lineage</div>
+          ${sectionHeader}🌳 Lineage</div>
           <div style="font-size: 11px; color: ${OceanicColors.textMuted}; font-style: italic;">
             First generation (spawned)
           </div>
@@ -210,7 +210,7 @@ export class CreatureDrawer {
 
     let html = `
       <div style="margin-bottom: 16px;">
-        ${sectionHeader}Lineage &mdash; Gen ${creature.generation}</div>
+        ${sectionHeader}🌳 Lineage &mdash; Gen ${creature.generation}</div>
         <div style="padding-left: 8px; border-left: 2px solid rgba(80, 180, 220, 0.2);">
     `;
 
@@ -235,15 +235,20 @@ export class CreatureDrawer {
   private renderAncestor(label: string, speciesLabel: string, color: string, traits: GeneticAttributes): string {
     const dominant = this.getDominantTraitFromAttrs(traits);
     const suffix = speciesLabel ? ` (${speciesLabel})` : '';
+    const miniBar = (val: number, barColor: string) => {
+      const pct = Math.round(val * 100);
+      return `<div style="display: inline-block; width: 28px; height: 3px; background: rgba(255,255,255,0.08); border-radius: 2px; vertical-align: middle; margin-left: 2px;">
+        <div style="width: ${pct}%; height: 100%; background: ${barColor}; border-radius: 2px;"></div>
+      </div>`;
+    };
     return `
       <div style="margin-bottom: 8px; font-size: 11px;">
-        <div style="color: ${color}; font-weight: 500;">${label}${suffix}</div>
-        <div style="color: ${OceanicColors.textMuted}; margin-top: 2px;">
-          ${dominant} &mdash;
-          Str:${traits.strength.toFixed(2)}
-          Stl:${traits.stealth.toFixed(2)}
-          Lrn:${traits.learnability.toFixed(2)}
-          Lng:${traits.longevity.toFixed(2)}
+        <div style="color: ${color}; font-weight: 500;">${label}${suffix} &mdash; ${dominant}</div>
+        <div style="color: ${OceanicColors.textMuted}; margin-top: 3px; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; font-size: 10px;">
+          <span>💪 ${traits.strength.toFixed(2)} ${miniBar(traits.strength, '#ff6666')}</span>
+          <span>🥷 ${traits.stealth.toFixed(2)} ${miniBar(traits.stealth, '#66aaff')}</span>
+          <span>🧠 ${traits.learnability.toFixed(2)} ${miniBar(traits.learnability, '#ffcc44')}</span>
+          <span>❤️ ${traits.longevity.toFixed(2)} ${miniBar(traits.longevity, '#cc66cc')}</span>
         </div>
       </div>
     `;
