@@ -53,8 +53,11 @@ export class Predator extends Creature {
     const bodyCompact = 1.0 - this.attributes.stealth * 0.3; // 0.7 - 1.0
 
     const bodyLength = size * 1.2;
-    const bodyHeight = size * 0.5 * bodyCompact;
+    // Longevity scales body height — long-lived predators look tankier (0.8-1.2 range)
+    const bodyHeight = size * 0.5 * bodyCompact * (0.8 + this.attributes.longevity * 0.4);
     const jawLength = size * 0.4 * jawScale;
+
+    const strength = this.attributes.strength;
 
     // Angular predator body - aggressive shape
     // Start at jaw tip (front)
@@ -63,9 +66,32 @@ export class Predator extends Creature {
     // Upper jaw (angular)
     shape.lineTo(bodyLength * 0.3, bodyHeight * 0.3);
 
-    // Upper body with dorsal ridge
+    // Upper body with dorsal ridge — add zigzag spikes if strength > 0.3
     shape.lineTo(bodyLength * 0.1, bodyHeight * 0.7);
-    shape.lineTo(-bodyLength * 0.2, bodyHeight * 0.5);
+
+    if (strength > 0.3) {
+      const spikeCount = Math.floor(strength * 3); // 1-3 spikes
+      const spikeHeight = bodyHeight * strength * 0.5;
+      const startX = bodyLength * 0.1;
+      const endX = -bodyLength * 0.2;
+      const startY = bodyHeight * 0.7;
+      const endY = bodyHeight * 0.5;
+
+      for (let i = 0; i < spikeCount; i++) {
+        const t = (i + 0.5) / spikeCount;
+        const baseT = (i + 1) / spikeCount;
+        // Spike tip
+        const spikeX = startX + (endX - startX) * t;
+        const spikeBaseY = startY + (endY - startY) * t;
+        shape.lineTo(spikeX, spikeBaseY + spikeHeight);
+        // Valley between spikes (back to body contour)
+        const valleyX = startX + (endX - startX) * baseT;
+        const valleyY = startY + (endY - startY) * baseT;
+        shape.lineTo(valleyX, valleyY);
+      }
+    } else {
+      shape.lineTo(-bodyLength * 0.2, bodyHeight * 0.5);
+    }
 
     // Back fin (angular)
     shape.lineTo(-bodyLength * 0.4, bodyHeight * 0.8);
@@ -127,6 +153,9 @@ export class Predator extends Creature {
       uStrength: { value: this.attributes.strength },
       uGlowIntensity: { value: 0.5 }, // Subtle glow
       uHunting: { value: 0 },
+      uAge: { value: 0 },
+      uLongevity: { value: this.attributes.longevity },
+      uLearnability: { value: this.attributes.learnability },
     });
 
     this.mesh = new THREE.Mesh(geometry, material);
@@ -144,6 +173,10 @@ export class Predator extends Creature {
       // Update shader uniforms
       const material = this.mesh.material as THREE.ShaderMaterial;
       if (material.uniforms) {
+        // Calculate normalized age ratio (lifespan scales with longevity)
+        const maxLifespan = 60 + (this.attributes.longevity * 40);
+        const ageRatio = Math.min(1, this.age / maxLifespan);
+
         updatePredatorUniforms(
           material,
           Predator.globalTime,
@@ -151,7 +184,10 @@ export class Predator extends Creature {
           this.maxEnergy,
           this.attributes.stealth,
           this.attributes.strength,
-          this.isActivelyHunting
+          this.isActivelyHunting,
+          ageRatio,
+          this.attributes.longevity,
+          this.attributes.learnability
         );
       }
 

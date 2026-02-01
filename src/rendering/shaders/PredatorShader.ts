@@ -13,6 +13,9 @@ export interface PredatorUniforms {
   uEyeColor: { value: THREE.Color };
   uHunting: { value: number };       // 0-1, hunting intensity
   uGlowIntensity: { value: number }; // Base glow intensity
+  uAge: { value: number };           // 0-1, normalized age ratio
+  uLongevity: { value: number };     // 0-1, longevity trait
+  uLearnability: { value: number };  // 0-1, learnability trait
 }
 
 /**
@@ -31,6 +34,9 @@ export function createPredatorUniforms(
     uEyeColor: { value: eyeColor },
     uHunting: { value: 0 },
     uGlowIntensity: { value: 1.2 },
+    uAge: { value: 0 },
+    uLongevity: { value: 0.5 },
+    uLearnability: { value: 0.5 },
   };
 }
 
@@ -62,6 +68,9 @@ export const predatorFragmentShader = `
   uniform vec3 uEyeColor;
   uniform float uHunting;
   uniform float uGlowIntensity;
+  uniform float uAge;
+  uniform float uLongevity;
+  uniform float uLearnability;
 
   varying vec2 vUv;
   varying vec3 vPosition;
@@ -77,6 +86,18 @@ export const predatorFragmentShader = `
     // High stealth = darker base, more contrast
     float bodyDarkness = 1.0 - (uStealth * 0.4);
     color *= bodyDarkness;
+
+    // Age desaturation and scarring
+    float ageFactor = uAge * 0.4;
+    float gray = dot(color, vec3(0.299, 0.587, 0.114));
+    color = mix(color, vec3(gray), ageFactor);
+
+    // Scarring noise for old creatures
+    if (uAge > 0.5) {
+      float scar = sin(vUv.x * 30.0 + vUv.y * 20.0) * sin(vUv.x * 15.0 - vUv.y * 25.0);
+      scar = smoothstep(0.3, 0.8, scar) * (uAge - 0.5) * 0.3;
+      color += vec3(scar * 0.2, scar * 0.1, 0.0);
+    }
 
     // Hunting intensification
     float huntPulse = sin(uTime * 4.0) * 0.5 + 0.5;
@@ -96,6 +117,17 @@ export const predatorFragmentShader = `
     // Add eye color to the base
     vec3 finalColor = color * energyBrightness;
     finalColor += uEyeColor * eyeGlow * uGlowIntensity;
+
+    // Lateral line sensor dots (learnability)
+    float dotPattern = 0.0;
+    if (uLearnability > 0.2) {
+      float dotCount = 3.0 + uLearnability * 4.0;
+      float dotX = fract(vUv.x * dotCount);
+      float dotY = abs(vUv.y - 0.5);
+      float dot = smoothstep(0.15, 0.05, length(vec2(dotX - 0.5, dotY)));
+      dotPattern = dot * uLearnability;
+    }
+    finalColor += uEyeColor * dotPattern * 0.5;
 
     // Add hunting glow over entire body
     finalColor += uEyeColor * huntIntensity;
@@ -130,7 +162,7 @@ export function createPredatorMaterial(
     uniforms: mergedUniforms,
     vertexShader: predatorVertexShader,
     fragmentShader: predatorFragmentShader,
-    transparent: false,
+    transparent: true,
     side: THREE.DoubleSide,
   });
 }
@@ -145,11 +177,17 @@ export function updatePredatorUniforms(
   maxEnergy: number,
   stealth: number,
   strength: number,
-  isHunting: boolean = false
+  isHunting: boolean = false,
+  age: number = 0,
+  longevity: number = 0.5,
+  learnability: number = 0.5
 ): void {
   material.uniforms.uTime.value = time;
   material.uniforms.uEnergy.value = energy / maxEnergy;
   material.uniforms.uStealth.value = stealth;
   material.uniforms.uStrength.value = strength;
   material.uniforms.uHunting.value = isHunting ? 1.0 : 0.0;
+  material.uniforms.uAge.value = age;
+  material.uniforms.uLongevity.value = longevity;
+  material.uniforms.uLearnability.value = learnability;
 }
