@@ -4,7 +4,7 @@ import { PopulationSparkline } from './PopulationSparkline';
 import { SettingsPanel } from './SettingsPanel';
 import { SimulationConfig } from '../config';
 import { HelpPanel } from './HelpPanel';
-import { ToastManager, ToastType, ToastEvent } from './ToastManager';
+import { ToastManager, ToastEvent } from './ToastManager';
 import { SimulationResultsPanel } from './SimulationResultsPanel';
 import { formatNumber, formatTime } from '../utils/formatters';
 
@@ -482,19 +482,19 @@ export class UIController {
     if (stats.preyCount > 0 && stats.resourceCount > 0 &&
         (stats.preyCount >= 2 * stats.resourceCount) &&
         !this.highPreyDensityShown) {
-      ToastManager.getInstance().showToast(ToastType.INFO, ToastEvent.HIGH_PREY_DENSITY);
+      ToastManager.getInstance().showToast(ToastEvent.HIGH_PREY_DENSITY);
       this.highPreyDensityShown = true;
     }
 
     if (stats.predatorCount > 5 && stats.preyCount > 0 &&
         (stats.predatorCount / stats.preyCount) >= 1 &&
         !this.highPredatorDensityShown) {
-      ToastManager.getInstance().showToast(ToastType.INFO, ToastEvent.HIGH_PREDATOR_DENSITY);
+      ToastManager.getInstance().showToast(ToastEvent.HIGH_PREDATOR_DENSITY);
       this.highPredatorDensityShown = true;
     }
 
     if (stats.resourceCount < initialResourceCount * 0.15 && !this.lowResourceWarningShown) {
-      ToastManager.getInstance().showToast(ToastType.INFO, ToastEvent.LOW_RESOURCE_WARNING);
+      ToastManager.getInstance().showToast(ToastEvent.LOW_RESOURCE_WARNING);
       this.lowResourceWarningShown = true;
     }
 
@@ -503,7 +503,7 @@ export class UIController {
       stats.preyAttributes.stealth > 0.75 ||
       stats.preyAttributes.longevity > 0.75;
     if (preySpecialized && !this.preySpecializedShown && stats.preyCount > 0) {
-      ToastManager.getInstance().showToast(ToastType.INFO, ToastEvent.PREY_ATTRIBUTES_SPECIALIZED);
+      ToastManager.getInstance().showToast(ToastEvent.PREY_ATTRIBUTES_SPECIALIZED);
       this.preySpecializedShown = true;
     }
 
@@ -512,7 +512,7 @@ export class UIController {
       stats.predatorAttributes.stealth > 0.75 ||
       stats.predatorAttributes.longevity > 0.75;
     if (predatorSpecialized && !this.predatorSpecializedShown && stats.predatorCount > 0) {
-      ToastManager.getInstance().showToast(ToastType.INFO, ToastEvent.PREDATOR_ATTRIBUTES_SPECIALIZED);
+      ToastManager.getInstance().showToast(ToastEvent.PREDATOR_ATTRIBUTES_SPECIALIZED);
       this.predatorSpecializedShown = true;
     }
 
@@ -523,7 +523,7 @@ export class UIController {
       const hasBalancedPredatorRatio = stats.predatorCount > 0 && stats.preyCount <= (10 * stats.predatorCount);
 
       if (isStable && hasRequiredPredators && hasHealthyResourcesRatio && hasBalancedPredatorRatio) {
-        ToastManager.getInstance().showToast(ToastType.INFO, ToastEvent.ECOSYSTEM_BALANCED);
+        ToastManager.getInstance().showToast(ToastEvent.ECOSYSTEM_BALANCED);
         this.ecosystemBalancedShown = true;
       }
     }
@@ -531,7 +531,7 @@ export class UIController {
     if (this.populationHistory.length > 20 && !this.ecosystemCollapseWarningShown) {
       const isUnstable = this.checkEcosystemInstability();
       if (isUnstable) {
-        ToastManager.getInstance().showToast(ToastType.INFO, ToastEvent.ECOSYSTEM_COLLAPSE_WARNING);
+        ToastManager.getInstance().showToast(ToastEvent.ECOSYSTEM_COLLAPSE_WARNING);
         this.ecosystemCollapseWarningShown = true;
       }
     }

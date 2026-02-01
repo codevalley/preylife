@@ -14,7 +14,7 @@ class Application {
   
   constructor() {
     // Initialize toast manager
-    ToastManager.getInstance().addAnimationStyles();
+    ToastManager.getInstance();
     
     // Create simulation engine with config
     this.simulation = new SimulationEngine(

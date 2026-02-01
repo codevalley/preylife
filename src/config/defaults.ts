@@ -14,7 +14,6 @@ export const DEFAULT_CONFIG: SimulationConfigType = {
   // UI settings - Control visual feedback elements
   ui: {
     toasts: {
-      showEphemeral: true,
       showInfo: true,
     }
   },

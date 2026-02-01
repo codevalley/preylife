@@ -575,17 +575,10 @@ export class SettingsPanel {
     `);
 
     section.appendChild(this.createCheckboxInput(
-      'Show Ephemeral Notifications',
-      SimulationConfig.ui.toasts.showEphemeral,
-      'ui.toasts.showEphemeral',
-      'Enable short notifications for common events (+1 prey, prey escaped, etc.)'
-    ));
-
-    section.appendChild(this.createCheckboxInput(
-      'Show Info Callouts',
+      'Show Notifications',
       SimulationConfig.ui.toasts.showInfo,
       'ui.toasts.showInfo',
-      'Enable educational callouts about ecosystem events (extinctions, blooms, etc.)'
+      'Enable ecosystem event notifications and educational callouts'
     ));
 
     return section;

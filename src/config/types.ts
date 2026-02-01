@@ -17,7 +17,6 @@ export type AttributeRange = [number, number];
 /** UI configuration */
 export interface UIConfig {
   toasts: {
-    showEphemeral: boolean;
     showInfo: boolean;
   };
 }
