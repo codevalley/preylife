@@ -28,16 +28,6 @@ export class UIController {
   private resourceCountElement: HTMLElement;
   private daysElement: HTMLElement;
 
-  // Ecology events tracking
-  private ecologyEvents: Array<{
-    type: 'extinction' | 'evolution',
-    species: 'prey' | 'predator',
-    day: number,
-    preyCount: number,
-    predatorCount: number,
-    resourceCount: number
-  }> = [];
-
   // Flags for tracking which info toasts have been shown
   private highPreyDensityShown: boolean = false;
   private highPredatorDensityShown: boolean = false;
@@ -396,8 +386,6 @@ export class UIController {
   updateStats(): void {
     const stats = this.simulation.getStats();
     const days = this.simulation.getDays();
-    const extinctionEvents = this.simulation.getExtinctionEvents();
-    const evolutionEvents = this.simulation.getEvolutionEvents();
 
     // Evergreen toast check
     if (this.isSimulationRunning) {
@@ -418,40 +406,6 @@ export class UIController {
 
     // Update day counter
     this.daysElement.textContent = formatTime(days);
-
-    // Track extinction events
-    for (const event of extinctionEvents) {
-      const exists = this.ecologyEvents.find(e =>
-        e.type === 'extinction' && e.species === event.type && e.day === event.day
-      );
-      if (!exists) {
-        this.ecologyEvents.push({
-          type: 'extinction',
-          species: event.type as 'prey' | 'predator',
-          day: event.day,
-          preyCount: event.type === 'prey' ? 0 : stats.preyCount,
-          predatorCount: event.type === 'predator' ? 0 : stats.predatorCount,
-          resourceCount: stats.resourceCount
-        });
-      }
-    }
-
-    // Track evolution events
-    for (const event of evolutionEvents) {
-      const exists = this.ecologyEvents.find(e =>
-        e.type === 'evolution' && e.species === event.fromType && e.day === event.day
-      );
-      if (!exists) {
-        this.ecologyEvents.push({
-          type: 'evolution',
-          species: event.fromType as 'prey' | 'predator',
-          day: event.day,
-          preyCount: event.preyCount,
-          predatorCount: event.predatorCount,
-          resourceCount: event.resourceCount
-        });
-      }
-    }
 
     // Track population history
     this.populationHistory.push({
