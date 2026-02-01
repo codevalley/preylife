@@ -1,5 +1,6 @@
 import { SimulationEngine } from '../core/SimulationEngine';
 import { OceanicColors } from './DashboardPanel';
+import { PopulationSparkline } from './PopulationSparkline';
 import { SettingsPanel } from './SettingsPanel';
 import { SimulationConfig } from '../config';
 import { HelpPanel } from './HelpPanel';
@@ -12,6 +13,7 @@ export class UIController {
   private settingsPanel: SettingsPanel;
   private helpPanel: HelpPanel;
   private resultsPanel: SimulationResultsPanel;
+  private sparkline: PopulationSparkline;
 
   // Control buttons
   private playPauseButton: HTMLButtonElement;
@@ -148,7 +150,8 @@ export class UIController {
 
     this.daysElement = daysSpan;
 
-    // Create feedback button
+    // Create sparkline and feedback button
+    this.sparkline = new PopulationSparkline();
     this.createFeedbackButton();
 
     // Event listeners
@@ -380,6 +383,7 @@ export class UIController {
     this.ecosystemCollapseWarningShown = false;
 
     this.populationHistory = [];
+    this.sparkline.reset();
 
     ToastManager.getInstance().resetInfoEvents();
 
@@ -408,6 +412,9 @@ export class UIController {
     this.preyCountElement.textContent = formatNumber(stats.preyCount);
     this.predatorCountElement.textContent = formatNumber(stats.predatorCount);
     this.resourceCountElement.textContent = formatNumber(stats.resourceCount);
+
+    // Update sparkline
+    this.sparkline.addDataPoint(stats.preyCount, stats.predatorCount, stats.resourceCount);
 
     // Update day counter
     this.daysElement.textContent = formatTime(days);
