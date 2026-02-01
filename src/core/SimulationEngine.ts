@@ -60,6 +60,15 @@ interface EvolutionEvent {
   resourceCount: number;
 }
 
+/** Fisher-Yates shuffle — mutates the array in place */
+function shuffleArray<T>(arr: T[]): T[] {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
 export class SimulationEngine {
   // Core components
   private world: World;
@@ -266,8 +275,12 @@ export class SimulationEngine {
   async update(deltaTime: number): Promise<void> {
     if (!this.isRunning) return;
 
+    // Shuffle update order each frame to remove deterministic processing bias
+    const shuffledPrey = shuffleArray([...this.world.prey]);
+    const shuffledPredators = shuffleArray([...this.world.predators]);
+
     // Update all prey with context (for existing behavior)
-    for (const prey of this.world.prey) {
+    for (const prey of shuffledPrey) {
       const nearbyPrey = this.world.queryPrey(
         prey.position.x,
         prey.position.y,
@@ -283,7 +296,7 @@ export class SimulationEngine {
     }
 
     // Update all predators with context
-    for (const predator of this.world.predators) {
+    for (const predator of shuffledPredators) {
       const nearbyPredators = this.world.queryPredators(
         predator.position.x,
         predator.position.y,

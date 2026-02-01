@@ -109,7 +109,7 @@ export const DEFAULT_CONFIG: SimulationConfigType = {
       minChance: 0.1,
       maxChance: 0.5
     },
-    energyGainFromPrey: 0.85,
+    energyGainFromPrey: 0.55,
     huntingSpeedMultiplier: 0.5,
     detectionRangeMultiplier: 0.5,
   },
@@ -153,7 +153,7 @@ export const DEFAULT_CONFIG: SimulationConfigType = {
     probability: {
       highEnergy: {
         prey: 0.2,
-        predator: 0.4
+        predator: 0.08
       },
       lowEnergy: {
         prey: 0.001,
@@ -162,7 +162,7 @@ export const DEFAULT_CONFIG: SimulationConfigType = {
     },
     cooldown: {
       prey: 7,
-      predator: 3
+      predator: 10
     },
     juvenileMaturity: 0.15,
     juvenileReproductionProbability: 0.01

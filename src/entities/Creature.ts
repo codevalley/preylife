@@ -59,7 +59,7 @@ export abstract class Creature extends Entity {
   update(deltaTime: number): void {
     // Smooth velocity transitions - lerp from previous velocity toward desired
     // This prevents instant direction snaps, creating natural arcing movement
-    const turnRate = 0.12;
+    const turnRate = 0.20;
     if (this._prevVelocity.lengthSq() > 0.0001) {
       const desiredVelocity = this.velocity.clone();
       this.velocity.copy(this._prevVelocity).lerp(desiredVelocity, turnRate);
@@ -142,7 +142,7 @@ export abstract class Creature extends Entity {
     
     // Balance energy consumption between predators and prey
     // More reasonable values to ensure predators can survive
-    const typeMultiplier = this.type === EntityType.PREDATOR ? 2.5 : 0.7;
+    const typeMultiplier = this.type === EntityType.PREDATOR ? 1.8 : 0.8;
     
     // Save previous energy for comparison
     const previousEnergy = this.energy;
@@ -267,7 +267,15 @@ export abstract class Creature extends Entity {
     
     // Apply cooldown factor (reduces probability right after reproduction)
     reproductionProbability *= cooldownFactor;
-    
+
+    // Predator hunting gate — reproduction probability scales with hunting success.
+    // 0 kills → 5% of base probability, 1 kill → 50%, 2+ kills → 100%.
+    // This prevents predators from chain-reproducing without eating.
+    if (!isPreyType) {
+      const huntFactor = Math.min(1, this.foodConsumed * 0.5);
+      reproductionProbability *= 0.05 + huntFactor * 0.95;
+    }
+
     // Check if reproduction occurs based on calculated probability
     return Math.random() < reproductionProbability;
   }

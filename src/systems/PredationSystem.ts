@@ -34,51 +34,51 @@ export class PredationSystem extends BaseSystem {
       );
 
       for (const prey of nearbyPrey) {
-        // First check: can predator catch the prey? (strength-based)
+        // Unified predation contest — single roll handles both offense and defense
         if (predator.canCatchPrey(prey)) {
-          // Second check: can prey escape using stealth? (stealth-based)
-          if (!prey.canEscapeWithStealth(predator)) {
-            // Successful hunt!
-            const energyGained = prey.energy * SimulationConfig.predator.energyGainFromPrey;
-            predator.consumePrey(prey);
-            prey.die();
+          // Successful hunt!
+          const energyGained = prey.energy * SimulationConfig.predator.energyGainFromPrey;
+          predator.consumePrey(prey);
+          prey.die();
 
-            // Track statistics
-            world.recordPreyConsumed();
+          // Track statistics
+          world.recordPreyConsumed();
 
-            // Emit prey consumed event
-            EventBus.getInstance().emit({
-              type: 'PREY_CONSUMED',
-              timestamp: Date.now(),
-              day: world.days,
-              preyId: prey.id,
-              predatorId: predator.id,
-              preyPosition: { x: prey.position.x, y: prey.position.y },
-              energyGained
-            });
+          // Emit prey consumed event
+          EventBus.getInstance().emit({
+            type: 'PREY_CONSUMED',
+            timestamp: Date.now(),
+            day: world.days,
+            preyId: prey.id,
+            predatorId: predator.id,
+            preyPosition: { x: prey.position.x, y: prey.position.y },
+            energyGained
+          });
 
-            // Each predator can only catch one prey per update
-            break;
-          } else {
-            // Prey escaped using stealth!
-            // Give the prey a speed boost to escape
-            const escapeDirection = prey.position.clone().sub(predator.position).normalize();
-            prey.velocity.copy(escapeDirection).multiplyScalar(prey.speed * 2);
+          // Each predator can only catch one prey per update
+          break;
+        } else {
+          // Prey escaped!
+          // Escape attempt costs the prey energy
+          prey.energy = Math.max(0, prey.energy - 5);
 
-            // Emit prey escaped event
-            EventBus.getInstance().emit({
-              type: 'PREY_ESCAPED',
-              timestamp: Date.now(),
-              day: world.days,
-              preyId: prey.id,
-              predatorId: predator.id,
-              escapeMethod: 'stealth',
-              preyPosition: { x: prey.position.x, y: prey.position.y }
-            });
+          // Give the prey a speed boost to escape
+          const escapeDirection = prey.position.clone().sub(predator.position).normalize();
+          prey.velocity.copy(escapeDirection).multiplyScalar(prey.speed * 2);
 
-            // Predator fails catch attempt, try next prey
-            break;
-          }
+          // Emit prey escaped event
+          EventBus.getInstance().emit({
+            type: 'PREY_ESCAPED',
+            timestamp: Date.now(),
+            day: world.days,
+            preyId: prey.id,
+            predatorId: predator.id,
+            escapeMethod: 'stealth',
+            preyPosition: { x: prey.position.x, y: prey.position.y }
+          });
+
+          // Predator fails catch attempt, move on
+          break;
         }
       }
     }
