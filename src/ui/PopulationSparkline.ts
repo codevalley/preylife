@@ -1,7 +1,8 @@
 import { OceanicColors } from './DashboardPanel';
 
-type DataPoint = { prey: number; predator: number; resource: number };
 type HealthState = 'balanced' | 'imbalanced' | 'critical';
+type NumericKey = 'prey' | 'predator' | 'resource';
+type DataPoint = { prey: number; predator: number; resource: number; health: HealthState };
 
 const HEALTH_COLORS: Record<HealthState, { color: string; bg: string; border: string; glow: string }> = {
   balanced:   { color: '#44cc44', bg: 'rgba(68, 204, 68, 0.04)',  border: 'rgba(68, 204, 68, 0.4)',  glow: 'rgba(68, 204, 68, 0.15)' },
@@ -138,13 +139,13 @@ export class PopulationSparkline {
   }
 
   addDataPoint(prey: number, predator: number, resource: number): void {
-    const point = { prey, predator, resource };
+    this.updateHealth(prey, predator, resource);
+    const point: DataPoint = { prey, predator, resource, health: this.currentHealth };
     this.fullData.push(point);
     this.data.push(point);
     if (this.data.length > this.maxDataPoints) {
       this.data.shift();
     }
-    this.updateHealth(prey, predator, resource);
     this.draw();
   }
 
@@ -177,9 +178,8 @@ export class PopulationSparkline {
     const chartW = chartRight - chartLeft;
     const chartH = chartBottom - chartTop;
 
-    // Subtle background tint reflecting ecology state
-    ctx.fillStyle = HEALTH_COLORS[this.currentHealth].bg;
-    ctx.fillRect(chartLeft, chartTop, chartW, chartH);
+    // Era bands: color the background per-datapoint health state
+    this.drawEraBands(ctx, activeData, chartLeft, chartTop, chartW, chartH);
 
     // Max per-species (overlapping, not stacked)
     let maxVal = 1;
@@ -198,7 +198,7 @@ export class PopulationSparkline {
     const offsetX = chartLeft + (totalPoints - activeData.length) * stepX;
 
     // Draw order: resource behind, prey middle, predator front
-    const series: Array<{ key: keyof DataPoint; fill: string; stroke: string }> = [
+    const series: Array<{ key: NumericKey; fill: string; stroke: string }> = [
       { key: 'resource', fill: 'rgba(68, 255, 170, 0.12)', stroke: 'rgba(68, 255, 170, 0.7)' },
       { key: 'prey',     fill: 'rgba(0, 200, 255, 0.12)',  stroke: 'rgba(0, 200, 255, 0.7)' },
       { key: 'predator', fill: 'rgba(255, 120, 30, 0.12)', stroke: 'rgba(255, 120, 30, 0.8)' },
@@ -212,7 +212,7 @@ export class PopulationSparkline {
   private drawSeries(
     ctx: CanvasRenderingContext2D,
     data: DataPoint[],
-    key: keyof DataPoint,
+    key: NumericKey,
     offsetX: number,
     stepX: number,
     chartBottom: number,
@@ -244,6 +244,55 @@ export class PopulationSparkline {
     ctx.strokeStyle = strokeColor;
     ctx.lineWidth = 1.5;
     ctx.stroke();
+  }
+
+  /**
+   * Draw vertical era bands behind the chart series.
+   * Adjacent data points with the same health state merge into one rectangle.
+   */
+  private drawEraBands(
+    ctx: CanvasRenderingContext2D,
+    data: DataPoint[],
+    chartLeft: number,
+    chartTop: number,
+    chartW: number,
+    chartH: number,
+  ): void {
+    if (data.length < 2) {
+      ctx.fillStyle = HEALTH_COLORS[this.currentHealth].bg;
+      ctx.fillRect(chartLeft, chartTop, chartW, chartH);
+      return;
+    }
+
+    const totalPoints = (this.expanded && this.showFullHistory) ? data.length : this.maxDataPoints;
+    const stepX = chartW / (totalPoints - 1);
+    const offsetX = chartLeft + (totalPoints - data.length) * stepX;
+
+    // Fill area before data starts with the first data point's state
+    if (offsetX > chartLeft) {
+      ctx.fillStyle = HEALTH_COLORS[data[0].health].bg;
+      ctx.fillRect(chartLeft, chartTop, offsetX - chartLeft, chartH);
+    }
+
+    // Merge adjacent same-state points into bands
+    let bandStart = 0;
+    let bandState = data[0].health;
+
+    for (let i = 1; i <= data.length; i++) {
+      const state = i < data.length ? data[i].health : null;
+      if (state !== bandState) {
+        // Draw the completed band
+        const x1 = offsetX + bandStart * stepX;
+        const x2 = offsetX + (i - 1) * stepX + (i < data.length ? stepX * 0.5 : stepX);
+        ctx.fillStyle = HEALTH_COLORS[bandState].bg;
+        ctx.fillRect(x1, chartTop, Math.max(1, x2 - x1), chartH);
+
+        if (i < data.length) {
+          bandStart = i;
+          bandState = data[i].health;
+        }
+      }
+    }
   }
 
   private drawAxes(

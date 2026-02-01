@@ -25,6 +25,12 @@ export class Predator extends Creature {
   // Track hunting state for visual feedback
   private isActivelyHunting: boolean = false;
 
+  // Target-lock: commit to a prey for sustained pursuit instead of switching every frame
+  private lockedTarget: Prey | null = null;
+  private targetLockFrames: number = 0;
+  private readonly minLockFrames = 30;       // Minimum frames before re-evaluating
+  private readonly switchDistanceRatio = 0.3; // Only switch if another prey is this much closer
+
   constructor(
     x: number,
     y: number,
@@ -264,6 +270,69 @@ export class Predator extends Creature {
   }
 
   /**
+   * Stealth-based lock break: stealthy prey can "vanish" mid-chase.
+   * Chance per frame based on prey stealth vs predator stealth.
+   * High stealth prey break locks frequently; low stealth prey almost never do.
+   */
+  private loseTrackCheck(prey: Prey): boolean {
+    const stealthAdvantage = prey.attributes.stealth - this.attributes.stealth;
+    // Base 1% chance, +2% per 0.1 stealth advantage, floored at 0
+    const loseChance = Math.max(0, 0.01 + stealthAdvantage * 0.2);
+    return Math.random() < loseChance;
+  }
+
+  /**
+   * Target-lock wrapper around detectPrey. Commits to a target for minLockFrames,
+   * only breaking early if the target dies, escapes range, or a much closer prey appears.
+   */
+  private selectPrey(preyList: Prey[], detectionRange: number): Prey | null {
+    this.targetLockFrames++;
+
+    // Check if current locked target is still valid
+    if (this.lockedTarget) {
+      const targetDead = this.lockedTarget.isDead;
+      const targetDist = this.position.distanceTo(this.lockedTarget.position);
+      const targetEscaped = targetDist > detectionRange * 1.2; // 20% grace beyond detection range
+
+      if (targetDead || targetEscaped) {
+        // Target lost — unlock immediately
+        this.lockedTarget = null;
+        this.targetLockFrames = 0;
+      } else if (this.loseTrackCheck(this.lockedTarget)) {
+        // Stealthy prey vanished — predator loses the trail
+        this.lockedTarget = null;
+        this.targetLockFrames = 0;
+      } else if (this.targetLockFrames < this.minLockFrames) {
+        // Still committed — keep chasing
+        return this.lockedTarget;
+      } else {
+        // Lock expired — check if a significantly closer prey exists
+        const newPrey = this.detectPrey(preyList, detectionRange);
+        if (newPrey && newPrey !== this.lockedTarget) {
+          const newDist = this.position.distanceTo(newPrey.position);
+          if (newDist < targetDist * this.switchDistanceRatio) {
+            // Much closer prey — switch target
+            this.lockedTarget = newPrey;
+            this.targetLockFrames = 0;
+            return newPrey;
+          }
+        }
+        // No better option — re-lock current target
+        this.targetLockFrames = 0;
+        return this.lockedTarget;
+      }
+    }
+
+    // No locked target — acquire a new one
+    const newTarget = this.detectPrey(preyList, detectionRange);
+    if (newTarget) {
+      this.lockedTarget = newTarget;
+      this.targetLockFrames = 0;
+    }
+    return newTarget;
+  }
+
+  /**
    * Unified predation contest — single roll combining predator offense and prey defense.
    * At median attributes (all 0.5) the result is exactly 0.40 (40% catch rate).
    * Clamped to [0.15, 0.75].
@@ -372,7 +441,7 @@ export class Predator extends Creature {
         // Just continue current movement - no hunting
       } else {
         // Occasionally still check for extremely close prey (opportunistic hunting)
-        const nearbyPrey = this.detectPrey(preyList, 40); // Much shorter detection range
+        const nearbyPrey = this.selectPrey(preyList, 40); // Much shorter detection range
         if (nearbyPrey) {
           this.isActivelyHunting = true;
           // Move toward the prey, but with less persistence (lower speed multiplier)
@@ -391,7 +460,7 @@ export class Predator extends Creature {
         detectionRange *= (1 + desp.detectionBonus);
       }
 
-      const nearbyPrey = this.detectPrey(preyList, detectionRange);
+      const nearbyPrey = this.selectPrey(preyList, detectionRange);
       if (nearbyPrey) {
         this.isActivelyHunting = true;
         // Move toward the prey - hungrier predators move faster to match fleeing prey speed
