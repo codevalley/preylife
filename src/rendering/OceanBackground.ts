@@ -13,7 +13,7 @@ export class OceanBackground {
 
   // Ocean color palette
   private static readonly COLORS = {
-    surface: new THREE.Color(0x0a2a4a),      // Deep blue at top
+    surface: new THREE.Color(0x0c3055),      // Deep blue at top
     midDepth: new THREE.Color(0x051525),     // Darker blue-green
     abyss: new THREE.Color(0x010508),        // Near black at bottom
     causticLight: new THREE.Color(0x1a4a6a), // Light ray tint
@@ -51,66 +51,38 @@ export class OceanBackground {
         uniform vec2 uResolution;
         varying vec2 vUv;
 
-        // Noise function for organic variation
-        float hash(vec2 p) {
-          return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
-        }
-
-        float noise(vec2 p) {
-          vec2 i = floor(p);
-          vec2 f = fract(p);
-          f = f * f * (3.0 - 2.0 * f);
-
-          float a = hash(i);
-          float b = hash(i + vec2(1.0, 0.0));
-          float c = hash(i + vec2(0.0, 1.0));
-          float d = hash(i + vec2(1.0, 1.0));
-
-          return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
-        }
-
-        // Caustic light pattern
         float caustics(vec2 uv, float time) {
-          vec2 p = uv * 8.0;
           float c = 0.0;
-
-          // Layer multiple noise octaves for caustic effect
-          c += noise(p + time * 0.3) * 0.5;
-          c += noise(p * 2.0 - time * 0.2) * 0.25;
-          c += noise(p * 4.0 + time * 0.1) * 0.125;
-
-          // Sharpen the caustics
-          c = smoothstep(0.3, 0.7, c);
-
-          // Fade caustics toward bottom (deeper = less light)
-          c *= smoothstep(0.0, 0.6, vUv.y);
-
+          c += sin(uv.x * 6.0 + time * 0.4 + sin(uv.y * 4.0 + time * 0.3)) * 0.3;
+          c += sin(uv.y * 5.0 - time * 0.35 + sin(uv.x * 3.0 - time * 0.2)) * 0.25;
+          c += sin((uv.x + uv.y) * 8.0 + time * 0.25) * 0.15;
+          c += sin((uv.x - uv.y) * 7.0 - time * 0.3) * 0.1;
+          c = c * 0.5 + 0.5;
+          c = c * c;
+          c *= smoothstep(0.0, 0.4, uv.y);
+          c *= smoothstep(1.0, 0.85, uv.y);
           return c;
         }
 
         void main() {
-          // Base vertical gradient with curve for more dramatic transition
           float depth = 1.0 - vUv.y;
-          float depthCurve = pow(depth, 1.5);
+          float depthCurve = pow(depth, 1.3);
 
-          // Add subtle horizontal variation
-          float horizontalNoise = noise(vec2(vUv.x * 3.0, uTime * 0.05)) * 0.1;
-          depthCurve += horizontalNoise * (1.0 - depth);
-
-          // Three-point gradient: surface -> mid -> abyss (smooth continuous blend)
-          float midBlend = smoothstep(0.0, 0.45, depthCurve);
-          float abyssBlend = smoothstep(0.35, 1.0, depthCurve);
+          float midBlend = smoothstep(0.0, 0.5, depthCurve);
+          float abyssBlend = smoothstep(0.4, 1.0, depthCurve);
           vec3 color = mix(
             mix(uSurfaceColor, uMidColor, midBlend),
             uAbyssColor,
             abyssBlend
           );
 
-          // Add caustic light patterns
           float causticPattern = caustics(vUv, uTime);
           color += uCausticColor * causticPattern * uCausticIntensity;
 
-          // Subtle vignette effect
+          float fogAmount = smoothstep(0.5, 1.0, depthCurve) * 0.15;
+          vec3 fogColor = vec3(0.02, 0.05, 0.1);
+          color = mix(color, fogColor, fogAmount);
+
           float vignette = 1.0 - length((vUv - 0.5) * 1.2);
           vignette = smoothstep(0.0, 1.0, vignette);
           color *= 0.85 + vignette * 0.15;
