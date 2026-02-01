@@ -1,7 +1,9 @@
 import * as THREE from 'three';
-import { Entity } from '../entities/Entity';
+import { Entity, EntityType } from '../entities/Entity';
+import { Creature } from '../entities/Creature';
 import { SimulationEngine } from '../core/SimulationEngine';
 import { EntityTooltip } from '../ui/EntityTooltip';
+import { CreatureDrawer } from '../ui/CreatureDrawer';
 import { OceanBackground } from './OceanBackground';
 import { MarineSnow } from './MarineSnow';
 import { PostProcessing } from './PostProcessing';
@@ -14,6 +16,7 @@ export class Renderer {
 
   private entityMeshes: Map<string, THREE.Mesh> = new Map();
   private entityTooltip: EntityTooltip;
+  private creatureDrawer: CreatureDrawer;
 
   // Ocean atmosphere systems
   private oceanBackground: OceanBackground;
@@ -117,8 +120,9 @@ export class Renderer {
     // Initialize interaction effects (subscribes to EventBus for visual feedback)
     this.interactionEffects = new InteractionEffects(this.scene);
 
-    // Initialize tooltip
+    // Initialize tooltip and creature drawer
     this.entityTooltip = new EntityTooltip();
+    this.creatureDrawer = new CreatureDrawer();
 
     // Initialize raycaster and mouse
     this.raycaster = new THREE.Raycaster();
@@ -187,17 +191,16 @@ export class Renderer {
   }
 
   private onClick(event: MouseEvent): void {
-    // If we have a hovered entity, select it
-    if (this.hoveredEntity) {
-      this.entityTooltip.selectEntity(this.hoveredEntity);
-      event.stopPropagation(); // Prevent document click from clearing selection
+    if (this.hoveredEntity && (this.hoveredEntity.type === EntityType.PREY || this.hoveredEntity.type === EntityType.PREDATOR)) {
+      this.creatureDrawer.open(this.hoveredEntity as Creature);
+      event.stopPropagation();
     }
   }
 
   private onDocumentClick(event: MouseEvent): void {
-    // If click is outside canvas or not on an entity, clear selection
-    if (event.target !== this.renderer.domElement || !this.hoveredEntity) {
-      this.entityTooltip.clearSelection();
+    // Close drawer when clicking on the canvas without hovering an entity
+    if (event.target === this.renderer.domElement && !this.hoveredEntity) {
+      this.creatureDrawer.close();
     }
   }
 
@@ -206,9 +209,9 @@ export class Renderer {
       const touch = event.touches[0];
       this.handleTouchInteraction(touch.clientX, touch.clientY);
 
-      // If we found an entity, select it and prevent default to avoid scroll
-      if (this.hoveredEntity) {
-        this.entityTooltip.selectEntity(this.hoveredEntity);
+      // If we found a creature, open the drawer and prevent default to avoid scroll
+      if (this.hoveredEntity && (this.hoveredEntity.type === EntityType.PREY || this.hoveredEntity.type === EntityType.PREDATOR)) {
+        this.creatureDrawer.open(this.hoveredEntity as Creature);
         event.preventDefault();
       }
     }
