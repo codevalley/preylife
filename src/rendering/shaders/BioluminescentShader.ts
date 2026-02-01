@@ -9,6 +9,8 @@ export interface BioluminescentUniforms {
   uEnergy: { value: number };        // 0-1, affects brightness
   uStealth: { value: number };       // 0-1, inversely affects glow intensity
   uStrength: { value: number };      // 0-1, affects body color saturation
+  uAge: { value: number };           // 0-1, normalized age
+  uLongevity: { value: number };     // 0-1, longevity attribute
   uBaseColor: { value: THREE.Color };
   uGlowColor: { value: THREE.Color };
   uPulseSpeed: { value: number };    // Pulse animation speed
@@ -27,6 +29,8 @@ export function createBioluminescentUniforms(
     uEnergy: { value: 1.0 },
     uStealth: { value: 0.5 },
     uStrength: { value: 0.5 },
+    uAge: { value: 0 },
+    uLongevity: { value: 0.5 },
     uBaseColor: { value: baseColor },
     uGlowColor: { value: glowColor },
     uPulseSpeed: { value: 2.0 },
@@ -61,6 +65,8 @@ export const bioluminescentFragmentShader = `
   uniform float uEnergy;
   uniform float uStealth;
   uniform float uStrength;
+  uniform float uAge;
+  uniform float uLongevity;
   uniform vec3 uBaseColor;
   uniform vec3 uGlowColor;
   uniform float uPulseSpeed;
@@ -85,6 +91,11 @@ export const bioluminescentFragmentShader = `
     float strengthWarmth = uStrength * 0.3;
     color.r += strengthWarmth * 0.2;
     color.g += strengthWarmth * 0.1;
+
+    // Age desaturation: older creatures lose color vibrancy
+    float ageFactor = uAge * 0.5; // Max 50% desaturation at end of life
+    float gray = dot(color, vec3(0.299, 0.587, 0.114));
+    color = mix(color, vec3(gray), ageFactor);
 
     // Subtle pulse animation - faster when more energy
     float pulseRate = uPulseSpeed * (0.5 + uEnergy * 0.5);
@@ -111,7 +122,10 @@ export const bioluminescentFragmentShader = `
     // Slight boost for bloom (subtle, not overwhelming)
     finalColor *= 1.0 + glowAmount * 0.15;
 
-    gl_FragColor = vec4(finalColor, 1.0);
+    // Stealth affects transparency: stealthier creatures are more transparent
+    float alpha = 1.0 - uStealth * 0.6; // Range 0.4-1.0
+
+    gl_FragColor = vec4(finalColor, alpha);
   }
 `;
 
@@ -133,7 +147,7 @@ export function createBioluminescentMaterial(
     uniforms: mergedUniforms,
     vertexShader: bioluminescentVertexShader,
     fragmentShader: bioluminescentFragmentShader,
-    transparent: false,
+    transparent: true,
     side: THREE.DoubleSide,
   });
 }
@@ -147,10 +161,14 @@ export function updateBioluminescentUniforms(
   energy: number,
   maxEnergy: number,
   stealth: number,
-  strength: number
+  strength: number,
+  age: number = 0,
+  longevity: number = 0.5
 ): void {
   material.uniforms.uTime.value = time;
   material.uniforms.uEnergy.value = energy / maxEnergy;
   material.uniforms.uStealth.value = stealth;
   material.uniforms.uStrength.value = strength;
+  material.uniforms.uAge.value = age;
+  material.uniforms.uLongevity.value = longevity;
 }

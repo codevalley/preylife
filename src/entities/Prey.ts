@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { Creature, GeneticAttributes } from './Creature';
 import { EntityType } from './Entity';
 import { Resource } from './Resource';
@@ -33,35 +34,34 @@ export class Prey extends Creature {
 
   /**
    * Create organic fish geometry for bioluminescent prey.
-   * The shape varies based on strength (more streamlined = higher strength)
+   * Longevity drives body elongation, strength drives fin prominence.
    */
-  private createFishGeometry(): THREE.ShapeGeometry {
+  private createFishGeometry(): THREE.BufferGeometry {
     const shape = new THREE.Shape();
-
-    // Base size adjusted by energy capacity
     const baseSize = 6;
-    const size = baseSize * (0.8 + (this.maxEnergy / Prey.DEFAULT_MAX_ENERGY) * 0.4);
 
-    // Strength affects body proportions: stronger = more elongated/streamlined
-    const streamline = 0.8 + this.attributes.strength * 0.4; // 0.8 - 1.2
-    const bodyWidth = size * 0.6 / streamline;
-    const bodyLength = size * streamline;
+    const { longevity, strength } = this.attributes;
 
-    // Fish body - organic curved shape
-    // Start at nose
+    // Longevity drives body proportions: higher longevity = longer, narrower body
+    const bodyLength = baseSize * (0.8 + longevity * 0.6);
+    const bodyWidth = baseSize * 0.6 / (0.8 + longevity * 0.4);
+
+    // Strength drives tail fin size
+    const tailLength = bodyLength * (0.2 + strength * 0.25);
+
+    // Fish body - organic curved shape starting at nose
     shape.moveTo(bodyLength * 0.5, 0);
 
     // Upper body curve (nose to tail)
     shape.bezierCurveTo(
-      bodyLength * 0.3, bodyWidth * 0.8,   // Control point 1
-      -bodyLength * 0.1, bodyWidth * 0.6,  // Control point 2
-      -bodyLength * 0.3, bodyWidth * 0.2   // End at tail base
+      bodyLength * 0.3, bodyWidth * 0.8,
+      -bodyLength * 0.1, bodyWidth * 0.6,
+      -bodyLength * 0.3, bodyWidth * 0.2
     );
 
-    // Tail fin (creates flowing V shape)
-    const tailLength = bodyLength * 0.3;
+    // Tail fin (scaled by strength)
     shape.lineTo(-bodyLength * 0.3 - tailLength * 0.3, bodyWidth * 0.5);
-    shape.lineTo(-bodyLength * 0.5, 0); // Tail tip
+    shape.lineTo(-bodyLength * 0.3 - tailLength, 0);
     shape.lineTo(-bodyLength * 0.3 - tailLength * 0.3, -bodyWidth * 0.5);
     shape.lineTo(-bodyLength * 0.3, -bodyWidth * 0.2);
 
@@ -72,7 +72,27 @@ export class Prey extends Creature {
       bodyLength * 0.5, 0
     );
 
-    return new THREE.ShapeGeometry(shape);
+    const bodyGeometry = new THREE.ShapeGeometry(shape);
+
+    // Dorsal fin for strong prey (strength > 0.3)
+    if (strength > 0.3) {
+      const dorsalHeight = bodyWidth * strength * 0.6;
+      const dorsalShape = new THREE.Shape();
+      dorsalShape.moveTo(bodyLength * 0.1, bodyWidth * 0.45);
+      dorsalShape.lineTo(0, bodyWidth * 0.45 + dorsalHeight);
+      dorsalShape.lineTo(-bodyLength * 0.15, bodyWidth * 0.35);
+      dorsalShape.closePath();
+
+      const dorsalGeometry = new THREE.ShapeGeometry(dorsalShape);
+      const merged = BufferGeometryUtils.mergeGeometries([bodyGeometry, dorsalGeometry]);
+      bodyGeometry.dispose();
+      dorsalGeometry.dispose();
+      if (merged) {
+        return merged;
+      }
+    }
+
+    return bodyGeometry;
   }
 
   createMesh(): THREE.Mesh {
@@ -111,8 +131,10 @@ export class Prey extends Creature {
       uEnergy: { value: this.energy / this.maxEnergy },
       uStealth: { value: this.attributes.stealth },
       uStrength: { value: this.attributes.strength },
-      uGlowIntensity: { value: 0.6 }, // Subtle glow
-      uPulseSpeed: { value: 2.0 + this.attributes.learnability }, // Faster pulse = more active learner
+      uAge: { value: 0 },
+      uLongevity: { value: this.attributes.longevity },
+      uGlowIntensity: { value: 0.6 },
+      uPulseSpeed: { value: 2.0 + this.attributes.learnability },
     });
 
     this.mesh = new THREE.Mesh(geometry, material);
@@ -130,13 +152,19 @@ export class Prey extends Creature {
       // Update shader uniforms
       const material = this.mesh.material as THREE.ShaderMaterial;
       if (material.uniforms) {
+        // Calculate normalized age ratio (lifespan scales with longevity)
+        const maxLifespan = 60 + (this.attributes.longevity * 40);
+        const ageRatio = Math.min(1, this.age / maxLifespan);
+
         updateBioluminescentUniforms(
           material,
           Prey.globalTime,
           this.energy,
           this.maxEnergy,
           this.attributes.stealth,
-          this.attributes.strength
+          this.attributes.strength,
+          ageRatio,
+          this.attributes.longevity
         );
       }
 
