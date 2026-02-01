@@ -58,6 +58,50 @@ These multiplied: predator hunting at ~1.85x prey speed (was ~1.2x). Meanwhile, 
 
 ---
 
+## Predator Target-Lock + Stealth Evasion
+
+**Problem**: Predators switched targets every frame when multiple prey were nearby, causing erratic zigzag "confused" movement. No target persistence mechanism existed.
+
+**Fix — target-lock homing**:
+- `selectPrey()` wraps `detectPrey()` with 30-frame minimum lock
+- Lock breaks only if target dies, escapes 120% detection range, or a prey appears 70% closer
+- Prevents oscillation while still allowing opportunistic switches
+
+**Problem discovered**: Target-lock made predators too lethal — committed chases always succeeded. Predators ate all prey in 300-500 days.
+
+**Fix — stealth lock-break**: `loseTrackCheck()` gives stealthy prey a per-frame chance to "vanish" mid-chase. Base 1% + 2% per 0.1 stealth advantage. Creates two survival strategies:
+- **Strong prey** (high str, low stealth): outrun predators (speed strategy)
+- **Stealthy prey** (low str, high stealth): break lock, vanish (evasion strategy)
+
+**Result**: 43-year balanced run achieved.
+
+---
+
+## Sparkline Era Bands
+
+**Problem**: Sparkline had a single background tint based on current health state — no historical era visualization in full-history mode.
+
+**Fix**: Each `DataPoint` stores its `HealthState`. New `drawEraBands()` renders merged vertical color strips (green = balanced, amber = imbalanced, red = critical) behind the series. Adjacent same-state points merge into single rectangles for efficiency.
+
+---
+
+## Prey Anti-Spin Fix
+
+**Problem**: Prey exhibited visible spinning/confusion despite targeting static resources. Three competing forces per frame caused it.
+
+**Root cause analysis**:
+1. **Repulsion vs foraging tug-of-war** — prey near resources pushed apart by `applyRepulsion()`, then pulled back by foraging, every frame
+2. **Random direction spam** — up to 5% per frame direction changes when full, combined with turn-rate smoothing, produced circular arcs
+3. **Resource oscillation** — `detectResource()` returned closest resource each frame; equidistant resources caused switching
+
+**Fix**:
+- `selectResource()` — resource target persistence until consumed or out of range
+- Repulsion suppressed while `lockedResource` is set (foraging overrides spacing)
+- Random direction chance reduced from 0.5-5% to 0.5-1.5%, suppressed while foraging
+- Resource lock dropped when fleeing (survival overrides foraging)
+
+---
+
 ## Files Modified
 
 | File | Changes |
@@ -65,6 +109,7 @@ These multiplied: predator hunting at ~1.85x prey speed (was ~1.2x). Meanwhile, 
 | `src/config/types.ts` | Added `PredatorDesperationConfig`, `PreyFleeExhaustionConfig`, `SpontaneousPreyConfig` |
 | `src/config/defaults.ts` | Default values for all new config fields |
 | `src/entities/Creature.ts` | `getEffectiveSpeed()`, dynamic turn rate, `turnRateBonus` hook |
-| `src/entities/Predator.ts` | `isDesperate()`, desperation bonuses for speed/detection/turn |
-| `src/entities/Prey.ts` | `consecutiveFleeFrames` counter, exhaustion speed penalty |
+| `src/entities/Predator.ts` | `isDesperate()`, desperation bonuses, `selectPrey()` target-lock, `loseTrackCheck()` stealth evasion |
+| `src/entities/Prey.ts` | `consecutiveFleeFrames`, exhaustion penalty, `selectResource()` target persistence, anti-spin fixes |
 | `src/systems/ResourceSystem.ts` | `trySpontaneousPreySpawn()` when prey extinct |
+| `src/ui/PopulationSparkline.ts` | Per-datapoint health state, `drawEraBands()` historical era visualization |

@@ -26,6 +26,9 @@ export class Prey extends Creature {
   // Flee exhaustion: continuous fleeing accumulates fatigue
   private consecutiveFleeFrames: number = 0;
 
+  // Resource target persistence — avoid switching between equidistant resources
+  private lockedResource: Resource | null = null;
+
   constructor(
     x: number,
     y: number,
@@ -213,6 +216,25 @@ export class Prey extends Creature {
     return closestResource;
   }
 
+  /**
+   * Resource target persistence. Stick with a locked resource until it's consumed
+   * or out of range, preventing oscillation between equidistant resources.
+   */
+  private selectResource(resources: Resource[], detectionRange: number): Resource | null {
+    if (this.lockedResource) {
+      const gone = this.lockedResource.isDead;
+      const dist = this.position.distanceTo(this.lockedResource.position);
+      if (gone || dist > detectionRange * 1.2) {
+        this.lockedResource = null;
+      } else {
+        return this.lockedResource;
+      }
+    }
+    const target = this.detectResource(resources, detectionRange);
+    if (target) this.lockedResource = target;
+    return target;
+  }
+
   // Method to detect nearby predators
   detectPredator(predators: Predator[]): Predator | null {
     // Get predator detection range from config
@@ -243,23 +265,25 @@ export class Prey extends Creature {
     // Check for nearby predators first - survival takes priority over feeding
     const nearbyPredator = this.detectPredator(predators);
 
-    // Randomly change direction occasionally - higher chance when full
+    // Randomly change direction occasionally - mild wander when safe
     const energyRatio = this.energy / this.maxEnergy;
-    const directionChangeChance = 0.02 + (energyRatio * 0.03); // Up to 5% when full
+    const directionChangeChance = 0.005 + (energyRatio * 0.01); // 0.5-1.5% per frame
 
-    if (Math.random() < directionChangeChance && !nearbyPredator) {
+    if (Math.random() < directionChangeChance && !nearbyPredator && !this.lockedResource) {
       const angle = Math.random() * Math.PI * 2;
       this.velocity.set(Math.cos(angle), Math.sin(angle)).normalize().multiplyScalar(this.speed);
     }
 
-    // Add mild repulsion between prey to prevent clumping
-    // This is a lower priority than predator avoidance and food seeking
-    if (!nearbyPredator && nearbyPrey.length > 0) {
+    // Add mild repulsion between prey — suppressed when foraging or fleeing
+    if (!nearbyPredator && !this.lockedResource && nearbyPrey.length > 0) {
       applyRepulsion(this, nearbyPrey, 'prey');
     }
 
     // If a predator is nearby, flee from it
     if (nearbyPredator) {
+      // Drop resource target — survival overrides foraging
+      this.lockedResource = null;
+
       // Accumulate flee exhaustion
       this.consecutiveFleeFrames++;
 
@@ -352,7 +376,7 @@ export class Prey extends Creature {
           // Just continue current movement - no active foraging
         } else {
           // Occasionally still check for extremely close resources (opportunistic feeding)
-          const nearbyResource = this.detectResource(resources, 30); // Much shorter detection range
+          const nearbyResource = this.selectResource(resources, 30); // Much shorter detection range
           if (nearbyResource) {
             // Move toward the resource, but with less urgency
             const direction = nearbyResource.position.clone().sub(this.position).normalize();
@@ -364,7 +388,7 @@ export class Prey extends Creature {
         // Scale detection range with hunger - hungrier prey are more motivated to find food
         const detectionRange = 50 * (1 + hungerLevel * 0.6); // Up to 60% increase when starving
 
-        const nearbyResource = this.detectResource(resources, detectionRange);
+        const nearbyResource = this.selectResource(resources, detectionRange);
         if (nearbyResource) {
           // Move toward the resource - hungrier prey move faster toward food
           const foragingSpeed = this.speed * (1 + hungerLevel * 0.3); // Up to 30% faster when starving
