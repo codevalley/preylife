@@ -24,7 +24,14 @@ export abstract class Creature extends Entity {
   // Stats tracking
   offspringCount: number = 0;
   foodConsumed: number = 0;
-  
+
+  // Lineage tracking
+  generation: number = 0;
+  parentTraits: GeneticAttributes | null = null;
+  grandparentTraits: GeneticAttributes | null = null;
+  greatGrandparentTraits: GeneticAttributes | null = null;
+  parentSpecies: EntityType | null = null;
+
   // Reproduction tracking
   timeSinceLastReproduction: number = 0; // Time since last reproduction event
   
@@ -324,6 +331,13 @@ export abstract class Creature extends Entity {
       childEnergy,
       childAttributes
     );
+
+    // Pass lineage data
+    offspring.generation = this.generation + 1;
+    offspring.parentTraits = { ...this.attributes };
+    offspring.grandparentTraits = this.parentTraits ? { ...this.parentTraits } : null;
+    offspring.greatGrandparentTraits = this.grandparentTraits ? { ...this.grandparentTraits } : null;
+    offspring.parentSpecies = this.type;
 
     this.energy *= energyRetention;
     this.onReproduction();
@@ -656,6 +670,13 @@ export abstract class Creature extends Entity {
       }
     }
     
+    // Pass lineage data (conversion is same generation, not a new one)
+    newCreature.generation = this.generation;
+    newCreature.parentTraits = this.parentTraits;
+    newCreature.grandparentTraits = this.grandparentTraits;
+    newCreature.greatGrandparentTraits = this.greatGrandparentTraits;
+    newCreature.parentSpecies = this.type; // Record original species before conversion
+
     // Turn on conversion animation for the new creature
     newCreature.isConversionAnimation = true;
     newCreature.conversionEffectTime = SimulationConfig.speciesConversion.visualEffectDuration;
