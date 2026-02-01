@@ -274,8 +274,8 @@ export class Prey extends Creature {
       this.velocity.set(Math.cos(angle), Math.sin(angle)).normalize().multiplyScalar(this.speed);
     }
 
-    // Add mild repulsion between prey — suppressed when foraging or fleeing
-    if (!nearbyPredator && !this.lockedResource && nearbyPrey.length > 0) {
+    // Add mild repulsion between prey to prevent clumping
+    if (!nearbyPredator && nearbyPrey.length > 0) {
       applyRepulsion(this, nearbyPrey, 'prey');
     }
 
