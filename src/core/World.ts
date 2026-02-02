@@ -238,6 +238,7 @@ export class World {
   removeResource(resource: Resource): void {
     const index = this._resources.indexOf(resource);
     if (index !== -1) {
+      resource.die();
       this._resources.splice(index, 1);
       const adapter = this.entityAdapters.get(resource.id);
       if (adapter) {

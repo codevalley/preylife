@@ -29,6 +29,11 @@ export class Prey extends Creature {
   // Resource target persistence — avoid switching between equidistant resources
   private lockedResource: Resource | null = null;
 
+  // Schooling: each prey belongs to one of 3 "current" groups.
+  // When idle, prey follow their school's slowly-rotating direction instead of
+  // sitting still (which lets repulsion create spinning vortices).
+  private readonly schoolId: number = Math.floor(Math.random() * 3);
+
   constructor(
     x: number,
     y: number,
@@ -191,6 +196,9 @@ export class Prey extends Creature {
     // Track food consumption
     this.onFoodConsumption();
 
+    // Clear any locked target so we don't keep steering toward a removed resource.
+    this.lockedResource = null;
+
     // Update visual appearance to reflect new energy level
     this.updateMeshPosition();
   }
@@ -274,8 +282,10 @@ export class Prey extends Creature {
       this.velocity.set(Math.cos(angle), Math.sin(angle)).normalize().multiplyScalar(this.speed);
     }
 
-    // Add mild repulsion between prey to prevent clumping
-    if (!nearbyPredator && nearbyPrey.length > 0) {
+    // Apply repulsion BEFORE foraging so that foraging's .copy() fully
+    // overwrites it when a resource is locked. Suppress entirely while
+    // foraging to prevent turn-rate-lerp oscillation (spinning).
+    if (!nearbyPredator && !this.lockedResource && nearbyPrey.length > 0) {
       applyRepulsion(this, nearbyPrey, 'prey');
     }
 
@@ -370,18 +380,23 @@ export class Prey extends Creature {
 
       // If prey is fairly full (less than 30% hunger), it's less focused on finding food
       if (hungerLevel < 0.3) {
-        // When fairly full, prey wanders more and is less likely to chase resources
-        // They might still opportunistically grab very close resources
-        if (Math.random() < 0.8) { // 80% chance to just wander when full
-          // Just continue current movement - no active foraging
+        // Occasionally still check for extremely close resources (opportunistic feeding)
+        const nearbyResource = (Math.random() < 0.2) ? this.selectResource(resources, 30) : null;
+        if (nearbyResource) {
+          const direction = nearbyResource.position.clone().sub(this.position).normalize();
+          this.velocity.copy(direction).multiplyScalar(this.speed * 0.8);
         } else {
-          // Occasionally still check for extremely close resources (opportunistic feeding)
-          const nearbyResource = this.selectResource(resources, 30); // Much shorter detection range
-          if (nearbyResource) {
-            // Move toward the resource, but with less urgency
-            const direction = nearbyResource.position.clone().sub(this.position).normalize();
-            this.velocity.copy(direction).multiplyScalar(this.speed * 0.8); // Move slower when not hungry
-          }
+          // Schooling: follow a slowly rotating ocean current instead of sitting idle.
+          // 3 schools offset by 120°, full rotation every ~90 seconds.
+          // This gives idle prey a strong directional signal that prevents
+          // repulsion-induced spinning while creating natural schooling patterns.
+          const t = Date.now() * 0.001; // seconds
+          const schoolOffset = (this.schoolId / 3) * Math.PI * 2;
+          const currentAngle = (t / 90) * Math.PI * 2 + schoolOffset;
+          this.velocity.set(
+            Math.cos(currentAngle),
+            Math.sin(currentAngle)
+          ).multiplyScalar(this.speed * 0.6);
         }
       } else {
         // When hungry, actively search for food
@@ -394,6 +409,17 @@ export class Prey extends Creature {
           const foragingSpeed = this.speed * (1 + hungerLevel * 0.3); // Up to 30% faster when starving
           const direction = nearbyResource.position.clone().sub(this.position).normalize();
           this.velocity.copy(direction).multiplyScalar(foragingSpeed);
+        } else {
+          // No food in range — follow schooling current to keep moving and
+          // cover ground searching. Without this, repulsion is the only
+          // force and prey spin in place.
+          const t = Date.now() * 0.001;
+          const schoolOffset = (this.schoolId / 3) * Math.PI * 2;
+          const currentAngle = (t / 90) * Math.PI * 2 + schoolOffset;
+          this.velocity.set(
+            Math.cos(currentAngle),
+            Math.sin(currentAngle)
+          ).multiplyScalar(this.speed * 0.8);
         }
       }
     }
