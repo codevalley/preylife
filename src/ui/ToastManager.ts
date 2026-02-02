@@ -233,14 +233,6 @@ export class ToastManager {
   private addGlobalStyles() {
     const style = document.createElement('style');
     style.textContent = `
-      @font-face {
-        font-family: 'Inter';
-        font-style: normal;
-        font-weight: 400;
-        font-display: swap;
-        src: url(https://fonts.gstatic.com/s/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1ZL7.woff2) format('woff2');
-      }
-
       #notification-container {
         position: fixed;
         bottom: 100px;
@@ -296,13 +288,13 @@ export class ToastManager {
       }
 
       .educational-card {
-        background: rgba(45, 30, 8, 0.85);
+        background: rgba(8, 25, 45, 0.92);
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
         border: 1px solid rgba(255, 170, 68, 0.3);
         border-radius: 10px;
         padding: 12px 16px;
-        color: #ffe8c8;
+        color: ${OceanicColors.textPrimary};
         font-size: 14px;
         line-height: 1.4;
         pointer-events: auto;
@@ -310,7 +302,7 @@ export class ToastManager {
         opacity: 0;
         transform: translateY(20px);
         transition: opacity 0.4s ease, transform 0.4s ease;
-        box-shadow: 0 4px 20px rgba(80, 50, 0, 0.3);
+        box-shadow: 0 4px 20px rgba(0, 50, 80, 0.4);
         animation: shimmer-border 3s ease-in-out infinite;
         position: relative;
         overflow: hidden;
@@ -445,12 +437,12 @@ export class ToastManager {
       toast.style.borderLeft = `4px solid ${config.color}`;
     }
 
-    const titleColor = isEducational ? '#ffe8c8' : config.color;
+    const titleColor = isEducational ? OceanicColors.accentWarm : config.color;
 
     // Insight label badge for educational cards
     if (isEducational) {
       const insightBadge = document.createElement('div');
-      insightBadge.style.cssText = 'font-size: 10px; color: rgba(255, 170, 68, 0.7); margin-bottom: 4px; font-weight: 500;';
+      insightBadge.style.cssText = `font-size: 10px; color: ${OceanicColors.accentWarm}; opacity: 0.7; margin-bottom: 4px; font-weight: 500;`;
       insightBadge.textContent = '\u{1F4A1} Insight';
       toast.appendChild(insightBadge);
     }

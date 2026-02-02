@@ -88,6 +88,10 @@ ToastManager provides decoupled notifications via `ToastManager.getInstance().sh
 
 - UI components in `src/ui/` build DOM elements programmatically (createElement, appendChild) — avoid innerHTML except where values come strictly from internal simulation state (creature attributes, energy). A security hook will warn on innerHTML usage.
 - `OceanicColors` in `src/ui/DashboardPanel.ts` is the single source of truth for the color palette — use it for all UI theming.
+- Modal panels (SettingsPanel, HelpPanel) use a flex column layout: fixed header → scrollable middle → fixed footer. The outer panel has `overflow: hidden`; only the scroll area has `overflow-y: auto`. When showing, set `display: flex` (not `block`).
+- SettingsPanel maps config paths via dot notation (e.g. `predator.desperation.hungerThreshold`) — `createNumberInput`/`createCheckboxInput` accept a `configPath` string that navigates `SimulationConfig` at save time.
+- Config is split: types in `src/config/types.ts`, defaults in `src/config/defaults.ts`, re-exported from `src/config.ts`.
+- Inter font is loaded via Google Fonts `<link>` in `index.html` (weights 400–700). Do not use `@font-face` in JS.
 - `SimulationEngine.getTotalSpawned()` returns lifetime birth counts (reproduction + conversion + spawned) per species.
 - `SimulationEngine.getStats()` returns current alive counts and average genetic attributes.
 - Population pills, sparkline, creature drawer, tooltip, and toast cards are all independent DOM-based components (no framework) — each manages its own element lifecycle.

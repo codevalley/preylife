@@ -29,19 +29,23 @@ export class SettingsPanel {
       width: '80%',
       maxWidth: '1000px',
       height: '80vh',
-      background: OceanicColors.panelBg,
-      backdropFilter: 'blur(15px)',
-      borderRadius: '12px',
-      padding: '20px',
+      background: 'linear-gradient(170deg, rgba(8, 30, 55, 0.95) 0%, rgba(4, 15, 35, 0.97) 50%, rgba(8, 25, 45, 0.95) 100%)',
+      backdropFilter: 'blur(20px)',
+      borderRadius: '14px',
+      padding: '0',
       display: 'none',
       zIndex: '1000',
-      overflowY: 'auto',
+      overflow: 'hidden',
       color: OceanicColors.textPrimary,
-      boxShadow: '0 8px 32px rgba(0, 50, 80, 0.5)',
-      border: `1px solid ${OceanicColors.borderPrimary}`
+      boxShadow: '0 8px 40px rgba(0, 30, 60, 0.6), 0 0 80px rgba(0, 100, 180, 0.08), inset 0 1px 0 rgba(100, 200, 255, 0.1)',
+      border: `1px solid ${OceanicColors.borderPrimary}`,
+      flexDirection: 'column'
     });
     // Safari support for backdrop-filter
-    (this.panel.style as any).webkitBackdropFilter = 'blur(15px)';
+    (this.panel.style as any).webkitBackdropFilter = 'blur(20px)';
+
+    // Inject global styles for section hover effects and input focus
+    this.addPanelStyles();
     
     // Add keyboard event listener
     this.panel.tabIndex = 0; // Make the panel focusable
@@ -58,161 +62,197 @@ export class SettingsPanel {
       }
     });
 
-    // Add close button
-    const closeButton = document.createElement('button');
-    closeButton.innerHTML = `
-      <div style="display: flex; align-items: center; justify-content: center;">
-        <span style="font-size: 24px;">×</span>
-        <span style="font-size: 10px; margin-left: 4px; opacity: 0.7; background: rgba(255,255,255,0.1); padding: 2px 4px; border-radius: 3px;">ESC</span>
-      </div>
+    // === HEADER (fixed top) ===
+    const header = document.createElement('div');
+    header.style.cssText = `
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 24px 14px;
+      border-bottom: 1px solid rgba(80, 180, 220, 0.15);
+      background: linear-gradient(180deg, rgba(10, 35, 60, 0.4) 0%, transparent 100%);
+      flex-shrink: 0;
     `;
+
+    const titleArea = document.createElement('div');
+    titleArea.style.cssText = 'display: flex; align-items: center; gap: 10px;';
+
+    const titleIcon = document.createElement('div');
+    titleIcon.style.cssText = `
+      width: 32px; height: 32px; border-radius: 8px;
+      background: linear-gradient(135deg, rgba(0, 200, 255, 0.2), rgba(0, 150, 220, 0.1));
+      border: 1px solid rgba(0, 200, 255, 0.2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+    `;
+    titleIcon.textContent = '\u2699\uFE0F';
+
+    const title = document.createElement('h2');
+    title.textContent = 'Simulation Settings';
+    title.style.cssText = `
+      margin: 0;
+      font-size: 20px;
+      font-weight: 700;
+      color: ${OceanicColors.textPrimary};
+      letter-spacing: 0.5px;
+    `;
+
+    titleArea.appendChild(titleIcon);
+    titleArea.appendChild(title);
+
+    // Close button built with DOM methods — no user input, hardcoded UI chrome
+    const closeButton = document.createElement('button');
+    closeButton.className = 'settings-footer-btn';
+    const closeBtnWrap = document.createElement('div');
+    closeBtnWrap.style.cssText = 'display: flex; align-items: center; justify-content: center; gap: 6px;';
+    const closeX = document.createElement('span');
+    closeX.style.cssText = 'font-size: 18px; line-height: 1;';
+    closeX.textContent = '\u00D7';
+    const closeHint = document.createElement('span');
+    closeHint.style.cssText = 'font-size: 10px; opacity: 0.5; background: rgba(255,255,255,0.08); padding: 2px 5px; border-radius: 3px;';
+    closeHint.textContent = 'ESC';
+    closeBtnWrap.appendChild(closeX);
+    closeBtnWrap.appendChild(closeHint);
+    closeButton.appendChild(closeBtnWrap);
     applyStyles(closeButton, {
-      position: 'absolute',
-      top: '10px',
-      right: '10px',
-      background: 'none',
-      border: 'none',
-      color: '#fff',
+      background: 'rgba(255, 255, 255, 0.04)',
+      border: '1px solid rgba(255, 255, 255, 0.08)',
+      color: OceanicColors.textSecondary,
       cursor: 'pointer',
-      padding: '5px 10px',
-      borderRadius: '4px',
+      padding: '6px 12px',
+      borderRadius: '8px',
       display: 'flex',
       alignItems: 'center'
     });
     closeButton.addEventListener('mouseenter', () => {
-      closeButton.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+      closeButton.style.backgroundColor = 'rgba(255, 100, 100, 0.12)';
+      closeButton.style.borderColor = 'rgba(255, 100, 100, 0.25)';
+      closeButton.style.color = '#ff8888';
     });
     closeButton.addEventListener('mouseleave', () => {
-      closeButton.style.backgroundColor = 'transparent';
+      closeButton.style.backgroundColor = 'rgba(255, 255, 255, 0.04)';
+      closeButton.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+      closeButton.style.color = OceanicColors.textSecondary;
     });
     closeButton.title = 'Close Settings Panel (Esc)';
     closeButton.addEventListener('click', () => this.hide());
-    this.panel.appendChild(closeButton);
 
-    // Add title with oceanic styling
-    const title = document.createElement('h2');
-    title.textContent = 'Simulation Settings';
-    title.style.cssText = `
-      margin: 0 0 20px 0;
-      font-size: 24px;
-      font-weight: bold;
-      color: ${OceanicColors.textPrimary};
-      text-shadow: 0 0 15px rgba(100, 200, 255, 0.3);
-      letter-spacing: 1px;
+    header.appendChild(titleArea);
+    header.appendChild(closeButton);
+    this.panel.appendChild(header);
+
+    // === SCROLL AREA (flexible middle) ===
+    const scrollArea = document.createElement('div');
+    scrollArea.className = 'settings-scroll-area';
+    scrollArea.style.cssText = `
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px 24px;
     `;
-    this.panel.appendChild(title);
+    this.panel.appendChild(scrollArea);
 
-    // Create settings content
-    this.createSettingsContent();
+    // Create settings content inside scroll area
+    this.createSettingsContent(scrollArea);
 
-    // Add buttons row with oceanic styling
+    // === FOOTER (fixed bottom) ===
     const buttonsRow = document.createElement('div');
     buttonsRow.style.cssText = `
       display: flex;
       justify-content: space-between;
-      margin-top: 20px;
-      position: sticky;
-      bottom: 0;
-      background: ${OceanicColors.headerBg};
-      padding: 15px 10px;
-      border-top: 1px solid ${OceanicColors.borderPrimary};
-      border-radius: 0 0 12px 12px;
+      align-items: center;
+      padding: 14px 24px;
+      border-top: 1px solid rgba(80, 180, 220, 0.15);
+      background: linear-gradient(0deg, rgba(5, 18, 35, 0.6) 0%, rgba(5, 18, 35, 0.3) 100%);
+      flex-shrink: 0;
+      gap: 10px;
     `;
 
-    // Add restore defaults button with oceanic styling
     const restoreButton = document.createElement('button');
+    restoreButton.className = 'settings-footer-btn';
     restoreButton.textContent = 'Restore Defaults';
     restoreButton.style.cssText = `
-      background: rgba(80, 180, 220, 0.2);
-      color: ${OceanicColors.textSecondary};
-      padding: 10px 20px;
-      border: 1px solid ${OceanicColors.borderPrimary};
-      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.04);
+      color: ${OceanicColors.textMuted};
+      padding: 9px 16px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
       cursor: pointer;
-      font-size: 14px;
-      display: flex;
-      align-items: center;
-      transition: all 0.2s;
+      font-size: 13px;
     `;
     restoreButton.title = 'Reset all settings to their default values';
     restoreButton.addEventListener('mouseenter', () => {
-      restoreButton.style.backgroundColor = 'rgba(80, 180, 220, 0.35)';
-      restoreButton.style.borderColor = OceanicColors.borderHighlight;
+      restoreButton.style.backgroundColor = 'rgba(255, 150, 50, 0.1)';
+      restoreButton.style.borderColor = 'rgba(255, 150, 50, 0.25)';
+      restoreButton.style.color = OceanicColors.accentWarm;
     });
     restoreButton.addEventListener('mouseleave', () => {
-      restoreButton.style.backgroundColor = 'rgba(80, 180, 220, 0.2)';
-      restoreButton.style.borderColor = OceanicColors.borderPrimary;
+      restoreButton.style.backgroundColor = 'rgba(255, 255, 255, 0.04)';
+      restoreButton.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+      restoreButton.style.color = OceanicColors.textMuted;
     });
     restoreButton.addEventListener('click', () => this.restoreDefaults());
     buttonsRow.appendChild(restoreButton);
 
-    // Add toggle advanced button with oceanic styling
     const toggleAdvancedButton = document.createElement('button');
-    toggleAdvancedButton.textContent = 'Show Advanced Settings';
+    toggleAdvancedButton.className = 'settings-footer-btn';
+    toggleAdvancedButton.textContent = 'Show Advanced';
     toggleAdvancedButton.style.cssText = `
-      background: rgba(80, 180, 220, 0.2);
+      background: rgba(80, 180, 220, 0.08);
       color: ${OceanicColors.textSecondary};
-      padding: 10px 20px;
-      border: 1px solid ${OceanicColors.borderPrimary};
-      border-radius: 6px;
+      padding: 9px 16px;
+      border: 1px solid rgba(80, 180, 220, 0.2);
+      border-radius: 8px;
       cursor: pointer;
-      font-size: 14px;
-      display: flex;
-      align-items: center;
-      transition: all 0.2s;
+      font-size: 13px;
     `;
     toggleAdvancedButton.title = 'Toggle visibility of advanced settings';
     toggleAdvancedButton.addEventListener('mouseenter', () => {
-      toggleAdvancedButton.style.backgroundColor = 'rgba(80, 180, 220, 0.35)';
+      toggleAdvancedButton.style.backgroundColor = 'rgba(80, 180, 220, 0.18)';
       toggleAdvancedButton.style.borderColor = OceanicColors.borderHighlight;
     });
     toggleAdvancedButton.addEventListener('mouseleave', () => {
-      toggleAdvancedButton.style.backgroundColor = 'rgba(80, 180, 220, 0.2)';
-      toggleAdvancedButton.style.borderColor = OceanicColors.borderPrimary;
+      toggleAdvancedButton.style.backgroundColor = 'rgba(80, 180, 220, 0.08)';
+      toggleAdvancedButton.style.borderColor = 'rgba(80, 180, 220, 0.2)';
     });
     toggleAdvancedButton.addEventListener('click', () => {
       this.showAdvanced = !this.showAdvanced;
-      toggleAdvancedButton.textContent = this.showAdvanced ? 'Hide Advanced Settings' : 'Show Advanced Settings';
+      toggleAdvancedButton.textContent = this.showAdvanced ? 'Hide Advanced' : 'Show Advanced';
       this.updateAdvancedVisibility();
     });
     buttonsRow.appendChild(toggleAdvancedButton);
 
-    // Add save button with oceanic accent
     const saveButton = document.createElement('button');
-    
-    // Create content with keyboard shortcut indicator
+    saveButton.className = 'settings-footer-btn';
+    // Build save button content with DOM methods (hardcoded UI chrome)
     const saveButtonContent = document.createElement('div');
-    saveButtonContent.style.cssText = `
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    `;
-    saveButtonContent.innerHTML = `
-      <span>Save Changes</span>
-      <span style="margin-left: 8px; font-size: 11px; opacity: 0.8; background: rgba(255,255,255,0.1); padding: 2px 5px; border-radius: 3px;">
-        ${navigator.platform.includes('Mac') ? '⌘+Enter' : 'Ctrl+Enter'}
-      </span>
-    `;
-    
+    saveButtonContent.style.cssText = 'display: flex; align-items: center; justify-content: center; gap: 8px;';
+    const saveLabel = document.createElement('span');
+    saveLabel.textContent = 'Save Changes';
+    const saveHint = document.createElement('span');
+    saveHint.style.cssText = 'font-size: 11px; opacity: 0.6; background: rgba(255,255,255,0.08); padding: 2px 5px; border-radius: 3px;';
+    saveHint.textContent = navigator.platform.includes('Mac') ? '\u2318+Enter' : 'Ctrl+Enter';
+    saveButtonContent.appendChild(saveLabel);
+    saveButtonContent.appendChild(saveHint);
     saveButton.appendChild(saveButtonContent);
     saveButton.style.cssText = `
-      background: rgba(0, 200, 170, 0.4);
+      background: linear-gradient(135deg, rgba(0, 200, 170, 0.3), rgba(0, 180, 220, 0.25));
       color: ${OceanicColors.textPrimary};
-      padding: 10px 20px;
-      border: 1px solid rgba(0, 220, 180, 0.5);
-      border-radius: 6px;
+      padding: 9px 20px;
+      border: 1px solid rgba(0, 220, 180, 0.35);
+      border-radius: 8px;
       cursor: pointer;
-      font-size: 14px;
-      transition: all 0.2s;
+      font-size: 13px;
     `;
     saveButton.title = 'Save Changes (Ctrl+Enter or Cmd+Enter)';
     saveButton.addEventListener('mouseenter', () => {
-      saveButton.style.backgroundColor = 'rgba(0, 200, 170, 0.6)';
-      saveButton.style.borderColor = 'rgba(0, 220, 180, 0.8)';
+      saveButton.style.background = 'linear-gradient(135deg, rgba(0, 200, 170, 0.45), rgba(0, 180, 220, 0.4))';
+      saveButton.style.borderColor = 'rgba(0, 220, 180, 0.6)';
+      saveButton.style.boxShadow = '0 0 15px rgba(0, 200, 170, 0.15)';
     });
     saveButton.addEventListener('mouseleave', () => {
-      saveButton.style.backgroundColor = 'rgba(0, 200, 170, 0.4)';
-      saveButton.style.borderColor = 'rgba(0, 220, 180, 0.5)';
+      saveButton.style.background = 'linear-gradient(135deg, rgba(0, 200, 170, 0.3), rgba(0, 180, 220, 0.25))';
+      saveButton.style.borderColor = 'rgba(0, 220, 180, 0.35)';
+      saveButton.style.boxShadow = 'none';
     });
     saveButton.addEventListener('click', () => this.saveSettings());
     buttonsRow.appendChild(saveButton);
@@ -238,14 +278,92 @@ export class SettingsPanel {
     container.appendChild(this.panel);
   }
 
-  private createSettingsContent(): void {
+  private addPanelStyles(): void {
+    const style = document.createElement('style');
+    style.textContent = `
+      .settings-section {
+        transition: transform 0.2s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+      }
+      .settings-section:hover {
+        transform: translateY(-1px);
+        border-color: rgba(100, 200, 255, 0.35) !important;
+        box-shadow: 0 4px 20px rgba(0, 80, 140, 0.15), inset 0 1px 0 rgba(100, 200, 255, 0.06);
+      }
+      .settings-panel input[type="number"]:focus,
+      .settings-panel input[type="text"]:focus {
+        outline: none;
+        border-color: rgba(0, 200, 255, 0.5);
+        box-shadow: 0 0 0 2px rgba(0, 200, 255, 0.1), 0 0 12px rgba(0, 200, 255, 0.08);
+      }
+      .settings-panel input[type="checkbox"] {
+        appearance: none;
+        -webkit-appearance: none;
+        width: 16px;
+        height: 16px;
+        border: 1.5px solid rgba(80, 180, 220, 0.4);
+        border-radius: 4px;
+        background: rgba(5, 15, 30, 0.6);
+        cursor: pointer;
+        position: relative;
+        transition: all 0.15s ease;
+        flex-shrink: 0;
+      }
+      .settings-panel input[type="checkbox"]:checked {
+        background: rgba(0, 200, 255, 0.3);
+        border-color: rgba(0, 220, 255, 0.6);
+      }
+      .settings-panel input[type="checkbox"]:checked::after {
+        content: '';
+        position: absolute;
+        left: 4px;
+        top: 1px;
+        width: 5px;
+        height: 9px;
+        border: solid ${OceanicColors.accentCyan};
+        border-width: 0 2px 2px 0;
+        transform: rotate(45deg);
+      }
+      .settings-panel input[type="checkbox"]:hover {
+        border-color: rgba(0, 200, 255, 0.6);
+      }
+      .settings-footer-btn {
+        transition: all 0.2s ease;
+        font-family: inherit;
+      }
+      .settings-footer-btn:hover {
+        transform: translateY(-1px);
+      }
+      .settings-footer-btn:active {
+        transform: translateY(0);
+      }
+      .settings-scroll-area {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(80, 180, 220, 0.25) transparent;
+      }
+      .settings-scroll-area::-webkit-scrollbar {
+        width: 6px;
+      }
+      .settings-scroll-area::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .settings-scroll-area::-webkit-scrollbar-thumb {
+        background: rgba(80, 180, 220, 0.25);
+        border-radius: 3px;
+      }
+      .settings-scroll-area::-webkit-scrollbar-thumb:hover {
+        background: rgba(80, 180, 220, 0.4);
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  private createSettingsContent(scrollArea?: HTMLElement): void {
     const content = document.createElement('div');
     content.id = 'settings-content';
     content.style.cssText = `
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 20px;
-      margin-bottom: 60px;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
     `;
 
     // Add sections
@@ -254,14 +372,18 @@ export class SettingsPanel {
     content.appendChild(this.createResourceSection());
     content.appendChild(this.createCreatureSection());
     content.appendChild(this.createPredatorSection());
+    content.appendChild(this.createDesperationSection());
     content.appendChild(this.createPreySection());
+    content.appendChild(this.createFleeExhaustionSection());
+    content.appendChild(this.createSpontaneousPreySection());
     content.appendChild(this.createLearningSection());
     content.appendChild(this.createReproductionSection());
     content.appendChild(this.createStarvationSection());
     content.appendChild(this.createClusteredSpawningSection());
     content.appendChild(this.createSpeciesConversionSection());
 
-    this.panel.appendChild(content);
+    const target = scrollArea || this.panel;
+    target.appendChild(content);
     this.updateAdvancedVisibility();
   }
 
@@ -269,19 +391,31 @@ export class SettingsPanel {
     const section = document.createElement('div');
     section.className = 'settings-section';
     section.style.cssText = `
-      background: ${OceanicColors.headerBg};
+      background: linear-gradient(160deg, rgba(8, 28, 50, 0.7) 0%, rgba(5, 18, 35, 0.8) 100%);
       border-radius: 10px;
-      padding: 15px;
-      border: 1px solid ${OceanicColors.borderPrimary};
+      padding: 16px;
+      border: 1px solid rgba(80, 180, 220, 0.15);
+      position: relative;
+      overflow: hidden;
     `;
+
+    // Subtle top-edge highlight
+    const topEdge = document.createElement('div');
+    topEdge.style.cssText = `
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent 0%, rgba(100, 200, 255, 0.15) 50%, transparent 100%);
+    `;
+    section.appendChild(topEdge);
 
     const header = document.createElement('div');
     header.style.cssText = `
       display: flex;
       align-items: center;
-      margin-bottom: 15px;
+      margin-bottom: 14px;
       padding-bottom: 10px;
-      border-bottom: 1px solid ${OceanicColors.borderPrimary};
+      border-bottom: 1px solid rgba(80, 180, 220, 0.1);
     `;
 
     const iconElement = document.createElement('span');
@@ -289,21 +423,24 @@ export class SettingsPanel {
     iconElement.innerHTML = icon;
     iconElement.style.cssText = `
       margin-right: 10px;
-      width: 24px;
-      height: 24px;
+      width: 28px;
+      height: 28px;
       display: flex;
       align-items: center;
       justify-content: center;
+      background: rgba(255, 255, 255, 0.04);
+      border-radius: 6px;
+      padding: 2px;
     `;
 
     const titleElement = document.createElement('h3');
     titleElement.textContent = title;
     titleElement.style.cssText = `
       margin: 0;
-      font-size: 16px;
-      font-weight: bold;
+      font-size: 14px;
+      font-weight: 600;
       color: ${OceanicColors.textPrimary};
-      text-shadow: 0 0 10px rgba(100, 200, 255, 0.2);
+      letter-spacing: 0.3px;
     `;
 
     header.appendChild(iconElement);
@@ -368,7 +505,7 @@ export class SettingsPanel {
       tooltipText.textContent = tooltip;
       tooltipText.style.cssText = `
         visibility: hidden;
-        background-color: rgba(40, 40, 40, 0.95);
+        background-color: ${OceanicColors.headerBg};
         color: #fff;
         text-align: center;
         padding: 8px 12px;
@@ -396,7 +533,7 @@ export class SettingsPanel {
         margin-left: -5px;
         border-width: 5px;
         border-style: solid;
-        border-color: rgba(40, 40, 40, 0.95) transparent transparent transparent;
+        border-color: ${OceanicColors.headerBg} transparent transparent transparent;
       `;
       tooltipText.appendChild(arrow);
 
@@ -427,13 +564,15 @@ export class SettingsPanel {
     if (step !== undefined) input.step = step.toString();
     input.style.cssText = `
       width: 100%;
-      padding: 8px;
-      border: 1px solid ${OceanicColors.borderPrimary};
+      padding: 7px 10px;
+      border: 1px solid rgba(80, 180, 220, 0.15);
       border-radius: 6px;
-      background: rgba(5, 15, 30, 0.6);
+      background: rgba(0, 10, 25, 0.5);
       color: ${OceanicColors.textPrimary};
       font-size: 13px;
-      transition: border-color 0.2s;
+      font-family: inherit;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      box-sizing: border-box;
     `;
 
     // Add change event to store value
@@ -485,7 +624,7 @@ export class SettingsPanel {
     labelElement.htmlFor = input.id;
     labelElement.style.cssText = `
       font-size: 14px;
-      color: #aaa;
+      color: ${OceanicColors.textSecondary};
     `;
     labelElement.textContent = label;
 
@@ -513,7 +652,7 @@ export class SettingsPanel {
       tooltipText.textContent = tooltip;
       tooltipText.style.cssText = `
         visibility: hidden;
-        background-color: rgba(40, 40, 40, 0.95);
+        background-color: ${OceanicColors.headerBg};
         color: #fff;
         text-align: center;
         padding: 8px 12px;
@@ -541,7 +680,7 @@ export class SettingsPanel {
         margin-left: -5px;
         border-width: 5px;
         border-style: solid;
-        border-color: rgba(40, 40, 40, 0.95) transparent transparent transparent;
+        border-color: ${OceanicColors.headerBg} transparent transparent transparent;
       `;
       tooltipText.appendChild(arrow);
 
@@ -1170,6 +1309,172 @@ export class SettingsPanel {
     return section;
   }
 
+  private createDesperationSection(): HTMLElement {
+    const section = this.createSection('Predator Desperation', `
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="#FF9800">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+        <path d="M12 5.99L19.53 19H4.47L12 5.99M12 2L1 21h22L12 2z" fill="#FF9800"/>
+      </svg>
+    `);
+
+    section.appendChild(this.createNumberInput(
+      'Hunger Threshold',
+      SimulationConfig.predator.desperation.hungerThreshold,
+      'predator.desperation.hungerThreshold',
+      0,
+      1,
+      0.05,
+      'Energy ratio below which predators enter desperation mode'
+    ));
+
+    section.appendChild(this.createNumberInput(
+      'Speed Bonus',
+      SimulationConfig.predator.desperation.speedBonus,
+      'predator.desperation.speedBonus',
+      0,
+      2,
+      0.1,
+      'Additional speed multiplier when desperate',
+      true
+    ));
+
+    section.appendChild(this.createNumberInput(
+      'Detection Bonus',
+      SimulationConfig.predator.desperation.detectionBonus,
+      'predator.desperation.detectionBonus',
+      0,
+      2,
+      0.1,
+      'Additional detection range multiplier when desperate',
+      true
+    ));
+
+    section.appendChild(this.createNumberInput(
+      'Turn Rate Bonus',
+      SimulationConfig.predator.desperation.turnRateBonus,
+      'predator.desperation.turnRateBonus',
+      0,
+      0.5,
+      0.05,
+      'Additional turn rate when desperate',
+      true
+    ));
+
+    section.appendChild(this.createNumberInput(
+      'Isolation Range',
+      SimulationConfig.predator.desperation.isolationRange,
+      'predator.desperation.isolationRange',
+      50,
+      500,
+      10,
+      'Distance to check for nearby predators to determine isolation',
+      true
+    ));
+
+    section.appendChild(this.createNumberInput(
+      'Max Nearby Predators',
+      SimulationConfig.predator.desperation.maxNearbyPredators,
+      'predator.desperation.maxNearbyPredators',
+      0,
+      10,
+      1,
+      'Maximum nearby predators to still be considered isolated',
+      true
+    ));
+
+    return section;
+  }
+
+  private createFleeExhaustionSection(): HTMLElement {
+    const section = this.createSection('Prey Flee Exhaustion', `
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="#64B5F6">
+        <path d="M13.49 5.48c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-3.6 13.9l1-4.4 2.1 2v6h2v-7.5l-2.1-2 .6-3c1.3 1.5 3.3 2.5 5.5 2.5v-2c-1.9 0-3.5-1-4.3-2.4l-1-1.6c-.4-.6-1-1-1.7-1-.3 0-.5.1-.8.1l-5.2 2.2v4.7h2v-3.4l1.8-.7-1.6 8.1-4.9-1-.4 2 7 1.4z"/>
+      </svg>
+    `);
+
+    section.appendChild(this.createNumberInput(
+      'Exhaustion Threshold',
+      SimulationConfig.prey.fleeExhaustion.threshold,
+      'prey.fleeExhaustion.threshold',
+      10,
+      200,
+      5,
+      'Frames of continuous fleeing before exhaustion penalties apply'
+    ));
+
+    section.appendChild(this.createNumberInput(
+      'Exhaustion Rate',
+      SimulationConfig.prey.fleeExhaustion.rate,
+      'prey.fleeExhaustion.rate',
+      0.001,
+      0.05,
+      0.001,
+      'Rate at which exhaustion penalty accumulates per frame',
+      true
+    ));
+
+    section.appendChild(this.createNumberInput(
+      'Max Speed Penalty',
+      SimulationConfig.prey.fleeExhaustion.maxPenalty,
+      'prey.fleeExhaustion.maxPenalty',
+      0,
+      0.8,
+      0.05,
+      'Maximum speed reduction from flee exhaustion (0 = none, 0.8 = 80% slower)'
+    ));
+
+    return section;
+  }
+
+  private createSpontaneousPreySection(): HTMLElement {
+    const section = this.createSection('Spontaneous Prey', `
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="#4DD0E1">
+        <path d="M12 2L9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2z"/>
+      </svg>
+    `);
+
+    section.appendChild(this.createCheckboxInput(
+      'Enabled',
+      SimulationConfig.spontaneousPrey.enabled,
+      'spontaneousPrey.enabled',
+      'Enable spontaneous prey spawning when prey are extinct and resources are abundant'
+    ));
+
+    section.appendChild(this.createNumberInput(
+      'Resource Threshold',
+      SimulationConfig.spontaneousPrey.resourceThreshold,
+      'spontaneousPrey.resourceThreshold',
+      10,
+      200,
+      5,
+      'Minimum resources needed before spontaneous prey can spawn'
+    ));
+
+    section.appendChild(this.createNumberInput(
+      'Spawn Chance',
+      SimulationConfig.spontaneousPrey.spawnChance,
+      'spontaneousPrey.spawnChance',
+      0.0001,
+      0.01,
+      0.0001,
+      'Per-frame probability of spontaneous prey spawning',
+      true
+    ));
+
+    section.appendChild(this.createNumberInput(
+      'Max Per Cycle',
+      SimulationConfig.spontaneousPrey.maxPerCycle,
+      'spontaneousPrey.maxPerCycle',
+      1,
+      5,
+      1,
+      'Maximum spontaneous prey to spawn per update cycle',
+      true
+    ));
+
+    return section;
+  }
+
   private createLearningSection(): HTMLElement {
     const section = this.createSection('Learning Settings', `
       <svg width="24" height="24" viewBox="0 0 24 24" fill="#BA68C8">
@@ -1746,7 +2051,7 @@ export class SettingsPanel {
     });
     
     if (this.panel instanceof HTMLElement) {
-      this.panel.style.display = 'block';
+      this.panel.style.display = 'flex';
       const overlay = this.panel.previousElementSibling;
       if (overlay instanceof HTMLElement) {
         overlay.style.display = 'block';
