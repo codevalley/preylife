@@ -119,19 +119,19 @@ export class Prey extends Creature {
 
     // Blue-dominant palette — clearly distinct from green plankton
     // Stealth shifts toward deeper blue, strength adds slight cyan
-    const stealthBlue = 0.6 + this.attributes.stealth * 0.4;
-    const strengthCyan = this.attributes.strength * 0.25;
+    const stealthBlue = 0.7 + this.attributes.stealth * 0.3;
+    const strengthCyan = this.attributes.strength * 0.35;
 
     baseColor.setRGB(
-      0.05,                          // Minimal red
-      0.15 + strengthCyan,            // Small amount of green (cyan hint)
+      0.08,                          // Slight red lift for visibility
+      0.25 + strengthCyan,            // Brighter green for cyan presence
       stealthBlue                     // Strong blue
     );
 
     // Glow color is brighter blue-white
     glowColor.setRGB(
-      0.15,
-      0.3 + strengthCyan,
+      0.2,
+      0.5 + strengthCyan,
       1.0
     );
 
@@ -144,7 +144,7 @@ export class Prey extends Creature {
       uStrength: { value: this.attributes.strength },
       uAge: { value: 0 },
       uLongevity: { value: this.attributes.longevity },
-      uGlowIntensity: { value: 0.6 },
+      uGlowIntensity: { value: 0.9 },
       uPulseSpeed: { value: 2.0 + this.attributes.learnability },
     });
 

@@ -13,10 +13,10 @@ export class OceanBackground {
 
   // Ocean color palette
   private static readonly COLORS = {
-    surface: new THREE.Color(0x0c3055),      // Deep blue at top
-    midDepth: new THREE.Color(0x051525),     // Darker blue-green
-    abyss: new THREE.Color(0x010508),        // Near black at bottom
-    causticLight: new THREE.Color(0x1a4a6a), // Light ray tint
+    surface: new THREE.Color(0x1b4f8a),      // Brighter surface blue
+    midDepth: new THREE.Color(0x0a2c4a),     // Clear mid-depth blue
+    abyss: new THREE.Color(0x050b14),        // Deep navy (not black)
+    causticLight: new THREE.Color(0x2f7cb3), // More visible caustic tint
   };
 
   constructor(width: number, height: number) {
@@ -31,7 +31,7 @@ export class OceanBackground {
         uMidColor: { value: OceanBackground.COLORS.midDepth },
         uAbyssColor: { value: OceanBackground.COLORS.abyss },
         uCausticColor: { value: OceanBackground.COLORS.causticLight },
-        uCausticIntensity: { value: 0.15 },
+        uCausticIntensity: { value: 0.3 },
         uResolution: { value: new THREE.Vector2(width, height) },
       },
       vertexShader: `
@@ -79,13 +79,13 @@ export class OceanBackground {
           float causticPattern = caustics(vUv, uTime);
           color += uCausticColor * causticPattern * uCausticIntensity;
 
-          float fogAmount = smoothstep(0.5, 1.0, depthCurve) * 0.15;
-          vec3 fogColor = vec3(0.02, 0.05, 0.1);
+          float fogAmount = smoothstep(0.5, 1.0, depthCurve) * 0.08;
+          vec3 fogColor = vec3(0.05, 0.08, 0.12);
           color = mix(color, fogColor, fogAmount);
 
           float vignette = 1.0 - length((vUv - 0.5) * 1.2);
           vignette = smoothstep(0.0, 1.0, vignette);
-          color *= 0.85 + vignette * 0.15;
+          color *= 0.9 + vignette * 0.1;
 
           gl_FragColor = vec4(color, 1.0);
         }

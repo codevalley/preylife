@@ -6,16 +6,16 @@ This guide explains the visual elements of PreyLife and how to interpret what yo
 
 PreyLife displays three types of entities, each with distinct visual characteristics.
 
-### Resources (Green Squares)
+### Resources (Plankton)
 
-Resources are static food sources that prey consume to gain energy.
+Resources are plankton-like food sources that prey consume to gain energy.
 
 | Visual Property | Meaning |
 |-----------------|---------|
-| **Shape** | Square |
-| **Base Color** | Green |
+| **Shape** | Soft glowing circle |
+| **Base Color** | Green-cyan plankton |
 | **Brightness** | Energy value (brighter = more energy) |
-| **Size** | Fixed, small |
+| **Size** | Scales with energy (larger = more energy) |
 
 **Key Observations:**
 - Resources spawn naturally over time
@@ -23,16 +23,18 @@ Resources are static food sources that prey consume to gain energy.
 - Resources decay after 30 days if not consumed
 - When creatures die, resources spawn at their location
 
-### Prey (Blue Circles)
+### Prey (Bioluminescent Fish)
 
 Prey are herbivorous creatures that eat resources and flee from predators.
 
 | Visual Property | Meaning |
 |-----------------|---------|
-| **Shape** | Circle |
-| **Base Color** | Blue-Green gradient |
-| **Green Tint** | Strength attribute (more green = stronger) |
-| **Blue Tint** | Stealth attribute (more blue = stealthier) |
+| **Shape** | Fish silhouette with fins |
+| **Body Length** | Longevity (longer, slimmer bodies = higher longevity) |
+| **Fin Size** | Strength (larger tail/dorsal fin = stronger) |
+| **Color** | Stealth shifts deeper blue; strength adds cyan |
+| **Glow/Opacity** | Stealth reduces glow and transparency |
+| **Pulse Speed** | Learnability (higher = faster glow pulse) |
 | **Brightness** | Current energy level (dimmer = low energy) |
 
 **Example Colors:**
@@ -41,16 +43,18 @@ Prey are herbivorous creatures that eat resources and flee from predators.
 - **Green-Blue** - High strength, moderate stealth (fast runner)
 - **Dim Colors** - Low energy, at risk of starvation
 
-### Predators (Red Pentagons)
+### Predators (Hunters)
 
 Predators hunt and consume prey to survive.
 
 | Visual Property | Meaning |
 |-----------------|---------|
-| **Shape** | Pentagon (5-sided) |
-| **Base Color** | Red-Yellow gradient |
-| **Red Tint** | Strength attribute (more red = stronger) |
-| **Yellow Tint** | Stealth attribute (more yellow = stealthier) |
+| **Shape** | Angular hunter profile |
+| **Jaw/Spikes** | Strength (bigger jaw, dorsal spikes) |
+| **Body Compactness** | Stealth (stealthier = more compact/darker) |
+| **Color** | Strength intensifies red/orange; stealth darkens base |
+| **Eye/Lure Glow** | Energy + hunting state (brighter when hunting) |
+| **Sensor Dots** | Learnability (lateral line highlights) |
 | **Brightness** | Current energy level (dimmer = low energy) |
 | **Rotation** | Points in movement direction |
 
@@ -128,8 +132,10 @@ When creatures reproduce:
 ### Species Conversion
 When a creature undergoes evolutionary conversion:
 - Brief visual effect as creature transforms
-- Shape changes (circle ↔ pentagon)
-- Color gradient shifts (blue-green ↔ red-yellow)
+- Shape changes (fish ↔ angular hunter)
+- Color palette shifts (blue/cyan ↔ amber/crimson)
+
+For a detailed breakdown of how traits affect visuals, see `docs/user-guide/rendering-traits.md`.
 
 ## Dashboard Interpretation
 

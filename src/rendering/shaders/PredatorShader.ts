@@ -80,11 +80,11 @@ export const predatorFragmentShader = `
     vec3 color = uBaseColor * (0.6 + uStrength * 0.4);
 
     // Energy affects overall brightness (40% - 100%)
-    float energyBrightness = 0.4 + uEnergy * 0.6;
+    float energyBrightness = 0.5 + uEnergy * 0.5;
 
     // Stealth creates contrast: dark body with brighter highlights
     // High stealth = darker base, more contrast
-    float bodyDarkness = 1.0 - (uStealth * 0.4);
+    float bodyDarkness = 1.0 - (uStealth * 0.25);
     color *= bodyDarkness;
 
     // Age desaturation and scarring
@@ -108,7 +108,7 @@ export const predatorFragmentShader = `
     float eyeZone = smoothstep(0.5, 0.7, vUv.x);
 
     // Eye glow intensity based on energy and hunting state
-    float eyeGlow = eyeZone * (0.5 + uEnergy * 0.5 + uHunting * 0.5);
+    float eyeGlow = eyeZone * (0.6 + uEnergy * 0.5 + uHunting * 0.6);
 
     // Pulse the eye glow
     float eyePulse = sin(uTime * 3.0 + uHunting * 2.0) * 0.3 + 0.7;
@@ -135,7 +135,7 @@ export const predatorFragmentShader = `
     // Edge glow for bloom effect
     float edgeDist = length(vUv - vec2(0.5)) * 2.0;
     float edgeGlow = smoothstep(0.4, 1.0, edgeDist);
-    finalColor += uEyeColor * edgeGlow * 0.3 * uGlowIntensity * energyBrightness;
+    finalColor += uEyeColor * edgeGlow * 0.4 * uGlowIntensity * energyBrightness;
 
     // Slight boost for bloom (subtle)
     finalColor *= 1.0 + uGlowIntensity * 0.1;

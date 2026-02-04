@@ -135,11 +135,11 @@ export class Predator extends Creature {
     const eyeColor = new THREE.Color();
 
     // Mix between amber (balanced) and crimson (high strength)
-    const redComponent = 0.7 + this.attributes.strength * 0.3;
-    const orangeComponent = 0.4 - this.attributes.strength * 0.2;
+    const redComponent = 0.78 + this.attributes.strength * 0.22;
+    const orangeComponent = 0.5 - this.attributes.strength * 0.15;
 
     // Stealthier predators have darker bodies
-    const darkness = 1.0 - this.attributes.stealth * 0.4;
+    const darkness = 1.0 - this.attributes.stealth * 0.25;
 
     baseColor.setRGB(
       redComponent * darkness,
@@ -148,7 +148,7 @@ export class Predator extends Creature {
     );
 
     // Eye/lure color is bright orange-yellow
-    eyeColor.setRGB(1.0, 0.6, 0.1);
+    eyeColor.setRGB(1.0, 0.72, 0.2);
 
     // Create predator shader material
     const material = createPredatorMaterial({
@@ -157,7 +157,7 @@ export class Predator extends Creature {
       uEnergy: { value: this.energy / this.maxEnergy },
       uStealth: { value: this.attributes.stealth },
       uStrength: { value: this.attributes.strength },
-      uGlowIntensity: { value: 0.5 }, // Subtle glow
+      uGlowIntensity: { value: 0.75 }, // Clearer glow
       uHunting: { value: 0 },
       uAge: { value: 0 },
       uLongevity: { value: this.attributes.longevity },

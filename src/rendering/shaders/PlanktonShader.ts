@@ -65,7 +65,7 @@ export const planktonFragmentShader = `
     float alpha = smoothstep(0.5, 0.0, dist);
 
     // Energy affects brightness (40% - 100%)
-    float energyBrightness = 0.4 + uEnergy * 0.6;
+    float energyBrightness = 0.5 + uEnergy * 0.6;
 
     // Gentle pulse animation
     float pulse = sin(uTime * uPulseSpeed) * 0.1 + 0.9;
@@ -75,11 +75,11 @@ export const planktonFragmentShader = `
 
     // Add glow at edges for bloom effect
     float glowRing = smoothstep(0.2, 0.4, dist) * smoothstep(0.5, 0.35, dist);
-    color += uGlowColor * glowRing * uGlowIntensity * energyBrightness;
+    color += uGlowColor * glowRing * uGlowIntensity * energyBrightness * 1.1;
 
     // Inner bright core
     float core = smoothstep(0.15, 0.0, dist);
-    color += uGlowColor * core * 0.5 * energyBrightness;
+    color += uGlowColor * core * 0.6 * energyBrightness;
 
     // Slight boost for bloom (subtle)
     color *= 1.0 + uGlowIntensity * 0.1;

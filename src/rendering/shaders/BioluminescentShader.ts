@@ -81,11 +81,11 @@ export const bioluminescentFragmentShader = `
     vec3 color = uBaseColor;
 
     // Energy affects overall brightness (30% - 100%)
-    float energyBrightness = 0.3 + uEnergy * 0.7;
+    float energyBrightness = 0.45 + uEnergy * 0.55;
 
     // Stealth inversely affects visibility - stealthy creatures are dimmer
     // But they're still visible enough to see, just less vibrant
-    float stealthDim = 1.0 - (uStealth * 0.5); // 0.5 - 1.0 range
+    float stealthDim = 1.0 - (uStealth * 0.35); // 0.65 - 1.0 range
 
     // Strength increases color saturation and warmth
     float strengthWarmth = uStrength * 0.3;
@@ -104,7 +104,7 @@ export const bioluminescentFragmentShader = `
     // Glow intensity based on attributes
     // Lower stealth = more glow (more visible)
     // Higher energy = more glow
-    float glowAmount = uGlowIntensity * (1.0 - uStealth * 0.6) * (0.5 + uEnergy * 0.5);
+    float glowAmount = uGlowIntensity * (1.0 - uStealth * 0.4) * (0.6 + uEnergy * 0.4);
 
     // Add subtle glow variation
     float glowPulse = 1.0 + pulse * 0.15 * glowAmount;
@@ -123,7 +123,7 @@ export const bioluminescentFragmentShader = `
     finalColor *= 1.0 + glowAmount * 0.15;
 
     // Stealth affects transparency: stealthier creatures are more transparent
-    float alpha = 1.0 - uStealth * 0.6; // Range 0.4-1.0
+    float alpha = 1.0 - uStealth * 0.45; // Range 0.55-1.0
 
     gl_FragColor = vec4(finalColor, alpha);
   }

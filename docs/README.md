@@ -20,6 +20,7 @@ Open `http://localhost:5173` in your browser.
 
 - **[Getting Started](user-guide/getting-started.md)** - Installation, first run, and basic controls
 - **[Visual Guide](user-guide/visual-guide.md)** - Understanding entity types, colors, and visual indicators
+- **[Rendering & Trait Morphing](user-guide/rendering-traits.md)** - How traits map to creature visuals and shaders
 - **[Mechanics](user-guide/mechanics.md)** - How the simulation works under the hood
 - **[Configuration](user-guide/configuration.md)** - All parameters explained with practical examples
 - **[Experiments](user-guide/experiments.md)** - Things to try and troubleshooting tips
